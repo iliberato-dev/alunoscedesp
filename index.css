@@ -57,7 +57,7 @@ h1 {
     margin-bottom: 5px;
 }
 
-.search-section input[type="text"] {
+.search-section input[type="text"], #filtroOrigem {
     flex-grow: 1;
     padding: 12px;
     border: 1px solid #00aaff; /* Borda azul vibrante */
@@ -70,11 +70,11 @@ h1 {
     box-shadow: 0 0 8px rgba(0, 170, 255, 0.3);
 }
 
-.search-section input[type="text"]::placeholder {
+.search-section input[type="text"]::placeholder, #filtroOrigem::placeholder {
     color: #6a6a90; /* Cor do placeholder */
 }
 
-.search-section input[type="text"]:focus {
+.search-section input[type="text"]:focus,  #filtroOrigem:focus {
     border-color: #00ffcc; /* Borda ciano ao focar */
     box-shadow: 0 0 15px rgba(0, 255, 204, 0.5); /* Brilho maior ao focar */
 }
@@ -171,6 +171,10 @@ table tr:hover {
         margin-bottom: 25px;
     }
 
+    .inputs  {
+      width: 95.5% !important;
+    }
+
     .search-section {
         flex-direction: column;
         align-items: stretch;
@@ -244,6 +248,11 @@ table tr:hover {
         font-size: 0.9em;
         padding: 10px 15px;
     }
+
+    .inputs {
+      width: 89% !important;
+    }
+
 
     table td {
         padding: 8px 10px; /* Reduz o padding geral das células */
