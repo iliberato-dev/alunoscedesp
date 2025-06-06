@@ -76,14 +76,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.insertCell().setAttribute('data-label', 'Faltas');
                 row.cells[1].textContent = student.Faltas !== undefined ? student.Faltas : 'N/A';
 
-                row.insertCell().setAttribute('data-label', 'Nota 1');
+                row.insertCell().setAttribute('data-label', 'Nota 1° Bimestre');
                 row.cells[2].textContent = student.Nota1 !== undefined ? student.Nota1 : 'N/A';
 
-                row.insertCell().setAttribute('data-label', 'Nota 2');
-                row.cells[3].setAttribute('data-label', 'Nota 2');
+                row.insertCell().setAttribute('data-label', 'Nota 2° Bimestre');
+                row.cells[3].setAttribute('data-label', 'Nota 2° Bimestre');
                 row.cells[3].textContent = student.Nota2 !== undefined ? student.Nota2 : 'N/A';
 
-                row.insertCell().setAttribute('data-label', 'Nota 3');
+                row.insertCell().setAttribute('data-label', 'Nota 3° Bimestre');
                 row.cells[4].textContent = student.Nota3 !== undefined ? student.Nota3 : 'N/A';
 
                 row.insertCell().setAttribute('data-label', 'Média');
