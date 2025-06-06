@@ -1,0 +1,257 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+body {
+    font-family: 'Roboto Mono', monospace; /* Fonte com toque tecnológico */
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); /* Degradê escuro e vibrante */
+    color: #e0e0e0; /* Cor de texto clara para contraste */
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    overflow-x: hidden; /* Evita barra de rolagem horizontal indesejada */
+}
+
+.container {
+    background-color: rgba(30, 30, 50, 0.9); /* Fundo semi-transparente escuro */
+    padding: 35px;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 255, 255, 0.2), 0 0 15px rgba(0, 255, 255, 0.1); /* Sombra neon */
+    width: 100%;
+    max-width: 950px;
+    box-sizing: border-box;
+    border: 1px solid rgba(0, 255, 255, 0.3); /* Borda sutil de neon */
+    animation: fadeIn 1s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+h1 {
+    font-family: 'Orbitron', sans-serif; /* Fonte mais futurista para o título */
+    text-align: center;
+    color: #00ffcc; /* Verde ciano vibrante */
+    text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc; /* Brilho neon no título */
+    margin-bottom: 30px;
+    font-size: 2.5em;
+    letter-spacing: 2px;
+}
+
+.search-section {
+    margin-bottom: 30px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px; /* Aumenta o espaçamento entre os itens */
+    align-items: center;
+    justify-content: center; /* Centraliza itens em linhas únicas */
+}
+
+.search-section label {
+    font-weight: bold;
+    color: #a0a0ff; /* Azul roxeado para labels */
+    flex-basis: 100%; /* Garante que o label ocupe a largura total */
+    text-align: center; /* Centraliza o texto do label */
+    margin-bottom: 5px;
+}
+
+.search-section input[type="text"] {
+    flex-grow: 1;
+    padding: 12px;
+    border: 1px solid #00aaff; /* Borda azul vibrante */
+    border-radius: 6px;
+    background-color: rgba(40, 40, 70, 0.7); /* Fundo do input escuro */
+    color: #00ffcc; /* Texto do input ciano */
+    min-width: 200px;
+    outline: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 8px rgba(0, 170, 255, 0.3);
+}
+
+.search-section input[type="text"]::placeholder {
+    color: #6a6a90; /* Cor do placeholder */
+}
+
+.search-section input[type="text"]:focus {
+    border-color: #00ffcc; /* Borda ciano ao focar */
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.5); /* Brilho maior ao focar */
+}
+
+.search-section button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: linear-gradient(45deg, #007bff, #00ffcc); /* Degradê nos botões */
+    color: white;
+    font-weight: bold;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
+.search-section button:hover {
+    background: linear-gradient(45deg, #00ffcc, #007bff); /* Inverte o degradê no hover */
+    box-shadow: 0 6px 20px rgba(0, 255, 204, 0.4);
+    transform: translateY(-2px);
+}
+
+/* ... (Mantenha o CSS anterior até aqui) ... */
+
+.results-container {
+    overflow-x: auto; /* Mantém a barra de rolagem para compatibilidade, mas o foco é o empilhamento */
+    background-color: rgba(20, 20, 40, 0.8);
+    border-radius: 8px;
+    box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.1);
+    padding: 15px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    /* Remover o min-width aqui, pois vamos controlar a responsividade de outra forma */
+    /* min-width: 650px; */ 
+}
+
+table th, table td {
+    border: 1px solid rgba(0, 255, 255, 0.15);
+    padding: 12px 15px;
+    text-align: left;
+    color: #d0d0d0;
+}
+
+table th {
+    background-color: rgba(0, 255, 255, 0.1);
+    color: #00ffcc;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+table tr:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+table tr:hover {
+    background-color: rgba(0, 255, 255, 0.05);
+}
+
+#noResults {
+    text-align: center;
+    color: #ff6666;
+    margin-top: 20px;
+    font-style: italic;
+    font-weight: bold;
+}
+
+.hidden {
+    display: none;
+}
+
+/* --- Media Queries para Responsividade --- */
+
+/* Para telas menores que 768px (tablets e celulares) */
+@media (max-width: 768px) {
+    body {
+        padding: 15px;
+    }
+
+    .container {
+        padding: 25px;
+    }
+
+    h1 {
+        font-size: 2em;
+        margin-bottom: 25px;
+    }
+
+    .search-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-section input[type="text"],
+    .search-section button {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    /* --- Estilização da Tabela Responsiva para Empilhamento --- */
+    table, thead, tbody, th, td, tr {
+        display: block; /* Faz com que todos os elementos da tabela se comportem como blocos */
+    }
+
+    thead tr {
+        position: absolute; /* Esconde o cabeçalho original, pois ele será replicado em cada "linha" */
+        top: -9999px;
+        left: -9999px;
+    }
+
+    table tr {
+        border: 1px solid rgba(0, 255, 255, 0.2); /* Borda para cada "card" de aluno */
+        margin-bottom: 15px; /* Espaçamento entre os "cards" */
+        border-radius: 8px;
+        overflow: hidden; /* Garante que as bordas arredondadas funcionem bem */
+        background-color: rgba(30, 30, 50, 0.8); /* Fundo para o card do aluno */
+        box-shadow: 0 4px 15px rgba(0, 255, 255, 0.1);
+    }
+
+    table td {
+        border: none; /* Remove as bordas internas das células */
+        border-bottom: 1px solid rgba(0, 255, 255, 0.1); /* Adiciona uma borda inferior para separar campos */
+        position: relative; /* Necessário para posicionar o label */
+        padding-left: 50%; /* Espaço para o label antes do valor */
+        text-align: right; /* Alinha o valor à direita */
+        font-size: 0.95em;
+    }
+
+    table td:last-child {
+        border-bottom: none; /* Remove a borda inferior da última célula */
+    }
+
+    table td::before {
+        /* Adiciona o "cabeçalho" como um pseudo-elemento antes de cada valor */
+        content: attr(data-label); /* Pega o texto do atributo data-label */
+        position: absolute;
+        left: 0;
+        width: 45%; /* Largura do label */
+        padding-left: 15px;
+        font-weight: bold;
+        color: #00ffcc; /* Cor do label */
+        text-align: left; /* Alinha o label à esquerda */
+        font-family: 'Orbitron', sans-serif;
+        letter-spacing: 0.5px;
+        white-space: nowrap; /* Evita que o label quebre a linha */
+        overflow: hidden;
+        text-overflow: ellipsis; /* Adiciona reticências se o label for muito longo */
+    }
+}
+
+/* Para telas muito pequenas (celulares) */
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.8em;
+        letter-spacing: 1px;
+    }
+
+    .search-section button {
+        font-size: 0.9em;
+        padding: 10px 15px;
+    }
+
+    table td {
+        padding: 8px 10px; /* Reduz o padding geral das células */
+        padding-left: 48%; /* Ajusta o padding para o label */
+    }
+
+    table td::before {
+        width: 45%; /* Ajusta a largura do label */
+        padding-left: 10px;
+    }
+}
