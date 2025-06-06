@@ -1,51 +1,61 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consulta de Alunos</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consulta de Alunos</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="text/javascript" src="script.js" defer></script>
+
 </head>
+
 <body>
-    <div class="container">
-        <h1>Consulta de Alunos</h1>
+  <div class="container">
+    <h1>Consulta de Alunos</h1>
 
-       <div class="search-section">
-            <label for="nomeAluno">Buscar por Nome:</label>
-            <input type="text" id="nomeAluno" placeholder="Digite o nome do aluno" class="inputs">
+    <div class="search-section">
+      <label for="nomeAluno">Buscar por Nome:</label>
+      <input type="text" id="nomeAluno" placeholder="Digite o nome do aluno" class="inputs">
 
-            <label for="filtroOrigem" class="inputs">Filtrar por Curso:</label> <select id="filtroOrigem">
-                <option value="">Todos</option> 
-                <option value="PWT">PWT</option>
-                <option value="PWN">PWN</option>
-            </select>
+      <label for="filtroOrigem" class="inputs">Filtrar por Curso:</label>
+      <select id="filtroOrigem">
+        <option value="">Todos</option>
+        <option value="PWT">PROGRAMAÇÃO TARDE</option>
+        <option value="PWN">PROGRAMAÇÃO NOITE</option>
+        <option value="DGT">DESIGNER TARDE</option>
+        <option value="DGN">DESIGNER NOITE</option>
+        <option value="MNT">MANICURE TARDE</option>
+        <option value="MNN">MANICURE NOITE</option>
+      </select>
 
-            <button id="searchButton">Buscar</button>
-            <button id="clearSearchButton">Limpar Busca</button>
-            <button id="showAllButton">Mostrar Todos</button>
-        </div>
-
-        <div class="results-container">
-            <table id="alunosTable">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Faltas</th>
-                         <th>Nota 1º Bimestre</th>
-                        <th>Nota 2º Bimestre</th>
-                        <th>Nota 3º Bimestre</th>
-                        <th>Média</th>
-                        <th>Situação</th>
-                        <th>Origem</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    </tbody>
-            </table>
-            <p id="noResults" class="hidden">Nenhum aluno encontrado.</p>
-        </div>
+      <button id="searchButton">Buscar</button>
+      <button id="clearSearchButton">Limpar Busca</button>
+      <button id="showAllButton">Mostrar Todos</button>
     </div>
 
-    <script src="script.js"></script>
+    <div class="results-container">
+      <table id="alunosTable">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Faltas</th>
+            <th>Nota 1º Bimestre</th>
+            <th>Nota 2º Bimestre</th>
+            <th>Nota 3º Bimestre</th>
+            <th>Média</th>
+            <th>Situação</th>
+            <th>Origem</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+      <p id="noResults" class="hidden">Nenhum aluno encontrado.</p>
+    </div>
+  </div>
+
+
 </body>
+
 </html>
