@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxkD3sukdRnPX-2rSVEupSVcmIgI8oKqylbxoJhha8qy5jH3hIk3rX_VInLXY0F70i7/exec'; 
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxXInG7aYeUvRYyfHmAKUmN4nfO5gsZ5bUgoYWqzi72CCDV7EkEHL50FV1YCW7vKh8r/exec';
 
     const nomeAlunoInput = document.getElementById('nomeAluno');
     const filtroOrigemSelect = document.getElementById('filtroOrigem');
