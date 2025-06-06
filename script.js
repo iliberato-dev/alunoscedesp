@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
             params.append('nomeAluno', searchTerm);
         }
         if (originFilter) {
-            params.append('curso', originFilter); // ALTERADO AQUI: 'origem' para 'curso'
+            params.append('curso', originFilter);
         }
 
         if (params.toString()) {
@@ -87,13 +87,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.cells[4].textContent = student.Nota3 !== undefined ? student.Nota3 : 'N/A';
 
                 row.insertCell().setAttribute('data-label', 'Média');
-                row.cells[5].textContent = student.Media !== undefined ? student.Media : 'N/A';
+                // --- ALTERAÇÃO AQUI: Formata a média para 1 casa decimal ---
+                if (typeof student.Media === 'number' && !isNaN(student.Media)) {
+                    row.cells[5].textContent = student.Media.toFixed(1); 
+                } else {
+                    row.cells[5].textContent = 'N/A'; 
+                }
+                // ---------------------------------------------------------
 
                 row.insertCell().setAttribute('data-label', 'Situação');
                 row.cells[6].textContent = student.Situacao || 'N/A';
 
-                row.insertCell().setAttribute('data-label', 'Curso'); // ALTERADO AQUI
-                row.cells[7].textContent = student.Origem || 'N/A'; // A propriedade do objeto continua 'Origem'
+                row.insertCell().setAttribute('data-label', 'Curso'); 
+                row.cells[7].textContent = student.Origem || 'N/A';
             });
 
         } catch (error) {
