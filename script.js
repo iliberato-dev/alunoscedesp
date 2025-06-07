@@ -1,7 +1,7 @@
 // const API_URL = 'https://script.google.com/macros/s/AKfycbxXInG7aYeUvRYyfHmAKUmN4nfO5gsZ5bUgoYWqzi72CCDV7EkEHL50FV1YCW7vKh8r/exec';
 document.addEventListener('DOMContentLoaded', () => {
     // ATENÇÃO: SUBSTITUA ESTA URL PELA SUA URL DE IMPLANTAÇÃO MAIS RECENTE DO APPS SCRIPT
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxXInG7aYeUvRYyfHmAKUmN4nfO5gsZ5bUgoYWqzi72CCDV7EkEHL50FV1YCW7vKh8r/exec'; 
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzNq3Hz1Pvlx3Ty4YGJvj0UM4jQNe2adOEQWyomzpTnBHooEzgHa1TGMWfcd8mpzTDe/exec'; 
 
     const nomeAlunoInput = document.getElementById('nomeAluno');
     const filtroOrigemSelect = document.getElementById('filtroOrigem');
