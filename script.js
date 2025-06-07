@@ -1,8 +1,11 @@
+// const API_URL = 'https://script.google.com/macros/s/AKfycbxXInG7aYeUvRYyfHmAKUmN4nfO5gsZ5bUgoYWqzi72CCDV7EkEHL50FV1YCW7vKh8r/exec';
 document.addEventListener('DOMContentLoaded', () => {
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxXInG7aYeUvRYyfHmAKUmN4nfO5gsZ5bUgoYWqzi72CCDV7EkEHL50FV1YCW7vKh8r/exec';
+    // ATENÇÃO: SUBSTITUA ESTA URL PELA SUA URL DE IMPLANTAÇÃO MAIS RECENTE DO APPS SCRIPT
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxXInG7aYeUvRYyfHmAKUmN4nfO5gsZ5bUgoYWqzi72CCDV7EkEHL50FV1YCW7vKh8r/exec'; 
 
     const nomeAlunoInput = document.getElementById('nomeAluno');
     const filtroOrigemSelect = document.getElementById('filtroOrigem');
+    const filtroPeriodoSelect = document.getElementById('filtroPeriodo'); // Obter o elemento do filtro de período
     const searchButton = document.getElementById('searchButton');
     const clearSearchButton = document.getElementById('clearSearchButton');
     const showAllButton = document.getElementById('showAllButton');
@@ -12,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let abortController = null;
     let debounceTimer;
 
-    async function fetchAndDisplayStudents(searchTerm = '', originFilter = '') {
+    async function fetchAndDisplayStudents(searchTerm = '', originFilter = '', periodFilter = '') { // Adicionado periodFilter
         if (abortController) {
             abortController.abort();
             console.log('Requisição anterior cancelada.');
@@ -31,6 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (originFilter) {
             params.append('curso', originFilter);
+        }
+        if (periodFilter) { // Adiciona o parâmetro período à URL
+            params.append('periodo', periodFilter);
         }
 
         if (params.toString()) {
@@ -76,29 +82,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.insertCell().setAttribute('data-label', 'Faltas');
                 row.cells[1].textContent = student.Faltas !== undefined ? student.Faltas : 'N/A';
 
-                row.insertCell().setAttribute('data-label', 'Nota 1° Bimestre');
+                row.insertCell().setAttribute('data-label', 'Nota 1º Bimestre'); // Atualizado o label
                 row.cells[2].textContent = student.Nota1 !== undefined ? student.Nota1 : 'N/A';
 
-                row.insertCell().setAttribute('data-label', 'Nota 2° Bimestre');
-                row.cells[3].setAttribute('data-label', 'Nota 2° Bimestre');
+                row.insertCell().setAttribute('data-label', 'Nota 2º Bimestre'); // Atualizado o label
                 row.cells[3].textContent = student.Nota2 !== undefined ? student.Nota2 : 'N/A';
 
-                row.insertCell().setAttribute('data-label', 'Nota 3° Bimestre');
+                row.insertCell().setAttribute('data-label', 'Nota 3º Bimestre'); // Atualizado o label
                 row.cells[4].textContent = student.Nota3 !== undefined ? student.Nota3 : 'N/A';
 
                 row.insertCell().setAttribute('data-label', 'Média');
-                // --- ALTERAÇÃO AQUI: Formata a média para 1 casa decimal ---
+                // Formata a média para 1 casa decimal
                 if (typeof student.Media === 'number' && !isNaN(student.Media)) {
                     row.cells[5].textContent = student.Media.toFixed(1); 
                 } else {
                     row.cells[5].textContent = 'N/A'; 
                 }
-                // ---------------------------------------------------------
 
                 row.insertCell().setAttribute('data-label', 'Situação');
                 row.cells[6].textContent = student.Situacao || 'N/A';
 
-                row.insertCell().setAttribute('data-label', 'Curso'); 
+                row.insertCell().setAttribute('data-label', 'Origem'); // Mantém 'Origem' para corresponder à API
                 row.cells[7].textContent = student.Origem || 'N/A';
             });
 
@@ -119,25 +123,29 @@ document.addEventListener('DOMContentLoaded', () => {
         debounceTimer = setTimeout(() => {
             const searchTerm = nomeAlunoInput.value.trim();
             const originFilter = filtroOrigemSelect.value;
-            fetchAndDisplayStudents(searchTerm, originFilter);
+            const periodFilter = filtroPeriodoSelect.value; // Obter valor do filtro de período
+            fetchAndDisplayStudents(searchTerm, originFilter, periodFilter); // Passar periodFilter
         }, 300);
     };
 
     nomeAlunoInput.addEventListener('input', triggerSearch);
     filtroOrigemSelect.addEventListener('change', triggerSearch);
+    filtroPeriodoSelect.addEventListener('change', triggerSearch); // Adicionar listener para o novo filtro
 
     searchButton.addEventListener('click', () => {
         clearTimeout(debounceTimer);
         const searchTerm = nomeAlunoInput.value.trim();
         const originFilter = filtroOrigemSelect.value;
-        fetchAndDisplayStudents(searchTerm, originFilter);
+        const periodFilter = filtroPeriodoSelect.value; // Obter valor do filtro de período
+        fetchAndDisplayStudents(searchTerm, originFilter, periodFilter); // Passar periodFilter
     });
 
     clearSearchButton.addEventListener('click', () => {
         clearTimeout(debounceTimer);
         nomeAlunoInput.value = '';
         filtroOrigemSelect.value = '';
-        fetchAndDisplayStudents('', '');
+        filtroPeriodoSelect.value = ''; // Limpar o filtro de período
+        fetchAndDisplayStudents('', '', ''); // Resetar todos os filtros
         nomeAlunoInput.focus();
     });
 
@@ -145,9 +153,10 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTimeout(debounceTimer);
         nomeAlunoInput.value = '';
         filtroOrigemSelect.value = '';
-        fetchAndDisplayStudents('', '');
+        filtroPeriodoSelect.value = ''; // Limpar o filtro de período
+        fetchAndDisplayStudents('', '', ''); // Resetar todos os filtros
         nomeAlunoInput.focus();
     });
 
-    fetchAndDisplayStudents();
+    fetchAndDisplayStudents(); // Carrega os dados na inicialização
 });
