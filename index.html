@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Consulta de Alunos</title>
   <link rel="stylesheet" href="style.css">
-  <script type="text/javascript" src="script.js" defer></script>
 
+  <script src="script.js" defer></script>
 </head>
 
 <body>
@@ -15,23 +15,38 @@
     <h1>Consulta de Alunos</h1>
 
     <div class="search-section">
-      <label for="nomeAluno">Buscar por Nome:</label>
-      <input type="text" id="nomeAluno" placeholder="Digite o nome do aluno" class="inputs">
 
-      <label for="filtroOrigem" class="inputs">Filtrar por Curso:</label>
-      <select id="filtroOrigem">
-        <option value="">Todos</option>
-        <option value="PWT">PROGRAMAÇÃO TARDE</option>
-        <option value="PWN">PROGRAMAÇÃO NOITE</option>
-        <option value="DGT">DESIGNER TARDE</option>
-        <option value="DGN">DESIGNER NOITE</option>
-        <option value="MNT">MANICURE TARDE</option>
-        <option value="MNN">MANICURE NOITE</option>
-      </select>
+      <div class="filter-group"> <label for="nomeAluno">Buscar por Nome:</label>
+        <input type="text" id="nomeAluno"  placeholder="Digite o nome do aluno">
+      </div>
 
-      <button id="searchButton">Buscar</button>
-      <button id="clearSearchButton">Limpar Busca</button>
-      <button id="showAllButton">Mostrar Todos</button>
+      <div class="filter-group"> 
+        <label for="filtroPeriodo">Filtrar por Período:</label>
+        <select id="filtroPeriodo">
+          <option value="">Todos</option>
+          <option value="Tarde">Tarde</option>
+          <option value="Noite">Noite</option>
+        </select>
+      </div>
+
+      <div class="filter-group"> 
+        <label for="filtroOrigem">Filtrar por Curso:</label>
+        <select id="filtroOrigem">
+          <option value="">Todos</option>
+          <option value="PWT">PROGRAMAÇÃO TARDE</option>
+          <option value="PWN">PROGRAMAÇÃO NOITE</option>
+          <option value="DGT">DESIGNER TARDE</option>
+          <option value="DGN">DESIGNER NOITE</option>
+          <option value="MNT">MANICURE TARDE</option>
+          <option value="MNN">MANICURE NOITE</option>
+        </select>
+      </div>
+
+      <div id="buttons">
+        <button id="searchButton">Buscar</button>
+        <button id="clearSearchButton">Limpar Busca</button>
+        <button id="showAllButton">Mostrar Todos</button>
+      </div>
     </div>
 
     <div class="results-container">
