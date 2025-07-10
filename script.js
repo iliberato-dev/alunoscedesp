@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // ATUALIZE ESTA URL com a URL de implantação do seu Google Apps Script!
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxXInG7aYeUvRYyfHmAKUmN4nfO5gsZ5bUgoYWqzi72CCDV7EkEHL50FV1YCW7vKh8r/exec'; // Sua URL da API
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzNq3Hz1Pvlx3Ty4YGJvj0UM4jQNe2adOEQWyomzpTnBHooEzgHa1TGMWfcd8mpzTDe/exec'; // Sua URL da API
 
     // Elementos existentes para a interface de consulta
     const nomeAlunoInput = document.getElementById('nomeAluno');
