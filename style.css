@@ -345,3 +345,261 @@ table tr:hover {
         padding-left: 10px;
     }
 }
+
+/* Adicione ao seu style.css existente */
+
+/* --- Botão de Ícone para Registro --- */
+#registerButton {
+    position: fixed; /* Fixa-o na janela de visualização */
+    bottom: 30px;    /* 30px da parte inferior */
+    right: 30px;     /* 30px da direita */
+    width: 60px;     /* Tamanho do círculo */
+    height: 60px;
+    border-radius: 50%; /* Torna-o redondo */
+    background: linear-gradient(45deg, #00ffcc, #007bff); /* Gradiente neon */
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(0, 255, 204, 0.6), 0 0 10px rgba(0, 255, 204, 0.4); /* Sombra neon mais forte */
+    transition: all 0.3s ease;
+    z-index: 1000; /* Garante que fique acima de outro conteúdo */
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.8em;
+    font-weight: bold;
+    flex-direction: column; /* Empilha ícone e texto */
+    padding: 5px; /* Ajusta o preenchimento para melhor ajuste do texto */
+    text-shadow: 0 0 5px rgba(255,255,255,0.5); /* Brilho sutil no texto */
+}
+
+#registerButton svg {
+    width: 28px; /* Tamanho do ícone */
+    height: 28px;
+    margin-bottom: 2px; /* Espaço entre ícone e texto */
+}
+
+#registerButton:hover {
+    transform: scale(1.08) translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0, 255, 204, 0.8), 0 0 20px rgba(0, 255, 204, 0.6);
+    background: linear-gradient(45deg, #007bff, #00ffcc); /* Inverte o gradiente no hover */
+}
+
+/* Botão menor para telas menores */
+@media (max-width: 768px) {
+    #registerButton {
+        width: 50px;
+        height: 50px;
+        font-size: 0.7em;
+        bottom: 20px;
+        right: 20px;
+    }
+    #registerButton svg {
+        width: 24px;
+        height: 24px;
+    }
+    #registerButton span {
+        display: none; /* Esconde o texto em telas pequenas, mostra apenas o ícone */
+    }
+}
+@media (max-width: 480px) {
+    #registerButton {
+        bottom: 15px;
+        right: 15px;
+    }
+}
+
+
+/* --- Estilo da Modal --- */
+.modal {
+    display: none; /* Oculto por padrão */
+    position: fixed; /* Permanece no lugar */
+    z-index: 1001; /* Fica no topo (maior que registerButton) */
+    left: 0;
+    top: 0;
+    width: 100%; /* Largura total */
+    height: 100%; /* Altura total */
+    overflow: auto; /* Habilita a rolagem se necessário */
+    background-color: rgba(0, 0, 0, 0.8); /* Preto com opacidade */
+    justify-content: center; /* Centraliza o conteúdo horizontalmente */
+    align-items: center; /* Centraliza o conteúdo verticalmente */
+    padding: 20px; /* Adiciona algum preenchimento para telas menores */
+}
+
+.modal.visible {
+    display: flex; /* Usa flex para centralizar o conteúdo */
+}
+
+.modal-content {
+    background-color: rgba(30, 30, 50, 0.95); /* Fundo mais escuro que o contêiner principal */
+    margin: auto; /* Para navegadores mais antigos / centralização de fallback */
+    padding: 30px;
+    border: 1px solid rgba(0, 255, 255, 0.4);
+    border-radius: 12px;
+    width: 90%; /* Largura responsiva */
+    max-width: 600px; /* Largura máxima para a modal */
+    box-shadow: 0 10px 40px rgba(0, 255, 255, 0.3), 0 0 20px rgba(0, 255, 255, 0.2);
+    position: relative;
+    animation: zoomIn 0.3s ease-out; /* Animação simples para a aparência da modal */
+}
+
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.close-button {
+    color: #fff;
+    font-size: 30px;
+    font-weight: bold;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #00ffcc;
+    text-decoration: none;
+}
+
+.modal-content h2 {
+    font-family: 'Orbitron', sans-serif;
+    color: #00ffcc;
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 2em;
+    text-shadow: 0 0 8px #00ffcc;
+}
+
+/* Estilo da Seção de Formulário dentro da Modal */
+.form-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    border: 1px dashed rgba(0, 255, 255, 0.1);
+    border-radius: 8px;
+    background-color: rgba(20, 20, 40, 0.5);
+}
+
+.form-section h3 {
+    color: #a0a0ff;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #e0e0e0;
+    font-weight: bold;
+}
+
+.full-width-input {
+    width: 100%; /* Faz com que os inputs/selects ocupem a largura total do seu contêiner */
+    padding: 12px;
+    border: 1px solid #00aaff;
+    border-radius: 6px;
+    background-color: rgba(40, 40, 70, 0.7);
+    color: #00ffcc;
+    outline: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 8px rgba(0, 170, 255, 0.3);
+}
+
+.full-width-input:focus {
+    border-color: #00ffcc;
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
+}
+
+.status-radio-group {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+}
+
+.status-radio-group label {
+    margin-bottom: 0; /* Sobrescreve a margem padrão do label */
+    display: inline-block; /* Para melhor alinhamento com o botão de rádio */
+    font-weight: normal;
+    color: #e0e0e0;
+}
+
+.status-radio-group input[type="radio"] {
+    margin-right: 5px;
+    accent-color: #00ffcc; /* Cor do próprio botão de rádio */
+}
+
+
+.form-button {
+    width: 100%;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: linear-gradient(45deg, #007bff, #00ffcc);
+    color: white;
+    font-weight: bold;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    margin-top: 15px;
+}
+
+.form-button:hover {
+    background: linear-gradient(45deg, #00ffcc, #007bff);
+    box-shadow: 0 6px 20px rgba(0, 255, 204, 0.4);
+    transform: translateY(-2px);
+}
+
+.form-separator {
+    border: none;
+    border-top: 1px dashed rgba(0, 255, 255, 0.2);
+    margin: 30px 0;
+}
+
+.feedback-message {
+    text-align: center;
+    margin-top: 20px;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* Media query para modal em telas menores */
+@media (max-width: 480px) {
+    .modal-content {
+        padding: 20px;
+        width: 95%; /* Faz com que ocupe mais largura em telas muito pequenas */
+    }
+    .modal-content h2 {
+        font-size: 1.6em;
+    }
+    .form-section h3 {
+        font-size: 1.1em;
+    }
+    .form-button {
+        padding: 10px 15px;
+        font-size: 0.9em;
+    }
+    .status-radio-group {
+        flex-direction: column; /* Empilha as opções de rádio verticalmente */
+        align-items: flex-start;
+        gap: 10px;
+    }
+}
