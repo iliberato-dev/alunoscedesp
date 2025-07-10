@@ -1,5 +1,5 @@
-// const API_URL = 'https://script.google.com/macros/s/AKfycbxXInG7aYeUvRYyfHmAKUmN4nfO5gsZ5bUgoYWqzi72CCDV7EkEHL50FV1YCW7vKh8r/exec';
 document.addEventListener('DOMContentLoaded', () => {
+    // ATUALIZE ESTA URL com a URL de implantação do seu Google Apps Script!
     const API_URL = 'https://script.google.com/macros/s/AKfycbxXInG7aYeUvRYyfHmAKUmN4nfO5gsZ5bUgoYWqzi72CCDV7EkEHL50FV1YCW7vKh8r/exec'; // Sua URL da API
 
     // Elementos existentes para a interface de consulta
@@ -80,22 +80,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido.' }));
-                throw new Error(`Erro HTTP! Status: ${response.status}. Detalhes: ${errorData.error || 'N/A'}`);
-            }
-            
-            const data = await response.json();
+            // A API do Apps Script sempre retorna 200 OK, mesmo em caso de erro lógico
+            // O tratamento de erro ocorre verificando o conteúdo do JSON
+            const data = await response.json(); 
             
             let studentsToShow = [];
-            if (data.saida) {
-                studentsToShow = data.saida;
-            } else if (data.retornoDaSaida) {
-                studentsToShow = data.retornoDaSaida;
-            } else if (data.error) {
+            // Verifica se a resposta contém um erro
+            if (data.error) {
                 console.error('Erro da API:', data.error);
                 alunosTableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: red;">Erro da API: ${data.error}</td></tr>`;
-                return;
+                return; // Para a execução se houver um erro da API
+            } else if (data.saida) { // Assume que dados de sucesso vêm em 'saida'
+                studentsToShow = data.saida;
             }
 
             if (studentsToShow.length === 0) {
@@ -206,11 +202,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const response = await fetch(url);
             const data = await response.json();
+            
             let allStudents = [];
-            if (data.saida) {
+            if (data.error) {
+                console.error('Erro da API ao carregar alunos para dropdown:', data.error);
+                showFeedback('Erro ao carregar a lista de alunos: ' + data.error, true);
+                alunoSelecionadoSelect.innerHTML = '<option value="">Erro ao carregar alunos</option>';
+                return;
+            } else if (data.saida) {
                 allStudents = data.saida;
-            } else if (data.retornoDaSaida) {
-                allStudents = data.retornoDaSaida;
             }
 
             alunoSelecionadoSelect.innerHTML = '<option value="">Selecione um aluno</option>'; // Redefine o dropdown
@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } catch (error) {
             console.error('Erro ao carregar a lista de alunos para o dropdown:', error);
-            showFeedback('Erro ao carregar a lista de alunos.', true);
+            showFeedback('Erro de comunicação ao carregar a lista de alunos.', true);
             alunoSelecionadoSelect.innerHTML = '<option value="">Erro ao carregar alunos</option>';
         }
     }
