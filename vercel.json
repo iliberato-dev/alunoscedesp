@@ -1,7 +1,7 @@
 {
     "rewrites": [
       {
-        "source": "/api/appsscript/:path*",
+        "source": "/api/appsscript",
         "destination": "https://script.google.com/macros/s/AKfycbzNq3Hz1Pvlx3Ty4YGJvj0UM4jQNe2adOEQWyomzpTnBHooEzgHa1TGMWfcd8mpzTDe/exec"
       }
     ]
