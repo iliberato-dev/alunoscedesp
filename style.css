@@ -505,6 +505,7 @@ table tr:hover {
     position: static; /* Remove o posicionamento absoluto, segue o fluxo do flexbox */
     margin-left: auto; /* Empurra para a direita */
     color: #fff;
+    width: 10rem;
 }
 
 /* Parágrafos de texto no painel de detalhes */
