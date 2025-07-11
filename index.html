@@ -7,7 +7,7 @@
     <title>Consulta de Alunos</title>
     <link rel="stylesheet" href="style.css">
 
-    <script src="script.js" defer></script> 
+    <script src="script.js" defer></script>
 </head>
 
 <body>
@@ -22,12 +22,12 @@
         </button>
 
         <div class="search-section">
-            <div class="filter-group"> 
+            <div class="filter-group">
                 <label for="searchInput">Buscar por Nome:</label>
-                <input type="text" id="searchInput" placeholder="Digite o nome do aluno"> 
+                <input type="text" id="searchInput" placeholder="Digite o nome do aluno">
             </div>
 
-            <div class="filter-group"> 
+            <div class="filter-group">
                 <label for="periodoFilter">Filtrar por Período:</label>
                 <select id="periodoFilter">
                     <option value="">Todos</option>
@@ -36,7 +36,7 @@
                 </select>
             </div>
 
-            <div class="filter-group"> 
+            <div class="filter-group">
                 <label for="cursoFilter">Filtrar por Curso:</label>
                 <select id="cursoFilter">
                     <option value="">Todos</option>
@@ -79,12 +79,12 @@
 
     <div id="registrationModal" class="modal hidden">
         <div class="modal-content">
-            <span id="closeDetail" class="close-button">&times;</span> 
+            <span id="closeRegistrationModalButton" class="close-button">&times;</span>
             <h2>Registrar Presença e Notas</h2>
 
             <div class="form-section">
                 <h3>Selecionar Aluno</h3>
-                <div class="filter-group"> 
+                <div class="filter-group">
                     <label for="filtroPeriodoModal">Filtrar por Período:</label>
                     <select id="filtroPeriodoModal" class="full-width-input">
                         <option value="">Todos</option>
@@ -93,7 +93,7 @@
                     </select>
                 </div>
 
-                <div class="filter-group"> 
+                <div class="filter-group">
                     <label for="filtroOrigemModal">Filtrar por Curso:</label>
                     <select id="filtroOrigemModal" class="full-width-input">
                         <option value="">Todos</option>
@@ -124,11 +124,11 @@
                 <div class="form-group status-radio-group">
                     <label>Status:</label>
                     <div>
-                        <input type="radio" id="presente" name="statusPresenca" value="P" checked> 
+                        <input type="radio" id="presente" name="statusPresenca" value="P" checked>
                         <label for="presente">Presente</label>
                     </div>
                     <div>
-                        <input type="radio" id="ausente" name="statusPresenca" value="A"> 
+                        <input type="radio" id="ausente" name="statusPresenca" value="A">
                         <label for="ausente">Ausente</label>
                     </div>
                 </div>
@@ -161,7 +161,7 @@
     <div id="studentDetail" class="student-detail-panel">
         <div class="detail-header">
             <h2 id="detailName"></h2>
-            <button id="closeDetailPanel" class="close-button">&times;</button> 
+            <button id="closeDetailPanel" class="close-button">&times;</button>
         </div>
         <p><strong>Faltas:</strong> <span id="detailFaltas"></span></p>
         <div class="form-section">
