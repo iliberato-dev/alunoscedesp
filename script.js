@@ -253,28 +253,37 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Lógica do Modal de Registro ---
-    registerButton.addEventListener('click', () => {
-        console.log("Botão clickado !!!")
-        registrationModal.classList.add('active'); // Isso irá aplicar display: flex; e mostrar o modal
-        // Preenche o campo de data com a data atual
-        const today = new Date();
-        dataPresencaInput.value = today.toISOString().slice(0, 10);
-        // Garante que o rádio "Presente" esteja selecionado por padrão
-        presenteRadio.checked = true;
-        // Limpa as notas
-        nota1Input.value = '';
-        nota2Input.value = '';
-        nota3Input.value = '';
-        // Reseta os filtros de seleção de aluno no modal
-        filtroPeriodoModal.value = '';
-        filtroOrigemModal.value = '';
-        populateAlunoSelect(); // Popula com todos os alunos inicialmente
-    });
+registerButton.addEventListener('click', () => {
+    console.log("Botão clickado !!!");
+    // Remove a classe 'hidden' caso ela esteja presente (estado inicial do HTML)
+    registrationModal.classList.remove('hidden');
+    // Adiciona a classe 'active' para exibir o modal (conforme seu CSS .modal.active)
+    registrationModal.classList.add('active');
+    // Preenche o campo de data com a data atual
+    const today = new Date();
+    dataPresencaInput.value = today.toISOString().slice(0, 10);
+    // Garante que o rádio "Presente" esteja selecionado por padrão
+    presenteRadio.checked = true;
+    // Limpa as notas
+    nota1Input.value = '';
+    nota2Input.value = '';
+    nota3Input.value = '';
+    // Reseta os filtros de seleção de aluno no modal
+    filtroPeriodoModal.value = '';
+    filtroOrigemModal.value = '';
+    populateAlunoSelect(); // Popula com todos os alunos inicialmente
+});
 
-    closeRegistrationModalButton.addEventListener('click', () => {
-        registrationModal.classList.add('hidden');
-        showFeedback('', 'hidden'); // Limpa qualquer feedback
-    });
+closeRegistrationModalButton.addEventListener('click', () => {
+    // Remove a classe 'active' para esconder o modal
+    registrationModal.classList.remove('active');
+    // Opcional: Adiciona a classe 'hidden' de volta para o estado inicial,
+    // mas o 'display: none' do .modal já deveria ser suficiente.
+    // Se o modal não sumir, descomente a linha abaixo.
+    // registrationModal.classList.add('hidden');
+    showFeedback('', 'hidden'); // Limpa qualquer feedback
+});
+
 
     // Função para popular o select de alunos no modal
     const populateAlunoSelect = () => {
