@@ -1,5 +1,48 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
 
+/* Definição de variáveis CSS */
+:root {
+    /* Cores */
+    --color-bg-dark-primary: #0f0c29;
+    --color-bg-dark-secondary: #302b63;
+    --color-bg-dark-tertiary: #24243e;
+    --color-bg-container: rgba(30, 30, 50, 0.9);
+    --color-bg-results-table: rgba(20, 20, 40, 0.8);
+    --color-bg-form-section: rgba(20, 20, 40, 0.5);
+    --color-bg-input: rgba(40, 40, 70, 0.7);
+    --color-bg-modal-content: rgba(30, 30, 50, 0.95);
+    --color-overlay-dark: rgba(0, 0, 0, 0.8);
+
+    --color-neon-cyan: #00ffcc;
+    --color-accent-blue: #007bff;
+    --color-text-light: #e0e0e0;
+    --color-text-muted: #d0d0d0;
+    --color-label-blue: #a0a0ff;
+    --color-placeholder: #6a6a90;
+    --color-error: #ff6666;
+
+    /* Bordas e Sombras */
+    --border-subtle-cyan: 1px solid rgba(0, 255, 255, 0.3);
+    --border-input-blue: 1px solid #00aaff;
+    --border-dashed-cyan: 1px dashed rgba(0, 255, 255, 0.1);
+    --border-table-cell: 1px solid rgba(0, 255, 255, 0.15);
+
+    --shadow-container: 0 8px 30px rgba(0, 255, 255, 0.2), 0 0 15px rgba(0, 255, 255, 0.1);
+    --shadow-input-initial: 0 0 8px rgba(0, 170, 255, 0.3);
+    --shadow-input-focus: 0 0 15px rgba(0, 255, 204, 0.5);
+    --shadow-button-initial: 0 4px 15px rgba(0, 123, 255, 0.3);
+    --shadow-button-hover: 0 6px 20px rgba(0, 255, 204, 0.4);
+    --shadow-register-button-initial: 0 4px 20px rgba(0, 255, 204, 0.6), 0 0 10px rgba(0, 255, 204, 0.4);
+    --shadow-register-button-hover: 0 6px 25px rgba(0, 255, 204, 0.8), 0 0 20px rgba(0, 255, 204, 0.6);
+    --shadow-modal-content: 0 10px 40px rgba(0, 255, 255, 0.3), 0 0 20px rgba(0, 255, 255, 0.2);
+    --shadow-panel-left: -8px 0 30px rgba(0, 255, 255, 0.2);
+    --shadow-table-row-mobile: 0 4px 15px rgba(0, 255, 255, 0.1);
+
+    /* Fontes */
+    --font-orbitron: 'Orbitron', sans-serif;
+    --font-roboto-mono: 'Roboto Mono', monospace;
+}
+
 /* Reset básico para todos os elementos */
 * {
     margin: 0;
@@ -9,29 +52,29 @@
 
 /* Estilos globais para o corpo da página */
 body {
-    font-family: 'Roboto Mono', monospace;
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); /* Gradiente de fundo escuro */
-    color: #e0e0e0; /* Cor do texto padrão */
+    font-family: var(--font-roboto-mono);
+    background: linear-gradient(135deg, var(--color-bg-dark-primary), var(--color-bg-dark-secondary), var(--color-bg-dark-tertiary));
+    color: var(--color-text-light);
     margin: 0;
     padding: 20px;
-    display: flex; /* Utiliza flexbox para centralizar o container principal */
-    justify-content: center; /* Centraliza horizontalmente */
-    align-items: flex-start; /* Alinha o conteúdo principal ao topo da página */
-    min-height: 100vh; /* Garante que o body ocupa a altura total da viewport */
-    overflow-x: hidden; /* Evita rolagem horizontal indesejada */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    overflow-x: hidden;
 }
 
 /* Estilos para o container principal da aplicação */
 .container {
-    background-color: rgba(30, 30, 50, 0.9); /* Fundo com transparência */
+    background-color: var(--color-bg-container);
     padding: 35px;
     border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(0, 255, 255, 0.2), 0 0 15px rgba(0, 255, 255, 0.1); /* Sombras com brilho ciano */
+    box-shadow: var(--shadow-container);
     width: 100%;
-    max-width: 950px; /* Largura máxima para o container */
+    max-width: 950px;
     box-sizing: border-box;
-    border: 1px solid rgba(0, 255, 255, 0.3); /* Borda sutil */
-    animation: fadeIn 1s ease-out; /* Animação de entrada */
+    border: var(--border-subtle-cyan);
+    animation: fadeIn 1s ease-out;
 }
 
 /* Animação de fade-in para o container */
@@ -48,10 +91,10 @@ body {
 
 /* Estilos para o título principal (h1) */
 h1 {
-    font-family: 'Orbitron', sans-serif; /* Fonte futurista */
+    font-family: var(--font-orbitron);
     text-align: center;
-    color: #00ffcc; /* Cor ciano vibrante */
-    text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc; /* Sombra de texto para efeito neon */
+    color: var(--color-neon-cyan);
+    text-shadow: 0 0 10px var(--color-neon-cyan), 0 0 20px var(--color-neon-cyan);
     margin-bottom: 30px;
     font-size: 2.5em;
     letter-spacing: 2px;
@@ -61,70 +104,70 @@ h1 {
 .search-section {
     margin-bottom: 30px;
     display: flex;
-    flex-direction: column; /* Por padrão, empilha em telas pequenas */
-    flex-wrap: wrap; /* Permite que os itens quebrem para a próxima linha */
-    gap: 15px; /* Espaçamento entre os itens */
-    align-items: center; /* Centraliza verticalmente os itens em relação ao container */
-    justify-content: center; /* Centraliza horizontalmente os itens */
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Grupos de filtro individuais (label + input/select) */
 .filter-group {
     display: flex;
     flex-direction: column;
-    width: 100%; /* Ocupa a largura total na coluna */
-    max-width: 27rem; /* Limita a largura mesmo em flex-row para organizar */
-    align-items: center; /* Centraliza labels e inputs/selects */
+    width: 100%;
+    max-width: 27rem;
+    align-items: center;
 }
 
 /* Estilos para os rótulos (labels) na seção de busca */
 .search-section label {
     font-weight: bold;
-    color: #a0a0ff; /* Tom de azul */
+    color: var(--color-label-blue);
     text-align: center;
     margin-bottom: 5px;
-    display: block; /* Garante que o label ocupe sua própria linha */
+    display: block;
 }
 
 /* Estilos para inputs de texto e selects de filtro */
 .search-section input[type="text"],
 #periodoFilter,
 #cursoFilter {
-    flex-grow: 1; /* Permite que cresçam para preencher o espaço disponível */
+    flex-grow: 1;
     padding: 12px;
-    border: 1px solid #00aaff; /* Borda azul */
+    border: var(--border-input-blue);
     border-radius: 6px;
-    background-color: rgba(40, 40, 70, 0.7); /* Fundo escuro com transparência */
-    color: #00ffcc; /* Texto ciano */
-    width: 100%; /* Ocupa 100% da largura do filter-group */
-    display: block; /* Garante que ocupem sua própria linha */
-    outline: none; /* Remove o contorno padrão no foco */
-    transition: all 0.3s ease; /* Transição suave para efeitos de foco */
-    box-shadow: 0 0 8px rgba(0, 170, 255, 0.3); /* Sombra sutil */
+    background-color: var(--color-bg-input);
+    color: var(--color-neon-cyan);
+    width: 100%;
+    display: block;
+    outline: none;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-input-initial);
 }
 
 /* Estilos para placeholders */
 .search-section input[type="text"]::placeholder,
 #periodoFilter::placeholder,
 #cursoFilter::placeholder {
-    color: #6a6a90; /* Cor de placeholder mais clara */
+    color: var(--color-placeholder);
 }
 
 /* Estilos de foco para inputs e selects */
 .search-section input[type="text"]:focus,
 #periodoFilter:focus,
 #cursoFilter:focus {
-    border-color: #00ffcc; /* Borda ciano no foco */
-    box-shadow: 0 0 15px rgba(0, 255, 204, 0.5); /* Sombra mais intensa no foco */
+    border-color: var(--color-neon-cyan);
+    box-shadow: var(--shadow-input-focus);
 }
 
 /* Container para os botões de ação */
 #buttons {
     display: flex;
     flex-wrap: wrap;
-    gap: 15px; /* Espaçamento entre os botões */
-    justify-content: center; /* Centraliza os botões */
-    width: 100%; /* Ocupa largura total para centralização */
+    gap: 15px;
+    justify-content: center;
+    width: 100%;
 }
 
 /* Estilos gerais para todos os botões na seção de busca */
@@ -133,55 +176,55 @@ h1 {
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    background: linear-gradient(45deg, #007bff, #00ffcc); /* Gradiente de fundo */
+    background: linear-gradient(45deg, var(--color-accent-blue), var(--color-neon-cyan));
     color: white;
     font-weight: bold;
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--font-orbitron);
     letter-spacing: 1px;
     transition: all 0.3s ease;
-    flex-shrink: 0; /* Evita que os botões encolham */
-    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    flex-shrink: 0;
+    box-shadow: var(--shadow-button-initial);
 }
 
 /* Efeito hover para os botões da seção de busca */
 .search-section button:hover {
-    background: linear-gradient(45deg, #00ffcc, #007bff); /* Inverte o gradiente no hover */
-    box-shadow: 0 6px 20px rgba(0, 255, 204, 0.4);
-    transform: translateY(-2px); /* Efeito de leve levantamento */
+    background: linear-gradient(45deg, var(--color-neon-cyan), var(--color-accent-blue));
+    box-shadow: var(--shadow-button-hover);
+    transform: translateY(-2px);
 }
 
 /* Container da tabela de resultados */
 .results-container {
-    overflow-x: auto; /* Adiciona rolagem horizontal se a tabela for muito larga */
-    background-color: rgba(20, 20, 40, 0.8);
+    overflow-x: auto;
+    background-color: var(--color-bg-results-table);
     border-radius: 8px;
-    box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.1); /* Sombra interna */
+    box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.1);
     padding: 15px;
 }
 
 /* Estilos da tabela */
 table {
     width: 100%;
-    border-collapse: collapse; /* Remove o espaçamento entre as bordas das células */
+    border-collapse: collapse;
     margin-top: 10px;
 }
 
 /* Estilos para cabeçalhos e células da tabela */
 table th,
 table td {
-    border: 1px solid rgba(0, 255, 255, 0.15); /* Bordas sutis */
+    border: var(--border-table-cell);
     padding: 12px 15px;
     text-align: left;
-    color: #d0d0d0; /* Cor do texto */
+    color: var(--color-text-muted);
 }
 
 /* Estilos para os cabeçalhos da tabela */
 table th {
-    background-color: rgba(0, 255, 255, 0.1); /* Fundo ciano claro */
-    color: #00ffcc; /* Texto ciano vibrante */
+    background-color: rgba(0, 255, 255, 0.1);
+    color: var(--color-neon-cyan);
     font-weight: bold;
     text-transform: uppercase;
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--font-orbitron);
     letter-spacing: 0.5px;
 }
 
@@ -193,13 +236,13 @@ table tr:nth-child(even) {
 /* Efeito hover para linhas da tabela */
 table tr:hover {
     background-color: rgba(0, 255, 255, 0.05);
-    cursor: pointer; /* Adiciona cursor de ponteiro para indicar que é clicável */
+    cursor: pointer;
 }
 
 /* Mensagem de "nenhum resultado" */
 #noResults {
     text-align: center;
-    color: #ff6666; /* Cor de erro/alerta */
+    color: var(--color-error);
     margin-top: 20px;
     font-style: italic;
     font-weight: bold;
@@ -207,31 +250,31 @@ table tr:hover {
 
 /* Classe utilitária para esconder elementos */
 .hidden {
-    display: none !important; /* Usa !important para garantir a ocultação */
+    display: none !important;
 }
 
 /* --- Botão de Ícone Flutuante para Registro (#registerButton) --- */
 #registerButton {
-    position: fixed; /* Posição fixa na tela */
+    position: fixed;
     bottom: 30px;
     right: 30px;
     width: 60px;
     height: 60px;
-    border-radius: 50%; /* Torna o botão circular */
-    background: linear-gradient(45deg, #00ffcc, #007bff); /* Gradiente de fundo */
+    border-radius: 50%;
+    background: linear-gradient(45deg, var(--color-neon-cyan), var(--color-accent-blue));
     color: white;
     border: none;
     cursor: pointer;
-    display: flex; /* Usa flexbox para centralizar ícone/texto */
+    display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 4px 20px rgba(0, 255, 204, 0.6), 0 0 10px rgba(0, 255, 204, 0.4);
+    box-shadow: var(--shadow-register-button-initial);
     transition: all 0.3s ease;
-    z-index: 1000; /* Garante que esteja acima da maioria dos elementos */
-    font-family: 'Orbitron', sans-serif;
+    z-index: 1000;
+    font-family: var(--font-orbitron);
     font-size: 0.8em;
     font-weight: bold;
-    flex-direction: column; /* Empilha ícone e texto */
+    flex-direction: column;
     padding: 5px;
     text-shadow: 0 0 5px rgba(255,255,255,0.5);
 }
@@ -245,45 +288,43 @@ table tr:hover {
 /* Efeito hover para o botão de registro */
 #registerButton:hover {
     transform: scale(1.08) translateY(-2px);
-    box-shadow: 0 6px 25px rgba(0, 255, 204, 0.8), 0 0 20px rgba(0, 255, 204, 0.6);
-    background: linear-gradient(45deg, #007bff, #00ffcc); /* Inverte o gradiente no hover */
+    box-shadow: var(--shadow-register-button-hover);
+    background: linear-gradient(45deg, var(--color-accent-blue), var(--color-neon-cyan));
 }
 
 /* --- Estilos da Modal de Registro (#registrationModal) --- */
 .modal {
-    display: none; /* ESCONDE o modal por padrão */
-    position: fixed; /* Posição fixa na viewport */
-    z-index: 1001; /* Fica no topo (maior que #registerButton z-index: 1000) */
+    display: none;
+    position: fixed;
+    z-index: 1001;
     left: 0;
     top: 0;
-    width: 100%; /* Largura total da tela */
-    height: 100%; /* Altura total da tela */
-    overflow: auto; /* Habilita a rolagem se o conteúdo for muito grande */
-    background-color: rgba(0, 0, 0, 0.8); /* Fundo escuro semi-transparente (overlay) */
-    justify-content: center; /* Centraliza o conteúdo horizontalmente (se display for flex) */
-    align-items: center; /* Centraliza o conteúdo verticalmente (se display for flex) */
-    padding: 20px; /* Adiciona algum preenchimento para telas menores */
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: var(--color-overlay-dark);
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
 }
 
 /* Classe 'active' para exibir o modal (adicionada via JavaScript) */
 .modal.active {
-    display: flex; /* EXIBE o modal como um flex container. */
-    /* Se mesmo com 'display: flex' não aparecer, tente 'display: flex !important;'
-       para depurar, mas a causa mais provável seria um z-index menor ou outro elemento cobrindo. */
+    display: flex;
 }
 
 /* Estilos para o conteúdo interno do modal */
 .modal-content {
-    background-color: rgba(30, 30, 50, 0.95); /* Fundo escuro para o conteúdo do modal */
-    margin: auto; /* Centraliza o bloco do conteúdo dentro do flex container do modal */
+    background-color: var(--color-bg-modal-content);
+    margin: auto;
     padding: 30px;
-    border: 1px solid rgba(0, 255, 255, 0.4);
+    border: 1px solid rgba(0, 255, 255, 0.4); /* Mantido literal por ser levemente diferente das bordas de outros elementos */
     border-radius: 12px;
-    width: 90%; /* Largura do conteúdo do modal */
-    max-width: 600px; /* Largura máxima */
-    box-shadow: 0 10px 40px rgba(0, 255, 255, 0.3), 0 0 20px rgba(0, 255, 255, 0.2);
-    position: relative; /* Necessário para posicionar o botão de fechar dentro */
-    animation: zoomIn 0.3s ease-out; /* Animação de entrada */
+    width: 90%;
+    max-width: 600px;
+    box-shadow: var(--shadow-modal-content);
+    position: relative;
+    animation: zoomIn 0.3s ease-out;
 }
 
 /* Animação de zoom-in para o conteúdo do modal */
@@ -303,7 +344,7 @@ table tr:hover {
     color: #fff;
     font-size: 30px;
     font-weight: bold;
-    position: absolute; /* Posiciona o botão de fechar absolutamente em relação ao seu pai (.modal-content) */
+    position: absolute;
     top: 10px;
     right: 20px;
     cursor: pointer;
@@ -313,32 +354,32 @@ table tr:hover {
 /* Efeito hover/focus para o botão de fechar */
 .close-button:hover,
 .close-button:focus {
-    color: #00ffcc;
+    color: var(--color-neon-cyan);
     text-decoration: none;
 }
 
 /* Título dentro do conteúdo do modal */
 .modal-content h2 {
-    font-family: 'Orbitron', sans-serif;
-    color: #00ffcc;
+    font-family: var(--font-orbitron);
+    color: var(--color-neon-cyan);
     text-align: center;
     margin-bottom: 25px;
     font-size: 2em;
-    text-shadow: 0 0 8px #00ffcc;
+    text-shadow: 0 0 8px var(--color-neon-cyan);
 }
 
 /* Seções de formulário dentro do modal */
 .form-section {
     margin-bottom: 25px;
     padding: 15px;
-    border: 1px dashed rgba(0, 255, 255, 0.1);
+    border: var(--border-dashed-cyan);
     border-radius: 8px;
-    background-color: rgba(20, 20, 40, 0.5);
+    background-color: var(--color-bg-form-section);
 }
 
 /* Títulos das seções de formulário */
 .form-section h3 {
-    color: #a0a0ff;
+    color: var(--color-label-blue);
     margin-bottom: 15px;
     font-size: 1.3em;
     text-align: center;
@@ -353,7 +394,7 @@ table tr:hover {
 .form-group label {
     display: block;
     margin-bottom: 8px;
-    color: #e0e0e0;
+    color: var(--color-text-light);
     font-weight: bold;
 }
 
@@ -361,19 +402,19 @@ table tr:hover {
 .full-width-input {
     width: 100%;
     padding: 12px;
-    border: 1px solid #00aaff;
+    border: var(--border-input-blue);
     border-radius: 6px;
-    background-color: rgba(40, 40, 70, 0.7);
-    color: #00ffcc;
+    background-color: var(--color-bg-input);
+    color: var(--color-neon-cyan);
     outline: none;
     transition: all 0.3s ease;
-    box-shadow: 0 0 8px rgba(0, 170, 255, 0.3);
+    box-shadow: var(--shadow-input-initial);
 }
 
 /* Efeito de foco para inputs de largura total */
 .full-width-input:focus {
-    border-color: #00ffcc;
-    box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
+    border-color: var(--color-neon-cyan);
+    box-shadow: var(--shadow-input-focus);
 }
 
 /* Grupo de botões de rádio para status (Presente/Ausente) */
@@ -390,13 +431,13 @@ table tr:hover {
     margin-bottom: 0;
     display: inline-block;
     font-weight: normal;
-    color: #e0e0e0;
+    color: var(--color-text-light);
 }
 
 /* Inputs de rádio */
 .status-radio-group input[type="radio"] {
     margin-right: 5px;
-    accent-color: #00ffcc; /* Muda a cor do círculo/quadrado do rádio */
+    accent-color: var(--color-neon-cyan);
 }
 
 /* Botões de formulário (dentro do modal) */
@@ -406,20 +447,20 @@ table tr:hover {
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    background: linear-gradient(45deg, #007bff, #00ffcc);
+    background: linear-gradient(45deg, var(--color-accent-blue), var(--color-neon-cyan));
     color: white;
     font-weight: bold;
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--font-orbitron);
     letter-spacing: 1px;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
-    margin-top: 15px; /* Espaço acima do botão */
+    box-shadow: var(--shadow-button-initial);
+    margin-top: 15px;
 }
 
 /* Efeito hover para botões de formulário */
 .form-button:hover {
-    background: linear-gradient(45deg, #00ffcc, #007bff);
-    box-shadow: 0 6px 20px rgba(0, 255, 204, 0.4);
+    background: linear-gradient(45deg, var(--color-neon-cyan), var(--color-accent-blue));
+    box-shadow: var(--shadow-button-hover);
     transform: translateY(-2px);
 }
 
@@ -440,44 +481,44 @@ table tr:hover {
 
 /* Cores específicas para mensagens de feedback */
 .feedback-message.success {
-    color: #00ffcc; /* Verde/Ciano para sucesso */
+    color: var(--color-neon-cyan);
 }
 
 .feedback-message.error {
-    color: #ff6666; /* Vermelho para erro */
+    color: var(--color-error);
 }
 
 
 /* --- Estilos para o Painel Lateral de Detalhes do Aluno (#studentDetail) --- */
 .student-detail-panel {
-    display: none; /* Oculto por padrão */
-    position: fixed; /* Posição fixa na viewport */
+    display: none;
+    position: fixed;
     top: 0;
     right: 0;
-    width: 400px; /* Largura do painel lateral */
-    height: 100%; /* Altura total da viewport */
-    background-color: rgba(30, 30, 50, 0.98); /* Fundo escuro, quase opaco */
-    box-shadow: -8px 0 30px rgba(0, 255, 255, 0.2); /* Sombra para o lado esquerdo */
-    border-left: 1px solid rgba(0, 255, 255, 0.3); /* Borda sutil à esquerda */
-    z-index: 1002; /* Fica acima do modal de registro (1001) */
+    width: 400px;
+    height: 100%;
+    background-color: rgba(30, 30, 50, 0.98); /* Mantido literal por ser levemente mais opaco */
+    box-shadow: var(--shadow-panel-left);
+    border-left: var(--border-subtle-cyan);
+    z-index: 1002;
     padding: 30px;
-    overflow-y: auto; /* Adiciona rolagem vertical se o conteúdo for muito grande */
-    animation: slideInRight 0.3s ease-out; /* Animação ao aparecer */
+    overflow-y: auto;
+    animation: slideInRight 0.3s ease-out;
 }
 
 /* Classe 'active' para exibir o painel lateral (adicionada via JavaScript) */
 .student-detail-panel.active {
-    display: block; /* Mostra o painel quando a classe 'active' é adicionada */
+    display: block;
 }
 
 /* Animação de deslize da direita para o painel lateral */
 @keyframes slideInRight {
     from {
-        transform: translateX(100%); /* Começa fora da tela à direita */
+        transform: translateX(100%);
         opacity: 0;
     }
     to {
-        transform: translateX(0); /* Desliza para a posição final */
+        transform: translateX(0);
         opacity: 1;
     }
 }
@@ -492,18 +533,18 @@ table tr:hover {
 
 /* Título do nome do aluno no painel de detalhes */
 .student-detail-panel .detail-header h2 {
-    font-family: 'Orbitron', sans-serif;
-    color: #00ffcc;
+    font-family: var(--font-orbitron);
+    color: var(--color-neon-cyan);
     font-size: 1.8em;
-    text-shadow: 0 0 8px #00ffcc;
+    text-shadow: 0 0 8px var(--color-neon-cyan);
     margin: 0;
     text-align: left;
 }
 
 /* O botão de fechar dentro do painel lateral (sobrescreve a regra .close-button global) */
 .student-detail-panel .close-button {
-    position: static; /* Remove o posicionamento absoluto, segue o fluxo do flexbox */
-    margin-left: auto; /* Empurra para a direita */
+    position: static;
+    margin-left: auto;
     color: #fff;
     width: 10rem;
 }
@@ -512,41 +553,41 @@ table tr:hover {
 .student-detail-panel p {
     font-size: 1.1em;
     margin-bottom: 20px;
-    color: #e0e0e0;
+    color: var(--color-text-light);
 }
 
 /* Texto em negrito no painel de detalhes */
 .student-detail-panel strong {
-    color: #a0a0ff;
+    color: var(--color-label-blue);
 }
 
 /* Estilos para as seções de formulário dentro do painel de detalhes (reutiliza .form-section) */
 .student-detail-panel .form-section {
-    margin-bottom: 20px; /* Ajusta a margem para o painel */
+    margin-bottom: 20px;
 }
 
 /* Títulos das seções de formulário no painel */
 .student-detail-panel .form-section h3 {
-    text-align: left; /* Alinha os títulos das seções à esquerda */
+    text-align: left;
 }
 
 /* Inputs de número (notas) dentro do painel de detalhes */
 .student-detail-panel input[type="number"] {
     width: 100%;
     padding: 10px;
-    border: 1px solid #00aaff;
+    border: var(--border-input-blue);
     border-radius: 6px;
-    background-color: rgba(40, 40, 70, 0.7);
-    color: #00ffcc;
+    background-color: var(--color-bg-input);
+    color: var(--color-neon-cyan);
     outline: none;
     transition: all 0.3s ease;
-    box-shadow: 0 0 8px rgba(0, 170, 255, 0.3);
+    box-shadow: var(--shadow-input-initial);
 }
 
 /* Efeito de foco para inputs de número no painel */
 .student-detail-panel input[type="number"]:focus {
-    border-color: #00ffcc;
-    box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
+    border-color: var(--color-neon-cyan);
+    box-shadow: var(--shadow-input-focus);
 }
 
 /* Labels dentro dos grupos de formulário no painel */
@@ -558,23 +599,23 @@ table tr:hover {
 .student-detail-panel button {
     width: 100%;
     padding: 10px 15px;
-    margin-top: 10px; /* Ajusta a margem superior para botões no painel */
+    margin-top: 10px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    background: linear-gradient(45deg, #007bff, #00ffcc);
+    background: linear-gradient(45deg, var(--color-accent-blue), var(--color-neon-cyan));
     color: white;
     font-weight: bold;
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--font-orbitron);
     letter-spacing: 1px;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    box-shadow: var(--shadow-button-initial);
 }
 
 /* Efeito hover para botões no painel de detalhes */
 .student-detail-panel button:hover {
-    background: linear-gradient(45deg, #00ffcc, #007bff);
-    box-shadow: 0 6px 20px rgba(0, 255, 204, 0.4);
+    background: linear-gradient(45deg, var(--color-neon-cyan), var(--color-accent-blue));
+    box-shadow: var(--shadow-button-hover);
     transform: translateY(-2px);
 }
 
@@ -598,20 +639,19 @@ table tr:hover {
 
     /* Ajustes para a seção de busca em telas menores */
     .search-section {
-        flex-direction: column; /* Força empilhamento vertical */
-        align-items: stretch; /* Estica os itens para preencher a largura disponível */
+        flex-direction: column;
+        align-items: stretch;
     }
     .filter-group {
-        max-width: none; /* Remove a largura máxima para permitir que ocupe 100% */
+        max-width: none;
     }
     .search-section input[type="text"],
     #periodoFilter,
     #cursoFilter {
-        width: 100%; /* Garante que ocupem a largura total disponível */
+        width: 100%;
     }
 
     /* --- Estilização da Tabela Responsiva para Empilhamento --- */
-    /* Transforma a tabela em blocos empilhados para melhor visualização em telas pequenas */
     table,
     thead,
     tbody,
@@ -622,7 +662,7 @@ table tr:hover {
     }
 
     thead tr {
-        position: absolute; /* Esconde o cabeçalho da tabela */
+        position: absolute;
         top: -9999px;
         left: -9999px;
     }
@@ -631,48 +671,48 @@ table tr:hover {
         border: 1px solid rgba(0, 255, 255, 0.2);
         margin-bottom: 15px;
         border-radius: 8px;
-        overflow: hidden; /* Garante que bordas arredondadas sejam aplicadas */
+        overflow: hidden;
         background-color: rgba(30, 30, 50, 0.8);
-        box-shadow: 0 4px 15px rgba(0, 255, 255, 0.1);
+        box-shadow: var(--shadow-table-row-mobile);
     }
 
     table td {
-        border: none; /* Remove bordas internas das células */
-        border-bottom: 1px solid rgba(0, 255, 255, 0.1); /* Adiciona uma linha divisória entre as "linhas" virtuais */
+        border: none;
+        border-bottom: 1px solid rgba(0, 255, 255, 0.1);
         position: relative;
-        padding-left: 50%; /* Espaço para o data-label (nome da coluna) */
-        text-align: right; /* Alinha o valor da célula à direita */
+        padding-left: 50%;
+        text-align: right;
         font-size: 0.95em;
     }
 
     table td:last-child {
-        border-bottom: none; /* Remove a borda inferior da última célula */
+        border-bottom: none;
     }
 
     /* Adiciona o "rótulo" da coluna antes do conteúdo da célula */
     table td::before {
-        content: attr(data-label); /* Pega o valor do atributo data-label do HTML */
+        content: attr(data-label);
         position: absolute;
         left: 0;
-        width: 45%; /* Largura do label */
+        width: 45%;
         padding-left: 15px;
         font-weight: bold;
-        color: #00ffcc;
+        color: var(--color-neon-cyan);
         text-align: left;
-        font-family: 'Orbitron', sans-serif;
+        font-family: var(--font-orbitron);
         letter-spacing: 0.5px;
-        white-space: nowrap; /* Impede que o texto quebre */
+        white-space: nowrap;
         overflow: hidden;
-        text-overflow: ellipsis; /* Adiciona reticências se o texto for muito longo */
+        text-overflow: ellipsis;
     }
 
     /* Ajustes para o painel lateral de detalhes em telas menores */
     .student-detail-panel {
-        width: 100%; /* Ocupa a largura total da tela em mobile */
-        left: 0; /* Começa da esquerda */
-        box-shadow: 0 8px 30px rgba(0, 255, 255, 0.2); /* Sombra inferior */
-        border-top: 1px solid rgba(0, 255, 255, 0.3); /* Borda superior */
-        animation: slideInUp 0.3s ease-out; /* Animação para aparecer de baixo para cima */
+        width: 100%;
+        left: 0;
+        box-shadow: 0 8px 30px rgba(0, 255, 255, 0.2);
+        border-top: var(--border-subtle-cyan);
+        animation: slideInUp 0.3s ease-out;
     }
 
     /* Animação para o painel lateral em telas pequenas */
@@ -700,7 +740,7 @@ table tr:hover {
         height: 24px;
     }
     #registerButton span {
-        display: none; /* Esconde o texto "Registrar" em telas pequenas, mostra apenas o ícone */
+        display: none;
     }
 }
 
@@ -722,7 +762,7 @@ table tr:hover {
 
     table td {
         padding: 8px 10px;
-        padding-left: 48%; /* Mantém o espaço para o label */
+        padding-left: 48%;
     }
 
     table td::before {
@@ -734,7 +774,7 @@ table tr:hover {
     .modal-content,
     .student-detail-panel {
         padding: 20px;
-        width: 95%; /* Faz com que ocupe mais largura em telas muito pequenas */
+        width: 95%;
     }
     .modal-content h2,
     .student-detail-panel .detail-header h2 {
@@ -748,8 +788,8 @@ table tr:hover {
         font-size: 0.9em;
     }
     .status-radio-group {
-        flex-direction: column; /* Empilha os rádios verticalmente */
-        align-items: flex-start; /* Alinha os rádios à esquerda */
+        flex-direction: column;
+        align-items: flex-start;
         gap: 10px;
     }
 
