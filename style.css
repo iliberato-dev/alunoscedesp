@@ -268,8 +268,6 @@ table tr:hover {
 /* Classe 'active' para exibir o modal (adicionada via JavaScript) */
 .modal.active {
     display: flex; /* EXIBE o modal como um flex container. */
-    /* Se mesmo com 'display: flex' não aparecer, tente 'display: flex !important;'
-       para depurar, mas a causa mais provável seria um z-index menor ou outro elemento cobrindo. */
 }
 
 /* Estilos para o conteúdo interno do modal */
@@ -463,11 +461,13 @@ table tr:hover {
     padding: 30px;
     overflow-y: auto; /* Adiciona rolagem vertical se o conteúdo for muito grande */
     animation: slideInRight 0.3s ease-out; /* Animação ao aparecer */
+    display: flex; /* Usar flexbox para o conteúdo do painel */
+    flex-direction: column; /* Empilhar os itens verticalmente */
 }
 
 /* Classe 'active' para exibir o painel lateral (adicionada via JavaScript) */
 .student-detail-panel.active {
-    display: block; /* Mostra o painel quando a classe 'active' é adicionada */
+    display: flex; /* Continua a exibir como flex */
 }
 
 /* Animação de deslize da direita para o painel lateral */
@@ -488,6 +488,7 @@ table tr:hover {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 25px;
+    flex-shrink: 0; /* Impede que o cabeçalho encolha */
 }
 
 /* Título do nome do aluno no painel de detalhes */
@@ -498,6 +499,7 @@ table tr:hover {
     text-shadow: 0 0 8px #00ffcc;
     margin: 0;
     text-align: left;
+    word-break: break-word; /* Permite quebras de linha em nomes longos */
 }
 
 /* O botão de fechar dentro do painel lateral (sobrescreve a regra .close-button global) */
@@ -505,23 +507,49 @@ table tr:hover {
     position: static; /* Remove o posicionamento absoluto, segue o fluxo do flexbox */
     margin-left: auto; /* Empurra para a direita */
     color: #fff;
+    flex-shrink: 0; /* Impede que o botão encolha */
 }
 
 /* Parágrafos de texto no painel de detalhes */
 .student-detail-panel p {
     font-size: 1.1em;
-    margin-bottom: 20px;
+    margin-bottom: 10px; /* Reduzido para dar mais espaço */
     color: #e0e0e0;
+    display: flex; /* Importante: Transforma cada parágrafo em um flex container */
+    justify-content: space-between; /* Distribui rótulo e valor nas extremidades */
+    flex-wrap: wrap; /* Permite que o conteúdo quebre para a linha de baixo se necessário */
+    padding: 5px 0; /* Adiciona um pequeno padding vertical */
+    border-bottom: 1px dashed rgba(0, 255, 255, 0.1); /* Separador visual */
 }
 
-/* Texto em negrito no painel de detalhes */
+/* Último parágrafo sem borda inferior */
+.student-detail-panel p:last-of-type {
+    border-bottom: none;
+}
+
+
+/* Texto em negrito (rótulos) no painel de detalhes */
 .student-detail-panel strong {
     color: #a0a0ff;
+    flex-basis: 40%; /* Dá ao rótulo uma base de 40% da largura */
+    text-align: left;
+    min-width: fit-content; /* Garante que o rótulo não encolha demais */
+    padding-right: 10px; /* Espaço entre o rótulo e o valor */
+    white-space: nowrap; /* Impede que o rótulo quebre, força o wrap do valor */
+}
+
+/* Estilo para o valor real (o texto depois do strong) */
+.student-detail-panel span.detail-value {
+    flex-grow: 1; /* Permite que o valor ocupe o espaço restante */
+    text-align: right; /* Alinha o valor à direita */
+    word-break: break-word; /* Permite que o valor quebre linha se for longo */
 }
 
 /* Estilos para as seções de formulário dentro do painel de detalhes (reutiliza .form-section) */
 .student-detail-panel .form-section {
-    margin-bottom: 20px; /* Ajusta a margem para o painel */
+    margin-top: 20px; /* Ajusta a margem superior */
+    margin-bottom: 20px;
+    flex-shrink: 0;
 }
 
 /* Títulos das seções de formulário no painel */
@@ -568,6 +596,7 @@ table tr:hover {
     letter-spacing: 1px;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    flex-shrink: 0;
 }
 
 /* Efeito hover para botões no painel de detalhes */
