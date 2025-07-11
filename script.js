@@ -89,45 +89,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Função para exibir alunos na tabela principal
-    function displayStudents(students) {
-        resultTableBody.innerHTML = '';
-        noResultsMessage.classList.add('hidden'); // Esconde a mensagem de "nenhum aluno" por padrão
+function displayStudents(students) {
+    resultTableBody.innerHTML = '';
+    noResultsMessage.classList.add('hidden'); // Esconde a mensagem de "nenhum aluno" por padrão
 
-        if (students.length === 0) {
-            noResultsMessage.classList.remove('hidden');
-            return;
-        }
-
-        students.forEach(student => {
-            const row = resultTableBody.insertRow();
-            // Adiciona atributos data-label para responsividade móvel
-            row.insertCell(0).setAttribute('data-label', 'Nome:');
-            row.insertCell(0).textContent = student.Nome;
-
-            row.insertCell(1).setAttribute('data-label', 'Faltas:');
-            row.insertCell(1).textContent = student.Faltas;
-
-            row.insertCell(2).setAttribute('data-label', 'Nota 1º Bimestre:');
-            row.insertCell(2).textContent = student.Nota1 !== 0 ? student.Nota1 : '-';
-
-            row.insertCell(3).setAttribute('data-label', 'Nota 2º Bimestre:');
-            row.insertCell(3).textContent = student.Nota2 !== 0 ? student.Nota2 : '-';
-
-            row.insertCell(4).setAttribute('data-label', 'Nota 3º Bimestre:');
-            row.insertCell(4).textContent = student.Nota3 !== 0 ? student.Nota3 : '-';
-
-            row.insertCell(5).setAttribute('data-label', 'Média:');
-            row.insertCell(5).textContent = student.Media !== 0 ? student.Media.toFixed(1) : '-';
-
-            row.insertCell(6).setAttribute('data-label', 'Situação:');
-            row.insertCell(6).textContent = student.Situacao;
-
-            row.insertCell(7).setAttribute('data-label', 'Origem:');
-            row.insertCell(7).textContent = student.Origem; // Coluna de origem (nome da aba/curso)
-
-            row.addEventListener('click', () => showStudentDetail(student));
-        });
+    if (students.length === 0) {
+        noResultsMessage.classList.remove('hidden');
+        return;
     }
+
+    students.forEach(student => {
+        const row = resultTableBody.insertRow();
+
+        // Correção: Crie a célula UMA VEZ e adicione data-label E textContent
+        let cell; // Variável para a célula atual
+
+        cell = row.insertCell(); // Adiciona no final (ou row.insertCell(0) e empurra, mas sempre à frente)
+        cell.setAttribute('data-label', 'Nome:');
+        cell.textContent = student.Nome;
+
+        cell = row.insertCell();
+        cell.setAttribute('data-label', 'Faltas:');
+        cell.textContent = student.Faltas;
+
+        cell = row.insertCell();
+        cell.setAttribute('data-label', 'Nota 1º Bimestre:');
+        cell.textContent = student.Nota1 !== 0 ? student.Nota1 : '-';
+
+        cell = row.insertCell();
+        cell.setAttribute('data-label', 'Nota 2º Bimestre:');
+        cell.textContent = student.Nota2 !== 0 ? student.Nota2 : '-';
+
+        cell = row.insertCell();
+        cell.setAttribute('data-label', 'Nota 3º Bimestre:');
+        cell.textContent = student.Nota3 !== 0 ? student.Nota3 : '-';
+
+        cell = row.insertCell();
+        cell.setAttribute('data-label', 'Média:');
+        cell.textContent = student.Media !== 0 ? student.Media.toFixed(1) : '-';
+
+        cell = row.insertCell();
+        cell.setAttribute('data-label', 'Situação:');
+        cell.textContent = student.Situacao;
+
+        cell = row.insertCell();
+        cell.setAttribute('data-label', 'Origem:');
+        cell.textContent = student.Origem; // Coluna de origem (nome da aba/curso)
+
+        row.addEventListener('click', () => showStudentDetail(student));
+    });
+}
 
     // Função para mostrar detalhes do aluno no painel lateral
     function showStudentDetail(student) {
