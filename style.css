@@ -1,36 +1,40 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
 
+/* Reset básico para todos os elementos */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* Estilos globais para o corpo da página */
 body {
     font-family: 'Roboto Mono', monospace;
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    color: #e0e0e0;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); /* Gradiente de fundo escuro */
+    color: #e0e0e0; /* Cor do texto padrão */
     margin: 0;
     padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
-    overflow-x: hidden;
+    display: flex; /* Utiliza flexbox para centralizar o container principal */
+    justify-content: center; /* Centraliza horizontalmente */
+    align-items: flex-start; /* Alinha o conteúdo principal ao topo da página */
+    min-height: 100vh; /* Garante que o body ocupa a altura total da viewport */
+    overflow-x: hidden; /* Evita rolagem horizontal indesejada */
 }
 
+/* Estilos para o container principal da aplicação */
 .container {
-    background-color: rgba(30, 30, 50, 0.9);
+    background-color: rgba(30, 30, 50, 0.9); /* Fundo com transparência */
     padding: 35px;
     border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(0, 255, 255, 0.2), 0 0 15px rgba(0, 255, 255, 0.1);
+    box-shadow: 0 8px 30px rgba(0, 255, 255, 0.2), 0 0 15px rgba(0, 255, 255, 0.1); /* Sombras com brilho ciano */
     width: 100%;
-    max-width: 950px;
+    max-width: 950px; /* Largura máxima para o container */
     box-sizing: border-box;
-    border: 1px solid rgba(0, 255, 255, 0.3);
-    animation: fadeIn 1s ease-out;
+    border: 1px solid rgba(0, 255, 255, 0.3); /* Borda sutil */
+    animation: fadeIn 1s ease-out; /* Animação de entrada */
 }
 
+/* Animação de fade-in para o container */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -42,71 +46,79 @@ body {
     }
 }
 
+/* Estilos para o título principal (h1) */
 h1 {
-    font-family: 'Orbitron', sans-serif;
+    font-family: 'Orbitron', sans-serif; /* Fonte futurista */
     text-align: center;
-    color: #00ffcc;
-    text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
+    color: #00ffcc; /* Cor ciano vibrante */
+    text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc; /* Sombra de texto para efeito neon */
     margin-bottom: 30px;
     font-size: 2.5em;
     letter-spacing: 2px;
 }
 
+/* Seção de busca e filtros */
 .search-section {
     margin-bottom: 30px;
     display: flex;
     flex-direction: column; /* Por padrão, empilha em telas pequenas */
-    flex-wrap: wrap;
-    gap: 15px;
-    align-items: center;
-    justify-content: center;
+    flex-wrap: wrap; /* Permite que os itens quebrem para a próxima linha */
+    gap: 15px; /* Espaçamento entre os itens */
+    align-items: center; /* Centraliza verticalmente os itens em relação ao container */
+    justify-content: center; /* Centraliza horizontalmente os itens */
 }
 
+/* Grupos de filtro individuais (label + input/select) */
 .filter-group {
     display: flex;
     flex-direction: column;
     width: 100%; /* Ocupa a largura total na coluna */
-    max-width: 27rem; /* Limita a largura mesmo em flex-row */
-    align-items: center; /* Centraliza labels e inputs */
+    max-width: 27rem; /* Limita a largura mesmo em flex-row para organizar */
+    align-items: center; /* Centraliza labels e inputs/selects */
 }
 
+/* Estilos para os rótulos (labels) na seção de busca */
 .search-section label {
     font-weight: bold;
-    color: #a0a0ff;
-    text-align: center; /* Centraliza o texto do label */
+    color: #a0a0ff; /* Tom de azul */
+    text-align: center;
     margin-bottom: 5px;
     display: block; /* Garante que o label ocupe sua própria linha */
 }
 
+/* Estilos para inputs de texto e selects de filtro */
 .search-section input[type="text"],
-#periodoFilter, /* ID atualizado */
-#cursoFilter { /* ID atualizado */
-    flex-grow: 1;
+#periodoFilter,
+#cursoFilter {
+    flex-grow: 1; /* Permite que cresçam para preencher o espaço disponível */
     padding: 12px;
-    border: 1px solid #00aaff;
+    border: 1px solid #00aaff; /* Borda azul */
     border-radius: 6px;
-    background-color: rgba(40, 40, 70, 0.7);
-    color: #00ffcc;
-    width: 100%; /* Faz com que ocupe 100% do filter-group */
-    display: block;
-    outline: none;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 8px rgba(0, 170, 255, 0.3);
+    background-color: rgba(40, 40, 70, 0.7); /* Fundo escuro com transparência */
+    color: #00ffcc; /* Texto ciano */
+    width: 100%; /* Ocupa 100% da largura do filter-group */
+    display: block; /* Garante que ocupem sua própria linha */
+    outline: none; /* Remove o contorno padrão no foco */
+    transition: all 0.3s ease; /* Transição suave para efeitos de foco */
+    box-shadow: 0 0 8px rgba(0, 170, 255, 0.3); /* Sombra sutil */
 }
 
+/* Estilos para placeholders */
 .search-section input[type="text"]::placeholder,
-#periodoFilter::placeholder, /* ID atualizado */
-#cursoFilter::placeholder { /* ID atualizado */
-    color: #6a6a90;
+#periodoFilter::placeholder,
+#cursoFilter::placeholder {
+    color: #6a6a90; /* Cor de placeholder mais clara */
 }
 
+/* Estilos de foco para inputs e selects */
 .search-section input[type="text"]:focus,
-#periodoFilter:focus, /* ID atualizado */
-#cursoFilter:focus { /* ID atualizado */
-    border-color: #00ffcc;
-    box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
+#periodoFilter:focus,
+#cursoFilter:focus {
+    border-color: #00ffcc; /* Borda ciano no foco */
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.5); /* Sombra mais intensa no foco */
 }
 
+/* Container para os botões de ação */
 #buttons {
     display: flex;
     flex-wrap: wrap;
@@ -115,101 +127,111 @@ h1 {
     width: 100%; /* Ocupa largura total para centralização */
 }
 
+/* Estilos gerais para todos os botões na seção de busca */
 .search-section button {
     padding: 12px 20px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    background: linear-gradient(45deg, #007bff, #00ffcc);
+    background: linear-gradient(45deg, #007bff, #00ffcc); /* Gradiente de fundo */
     color: white;
     font-weight: bold;
     font-family: 'Orbitron', sans-serif;
     letter-spacing: 1px;
     transition: all 0.3s ease;
-    flex-shrink: 0;
+    flex-shrink: 0; /* Evita que os botões encolham */
     box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
 }
 
+/* Efeito hover para os botões da seção de busca */
 .search-section button:hover {
-    background: linear-gradient(45deg, #00ffcc, #007bff);
+    background: linear-gradient(45deg, #00ffcc, #007bff); /* Inverte o gradiente no hover */
     box-shadow: 0 6px 20px rgba(0, 255, 204, 0.4);
-    transform: translateY(-2px);
+    transform: translateY(-2px); /* Efeito de leve levantamento */
 }
 
+/* Container da tabela de resultados */
 .results-container {
-    overflow-x: auto;
+    overflow-x: auto; /* Adiciona rolagem horizontal se a tabela for muito larga */
     background-color: rgba(20, 20, 40, 0.8);
     border-radius: 8px;
-    box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.1);
+    box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.1); /* Sombra interna */
     padding: 15px;
 }
 
+/* Estilos da tabela */
 table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: collapse; /* Remove o espaçamento entre as bordas das células */
     margin-top: 10px;
 }
 
+/* Estilos para cabeçalhos e células da tabela */
 table th,
 table td {
-    border: 1px solid rgba(0, 255, 255, 0.15);
+    border: 1px solid rgba(0, 255, 255, 0.15); /* Bordas sutis */
     padding: 12px 15px;
     text-align: left;
-    color: #d0d0d0;
+    color: #d0d0d0; /* Cor do texto */
 }
 
+/* Estilos para os cabeçalhos da tabela */
 table th {
-    background-color: rgba(0, 255, 255, 0.1);
-    color: #00ffcc;
+    background-color: rgba(0, 255, 255, 0.1); /* Fundo ciano claro */
+    color: #00ffcc; /* Texto ciano vibrante */
     font-weight: bold;
     text-transform: uppercase;
     font-family: 'Orbitron', sans-serif;
     letter-spacing: 0.5px;
 }
 
+/* Fundo alternado para linhas da tabela (pares) */
 table tr:nth-child(even) {
     background-color: rgba(0, 0, 0, 0.1);
 }
 
+/* Efeito hover para linhas da tabela */
 table tr:hover {
     background-color: rgba(0, 255, 255, 0.05);
     cursor: pointer; /* Adiciona cursor de ponteiro para indicar que é clicável */
 }
 
+/* Mensagem de "nenhum resultado" */
 #noResults {
     text-align: center;
-    color: #ff6666;
+    color: #ff6666; /* Cor de erro/alerta */
     margin-top: 20px;
     font-style: italic;
     font-weight: bold;
 }
 
+/* Classe utilitária para esconder elementos */
 .hidden {
     display: none !important; /* Usa !important para garantir a ocultação */
 }
 
-/* --- Botão de Ícone para Registro --- */
+/* --- Botão de Ícone Flutuante para Registro (#registerButton) --- */
 #registerButton {
-    position: fixed;
+    position: fixed; /* Posição fixa na tela */
     bottom: 30px;
     right: 30px;
     width: 60px;
     height: 60px;
-    border-radius: 50%;
-    background: linear-gradient(45deg, #00ffcc, #007bff);
+    border-radius: 50%; /* Torna o botão circular */
+    background: linear-gradient(45deg, #00ffcc, #007bff); /* Gradiente de fundo */
     color: white;
     border: none;
     cursor: pointer;
-    display: flex;
+    display: flex; /* Usa flexbox para centralizar ícone/texto */
     justify-content: center;
     align-items: center;
     box-shadow: 0 4px 20px rgba(0, 255, 204, 0.6), 0 0 10px rgba(0, 255, 204, 0.4);
     transition: all 0.3s ease;
-    z-index: 1000;
+    z-index: 1000; /* Garante que esteja acima da maioria dos elementos */
     font-family: 'Orbitron', sans-serif;
     font-size: 0.8em;
     font-weight: bold;
-    flex-direction: column;
+    flex-direction: column; /* Empilha ícone e texto */
     padding: 5px;
     text-shadow: 0 0 5px rgba(255,255,255,0.5);
 }
@@ -220,75 +242,51 @@ table tr:hover {
     margin-bottom: 2px;
 }
 
+/* Efeito hover para o botão de registro */
 #registerButton:hover {
     transform: scale(1.08) translateY(-2px);
     box-shadow: 0 6px 25px rgba(0, 255, 204, 0.8), 0 0 20px rgba(0, 255, 204, 0.6);
-    background: linear-gradient(45deg, #007bff, #00ffcc);
+    background: linear-gradient(45deg, #007bff, #00ffcc); /* Inverte o gradiente no hover */
 }
 
-/* --- Media Queries para o Botão de Registro --- */
-@media (max-width: 768px) {
-    #registerButton {
-        width: 50px;
-        height: 50px;
-        font-size: 0.7em;
-        bottom: 20px;
-        right: 20px;
-    }
-    #registerButton svg {
-        width: 24px;
-        height: 24px;
-    }
-    #registerButton span {
-        display: none; /* Esconde o texto em telas pequenas, mostra apenas o ícone */
-    }
-}
-@media (max-width: 480px) {
-    #registerButton {
-        bottom: 15px;
-        right: 15px;
-    }
-}
-
-
-/* --- Estilo da Modal de Registro (#registrationModal) --- */
+/* --- Estilos da Modal de Registro (#registrationModal) --- */
 .modal {
-    display: none; /* Oculto por padrão */
-    position: fixed; /* Permanece no lugar */
-    z-index: 1001; /* Fica no topo (maior que registerButton) */
+    display: none; /* ESCONDE o modal por padrão */
+    position: fixed; /* Posição fixa na viewport */
+    z-index: 1001; /* Fica no topo (maior que #registerButton z-index: 1000) */
     left: 0;
     top: 0;
-    width: 100%; /* Largura total */
-    height: 100%; /* Altura total */
-    overflow: auto; /* Habilita a rolagem se necessário */
-    background-color: rgba(0, 0, 0, 0.8); /* Preto com opacidade */
-    justify-content: center; /* Centraliza o conteúdo horizontalmente */
-    align-items: center; /* Centraliza o conteúdo verticalmente */
+    width: 100%; /* Largura total da tela */
+    height: 100%; /* Altura total da tela */
+    overflow: auto; /* Habilita a rolagem se o conteúdo for muito grande */
+    background-color: rgba(0, 0, 0, 0.8); /* Fundo escuro semi-transparente (overlay) */
+    justify-content: center; /* Centraliza o conteúdo horizontalmente (se display for flex) */
+    align-items: center; /* Centraliza o conteúdo verticalmente (se display for flex) */
     padding: 20px; /* Adiciona algum preenchimento para telas menores */
 }
 
-/* A classe 'active' ou 'visible' pode ser usada para mostrar o modal no JS */
-.modal.active { /* Use 'active' se o JS usa 'classList.add('active')' */
-    display: flex;
-}
-.modal.visible { /* Se o JS usa 'classList.add('visible')' */
-    display: flex;
+/* Classe 'active' para exibir o modal (adicionada via JavaScript) */
+.modal.active {
+    display: flex; /* EXIBE o modal como um flex container. */
+    /* Se mesmo com 'display: flex' não aparecer, tente 'display: flex !important;'
+       para depurar, mas a causa mais provável seria um z-index menor ou outro elemento cobrindo. */
 }
 
-
+/* Estilos para o conteúdo interno do modal */
 .modal-content {
-    background-color: rgba(30, 30, 50, 0.95);
-    margin: auto;
+    background-color: rgba(30, 30, 50, 0.95); /* Fundo escuro para o conteúdo do modal */
+    margin: auto; /* Centraliza o bloco do conteúdo dentro do flex container do modal */
     padding: 30px;
     border: 1px solid rgba(0, 255, 255, 0.4);
     border-radius: 12px;
-    width: 90%;
-    max-width: 600px;
+    width: 90%; /* Largura do conteúdo do modal */
+    max-width: 600px; /* Largura máxima */
     box-shadow: 0 10px 40px rgba(0, 255, 255, 0.3), 0 0 20px rgba(0, 255, 255, 0.2);
-    position: relative;
-    animation: zoomIn 0.3s ease-out;
+    position: relative; /* Necessário para posicionar o botão de fechar dentro */
+    animation: zoomIn 0.3s ease-out; /* Animação de entrada */
 }
 
+/* Animação de zoom-in para o conteúdo do modal */
 @keyframes zoomIn {
     from {
         opacity: 0;
@@ -300,23 +298,26 @@ table tr:hover {
     }
 }
 
-.close-button { /* Aplica-se a ambos os botões de fechar (modal e painel lateral) */
+/* Estilos para o botão de fechar (X) - usado tanto no modal quanto no painel lateral */
+.close-button {
     color: #fff;
     font-size: 30px;
     font-weight: bold;
-    position: absolute;
+    position: absolute; /* Posiciona o botão de fechar absolutamente em relação ao seu pai (.modal-content) */
     top: 10px;
     right: 20px;
     cursor: pointer;
     transition: color 0.3s ease;
 }
 
+/* Efeito hover/focus para o botão de fechar */
 .close-button:hover,
 .close-button:focus {
     color: #00ffcc;
     text-decoration: none;
 }
 
+/* Título dentro do conteúdo do modal */
 .modal-content h2 {
     font-family: 'Orbitron', sans-serif;
     color: #00ffcc;
@@ -326,6 +327,7 @@ table tr:hover {
     text-shadow: 0 0 8px #00ffcc;
 }
 
+/* Seções de formulário dentro do modal */
 .form-section {
     margin-bottom: 25px;
     padding: 15px;
@@ -334,6 +336,7 @@ table tr:hover {
     background-color: rgba(20, 20, 40, 0.5);
 }
 
+/* Títulos das seções de formulário */
 .form-section h3 {
     color: #a0a0ff;
     margin-bottom: 15px;
@@ -341,10 +344,12 @@ table tr:hover {
     text-align: center;
 }
 
+/* Grupos de formulário (label + input/select) */
 .form-group {
     margin-bottom: 15px;
 }
 
+/* Labels dentro dos grupos de formulário */
 .form-group label {
     display: block;
     margin-bottom: 8px;
@@ -352,6 +357,7 @@ table tr:hover {
     font-weight: bold;
 }
 
+/* Inputs de largura total dentro dos formulários */
 .full-width-input {
     width: 100%;
     padding: 12px;
@@ -364,11 +370,13 @@ table tr:hover {
     box-shadow: 0 0 8px rgba(0, 170, 255, 0.3);
 }
 
+/* Efeito de foco para inputs de largura total */
 .full-width-input:focus {
     border-color: #00ffcc;
     box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
 }
 
+/* Grupo de botões de rádio para status (Presente/Ausente) */
 .status-radio-group {
     display: flex;
     gap: 20px;
@@ -377,6 +385,7 @@ table tr:hover {
     align-items: center;
 }
 
+/* Labels dentro do grupo de rádio */
 .status-radio-group label {
     margin-bottom: 0;
     display: inline-block;
@@ -384,11 +393,13 @@ table tr:hover {
     color: #e0e0e0;
 }
 
+/* Inputs de rádio */
 .status-radio-group input[type="radio"] {
     margin-right: 5px;
-    accent-color: #00ffcc;
+    accent-color: #00ffcc; /* Muda a cor do círculo/quadrado do rádio */
 }
 
+/* Botões de formulário (dentro do modal) */
 .form-button {
     width: 100%;
     padding: 12px 20px;
@@ -402,21 +413,24 @@ table tr:hover {
     letter-spacing: 1px;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
-    margin-top: 15px;
+    margin-top: 15px; /* Espaço acima do botão */
 }
 
+/* Efeito hover para botões de formulário */
 .form-button:hover {
     background: linear-gradient(45deg, #00ffcc, #007bff);
     box-shadow: 0 6px 20px rgba(0, 255, 204, 0.4);
     transform: translateY(-2px);
 }
 
+/* Separador dentro do formulário */
 .form-separator {
     border: none;
     border-top: 1px dashed rgba(0, 255, 255, 0.2);
     margin: 30px 0;
 }
 
+/* Mensagens de feedback (sucesso/erro) no modal */
 .feedback-message {
     text-align: center;
     margin-top: 20px;
@@ -424,38 +438,51 @@ table tr:hover {
     font-size: 1.1em;
 }
 
+/* Cores específicas para mensagens de feedback */
+.feedback-message.success {
+    color: #00ffcc; /* Verde/Ciano para sucesso */
+}
+
+.feedback-message.error {
+    color: #ff6666; /* Vermelho para erro */
+}
+
+
 /* --- Estilos para o Painel Lateral de Detalhes do Aluno (#studentDetail) --- */
 .student-detail-panel {
-    display: none; /* Oculto por padrão, será mostrado via JS */
-    position: fixed;
+    display: none; /* Oculto por padrão */
+    position: fixed; /* Posição fixa na viewport */
     top: 0;
     right: 0;
     width: 400px; /* Largura do painel lateral */
-    height: 100%;
+    height: 100%; /* Altura total da viewport */
     background-color: rgba(30, 30, 50, 0.98); /* Fundo escuro, quase opaco */
     box-shadow: -8px 0 30px rgba(0, 255, 255, 0.2); /* Sombra para o lado esquerdo */
-    border-left: 1px solid rgba(0, 255, 255, 0.3);
-    z-index: 1002; /* Maior que o modal de registro */
+    border-left: 1px solid rgba(0, 255, 255, 0.3); /* Borda sutil à esquerda */
+    z-index: 1002; /* Fica acima do modal de registro (1001) */
     padding: 30px;
-    overflow-y: auto; /* Adiciona rolagem se o conteúdo for muito grande */
+    overflow-y: auto; /* Adiciona rolagem vertical se o conteúdo for muito grande */
     animation: slideInRight 0.3s ease-out; /* Animação ao aparecer */
 }
 
+/* Classe 'active' para exibir o painel lateral (adicionada via JavaScript) */
 .student-detail-panel.active {
     display: block; /* Mostra o painel quando a classe 'active' é adicionada */
 }
 
+/* Animação de deslize da direita para o painel lateral */
 @keyframes slideInRight {
     from {
-        transform: translateX(100%);
+        transform: translateX(100%); /* Começa fora da tela à direita */
         opacity: 0;
     }
     to {
-        transform: translateX(0);
+        transform: translateX(0); /* Desliza para a posição final */
         opacity: 1;
     }
 }
 
+/* Cabeçalho dentro do painel de detalhes */
 .student-detail-panel .detail-header {
     display: flex;
     justify-content: space-between;
@@ -463,41 +490,46 @@ table tr:hover {
     margin-bottom: 25px;
 }
 
+/* Título do nome do aluno no painel de detalhes */
 .student-detail-panel .detail-header h2 {
     font-family: 'Orbitron', sans-serif;
     color: #00ffcc;
     font-size: 1.8em;
     text-shadow: 0 0 8px #00ffcc;
-    margin: 0; /* Remove margem padrão do h2 */
-    text-align: left; /* Alinha o nome à esquerda */
+    margin: 0;
+    text-align: left;
 }
 
-/* O botão de fechar dentro do painel lateral */
+/* O botão de fechar dentro do painel lateral (sobrescreve a regra .close-button global) */
 .student-detail-panel .close-button {
-    position: static; /* Remove o posicionamento absoluto para que ele siga o fluxo */
+    position: static; /* Remove o posicionamento absoluto, segue o fluxo do flexbox */
     margin-left: auto; /* Empurra para a direita */
     color: #fff;
 }
 
+/* Parágrafos de texto no painel de detalhes */
 .student-detail-panel p {
     font-size: 1.1em;
     margin-bottom: 20px;
     color: #e0e0e0;
 }
 
+/* Texto em negrito no painel de detalhes */
 .student-detail-panel strong {
     color: #a0a0ff;
 }
 
-/* Estilos para os inputs e botões dentro do painel de detalhes (reutiliza classes existentes) */
+/* Estilos para as seções de formulário dentro do painel de detalhes (reutiliza .form-section) */
 .student-detail-panel .form-section {
-    margin-bottom: 20px;
+    margin-bottom: 20px; /* Ajusta a margem para o painel */
 }
 
+/* Títulos das seções de formulário no painel */
 .student-detail-panel .form-section h3 {
     text-align: left; /* Alinha os títulos das seções à esquerda */
 }
 
+/* Inputs de número (notas) dentro do painel de detalhes */
 .student-detail-panel input[type="number"] {
     width: 100%;
     padding: 10px;
@@ -510,20 +542,22 @@ table tr:hover {
     box-shadow: 0 0 8px rgba(0, 170, 255, 0.3);
 }
 
+/* Efeito de foco para inputs de número no painel */
 .student-detail-panel input[type="number"]:focus {
     border-color: #00ffcc;
     box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
 }
 
+/* Labels dentro dos grupos de formulário no painel */
 .student-detail-panel .form-group label {
     margin-bottom: 5px;
 }
 
+/* Botões dentro do painel de detalhes */
 .student-detail-panel button {
     width: 100%;
     padding: 10px 15px;
-    margin-top: 10px;
-    /* Ajusta a margem superior para botões no painel */
+    margin-top: 10px; /* Ajusta a margem superior para botões no painel */
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -536,6 +570,7 @@ table tr:hover {
     box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
 }
 
+/* Efeito hover para botões no painel de detalhes */
 .student-detail-panel button:hover {
     background: linear-gradient(45deg, #00ffcc, #007bff);
     box-shadow: 0 6px 20px rgba(0, 255, 204, 0.4);
@@ -562,19 +597,20 @@ table tr:hover {
 
     /* Ajustes para a seção de busca em telas menores */
     .search-section {
-        flex-direction: column;
-        align-items: stretch; /* Estica os itens para preencher a largura */
+        flex-direction: column; /* Força empilhamento vertical */
+        align-items: stretch; /* Estica os itens para preencher a largura disponível */
     }
     .filter-group {
-        max-width: none; /* Remove a largura máxima */
+        max-width: none; /* Remove a largura máxima para permitir que ocupe 100% */
     }
     .search-section input[type="text"],
     #periodoFilter,
     #cursoFilter {
-        width: 100%; /* Garante que ocupem a largura total */
+        width: 100%; /* Garante que ocupem a largura total disponível */
     }
 
     /* --- Estilização da Tabela Responsiva para Empilhamento --- */
+    /* Transforma a tabela em blocos empilhados para melhor visualização em telas pequenas */
     table,
     thead,
     tbody,
@@ -585,7 +621,7 @@ table tr:hover {
     }
 
     thead tr {
-        position: absolute;
+        position: absolute; /* Esconde o cabeçalho da tabela */
         top: -9999px;
         left: -9999px;
     }
@@ -594,38 +630,39 @@ table tr:hover {
         border: 1px solid rgba(0, 255, 255, 0.2);
         margin-bottom: 15px;
         border-radius: 8px;
-        overflow: hidden;
+        overflow: hidden; /* Garante que bordas arredondadas sejam aplicadas */
         background-color: rgba(30, 30, 50, 0.8);
         box-shadow: 0 4px 15px rgba(0, 255, 255, 0.1);
     }
 
     table td {
-        border: none;
-        border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+        border: none; /* Remove bordas internas das células */
+        border-bottom: 1px solid rgba(0, 255, 255, 0.1); /* Adiciona uma linha divisória entre as "linhas" virtuais */
         position: relative;
-        padding-left: 50%;
-        text-align: right;
+        padding-left: 50%; /* Espaço para o data-label (nome da coluna) */
+        text-align: right; /* Alinha o valor da célula à direita */
         font-size: 0.95em;
     }
 
     table td:last-child {
-        border-bottom: none;
+        border-bottom: none; /* Remove a borda inferior da última célula */
     }
 
+    /* Adiciona o "rótulo" da coluna antes do conteúdo da célula */
     table td::before {
-        content: attr(data-label);
+        content: attr(data-label); /* Pega o valor do atributo data-label do HTML */
         position: absolute;
         left: 0;
-        width: 45%;
+        width: 45%; /* Largura do label */
         padding-left: 15px;
         font-weight: bold;
         color: #00ffcc;
         text-align: left;
         font-family: 'Orbitron', sans-serif;
         letter-spacing: 0.5px;
-        white-space: nowrap;
+        white-space: nowrap; /* Impede que o texto quebre */
         overflow: hidden;
-        text-overflow: ellipsis;
+        text-overflow: ellipsis; /* Adiciona reticências se o texto for muito longo */
     }
 
     /* Ajustes para o painel lateral de detalhes em telas menores */
@@ -637,6 +674,7 @@ table tr:hover {
         animation: slideInUp 0.3s ease-out; /* Animação para aparecer de baixo para cima */
     }
 
+    /* Animação para o painel lateral em telas pequenas */
     @keyframes slideInUp {
         from {
             transform: translateY(100%);
@@ -647,6 +685,22 @@ table tr:hover {
             opacity: 1;
         }
     }
+
+    /* Botão de registro flutuante em telas médias/pequenas */
+    #registerButton {
+        width: 50px;
+        height: 50px;
+        font-size: 0.7em;
+        bottom: 20px;
+        right: 20px;
+    }
+    #registerButton svg {
+        width: 24px;
+        height: 24px;
+    }
+    #registerButton span {
+        display: none; /* Esconde o texto "Registrar" em telas pequenas, mostra apenas o ícone */
+    }
 }
 
 /* Para telas muito pequenas (celulares) */
@@ -655,9 +709,6 @@ table tr:hover {
         font-size: 1.8em;
         letter-spacing: 1px;
     }
-
-    /* Aqui, os inputs e selects na seção de busca já estarão 100% devido ao 768px,
-       então não precisamos de 'width: 18rem;' que pode quebrar o layout. */
 
     #buttons {
         gap: 10px;
@@ -670,7 +721,7 @@ table tr:hover {
 
     table td {
         padding: 8px 10px;
-        padding-left: 48%;
+        padding-left: 48%; /* Mantém o espaço para o label */
     }
 
     table td::before {
@@ -696,8 +747,13 @@ table tr:hover {
         font-size: 0.9em;
     }
     .status-radio-group {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: column; /* Empilha os rádios verticalmente */
+        align-items: flex-start; /* Alinha os rádios à esquerda */
         gap: 10px;
+    }
+
+    #registerButton {
+        bottom: 15px;
+        right: 15px;
     }
 }
