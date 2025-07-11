@@ -1,5 +1,5 @@
 // A URL do seu Web App implantado (substitua pela sua URL real)
-const WEB_APP_URL = ''; // SUBSTITUA PELA SUA URL REAL
+const WEB_APP_URL = '/api/appsscript/'; // SUBSTITUA PELA SUA URL REAL
 
 let allStudentsRawData = []; // Armazena todos os alunos carregados (dados brutos para os modais)
 let currentFilteredStudents = []; // Armazena os alunos filtrados atualmente na tabela principal
