@@ -254,6 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Lógica do Modal de Registro ---
     registerButton.addEventListener('click', () => {
+        console.log("Botão clickado !!!")
         registrationModal.classList.remove('hidden');
         // Preenche o campo de data com a data atual
         const today = new Date();
