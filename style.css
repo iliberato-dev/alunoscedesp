@@ -8,11 +8,8 @@
 
 body {
     font-family: 'Roboto Mono', monospace;
-    /* Fonte com toque tecnológico */
     background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    /* Degradê escuro e vibrante */
     color: #e0e0e0;
-    /* Cor de texto clara para contraste */
     margin: 0;
     padding: 20px;
     display: flex;
@@ -20,21 +17,17 @@ body {
     align-items: flex-start;
     min-height: 100vh;
     overflow-x: hidden;
-    /* Evita barra de rolagem horizontal indesejada */
 }
 
 .container {
     background-color: rgba(30, 30, 50, 0.9);
-    /* Fundo semi-transparente escuro */
     padding: 35px;
     border-radius: 12px;
     box-shadow: 0 8px 30px rgba(0, 255, 255, 0.2), 0 0 15px rgba(0, 255, 255, 0.1);
-    /* Sombra neon */
     width: 100%;
     max-width: 950px;
     box-sizing: border-box;
     border: 1px solid rgba(0, 255, 255, 0.3);
-    /* Borda sutil de neon */
     animation: fadeIn 1s ease-out;
 }
 
@@ -43,7 +36,6 @@ body {
         opacity: 0;
         transform: translateY(-20px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
@@ -52,12 +44,9 @@ body {
 
 h1 {
     font-family: 'Orbitron', sans-serif;
-    /* Fonte mais futurista para o título */
     text-align: center;
     color: #00ffcc;
-    /* Verde ciano vibrante */
     text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
-    /* Brilho neon no título */
     margin-bottom: 30px;
     font-size: 2.5em;
     letter-spacing: 2px;
@@ -66,38 +55,39 @@ h1 {
 .search-section {
     margin-bottom: 30px;
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Por padrão, empilha em telas pequenas */
     flex-wrap: wrap;
     gap: 15px;
-    /* Aumenta o espaçamento entre os itens */
     align-items: center;
     justify-content: center;
-    /* Centraliza itens em linhas únicas */
 }
 
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%; /* Ocupa a largura total na coluna */
+    max-width: 27rem; /* Limita a largura mesmo em flex-row */
+    align-items: center; /* Centraliza labels e inputs */
+}
 
 .search-section label {
     font-weight: bold;
     color: #a0a0ff;
-    /* Azul roxeado para labels */
-    flex-basis: 100%;
-    /* Garante que o label ocupe a largura total */
-    text-align: center;
-    /* Centraliza o texto do label */
+    text-align: center; /* Centraliza o texto do label */
     margin-bottom: 5px;
+    display: block; /* Garante que o label ocupe sua própria linha */
 }
 
 .search-section input[type="text"],
-#filtroOrigem,
-#filtroPeriodo {
+#periodoFilter, /* ID atualizado */
+#cursoFilter { /* ID atualizado */
     flex-grow: 1;
     padding: 12px;
     border: 1px solid #00aaff;
     border-radius: 6px;
     background-color: rgba(40, 40, 70, 0.7);
     color: #00ffcc;
-    width: 27rem;
-    margin: 1rem 0;
+    width: 100%; /* Faz com que ocupe 100% do filter-group */
     display: block;
     outline: none;
     transition: all 0.3s ease;
@@ -105,19 +95,24 @@ h1 {
 }
 
 .search-section input[type="text"]::placeholder,
-#filtroOrigem::placeholder,
-#filtroPeriodo::placeholder {
+#periodoFilter::placeholder, /* ID atualizado */
+#cursoFilter::placeholder { /* ID atualizado */
     color: #6a6a90;
-    /* Cor do placeholder */
 }
 
 .search-section input[type="text"]:focus,
-#filtroOrigem:focus,
-#filtroPeriodo:focus {
+#periodoFilter:focus, /* ID atualizado */
+#cursoFilter:focus { /* ID atualizado */
     border-color: #00ffcc;
-    /* Borda ciano ao focar */
     box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
-    /* Brilho maior ao focar */
+}
+
+#buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px; /* Espaçamento entre os botões */
+    justify-content: center; /* Centraliza os botões */
+    width: 100%; /* Ocupa largura total para centralização */
 }
 
 .search-section button {
@@ -126,7 +121,6 @@ h1 {
     border-radius: 6px;
     cursor: pointer;
     background: linear-gradient(45deg, #007bff, #00ffcc);
-    /* Degradê nos botões */
     color: white;
     font-weight: bold;
     font-family: 'Orbitron', sans-serif;
@@ -138,16 +132,12 @@ h1 {
 
 .search-section button:hover {
     background: linear-gradient(45deg, #00ffcc, #007bff);
-    /* Inverte o degradê no hover */
     box-shadow: 0 6px 20px rgba(0, 255, 204, 0.4);
     transform: translateY(-2px);
 }
 
-/* ... (Mantenha o CSS anterior até aqui) ... */
-
 .results-container {
     overflow-x: auto;
-    /* Mantém a barra de rolagem para compatibilidade, mas o foco é o empilhamento */
     background-color: rgba(20, 20, 40, 0.8);
     border-radius: 8px;
     box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.1);
@@ -158,8 +148,6 @@ table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 10px;
-    /* Remover o min-width aqui, pois vamos controlar a responsividade de outra forma */
-    /* min-width: 650px; */
 }
 
 table th,
@@ -185,6 +173,7 @@ table tr:nth-child(even) {
 
 table tr:hover {
     background-color: rgba(0, 255, 255, 0.05);
+    cursor: pointer; /* Adiciona cursor de ponteiro para indicar que é clicável */
 }
 
 #noResults {
@@ -196,197 +185,48 @@ table tr:hover {
 }
 
 .hidden {
-    display: none;
+    display: none !important; /* Usa !important para garantir a ocultação */
 }
-
-/* --- Media Queries para Responsividade --- */
-
-/* Para telas menores que 768px (tablets e celulares) */
-@media (max-width: 768px) {
-    body {
-        padding: 15px;
-    }
-
-    .container {
-        padding: 25px;
-    }
-
-    h1 {
-        font-size: 2em;
-        margin-bottom: 25px;
-    }
-
-    /* .search-section {
-        flex-direction: column;
-        align-items: stretch;
-    } */
-
-    /* .search-section input[type="text"],
-    .search-section button {
-        width: 100%;
-        min-width: unset;
-    } */
-
-    /* --- Estilização da Tabela Responsiva para Empilhamento --- */
-    table,
-    thead,
-    tbody,
-    th,
-    td,
-    tr {
-        display: block;
-        /* Faz com que todos os elementos da tabela se comportem como blocos */
-    }
-
-    thead tr {
-        position: absolute;
-        /* Esconde o cabeçalho original, pois ele será replicado em cada "linha" */
-        top: -9999px;
-        left: -9999px;
-    }
-
-    table tr {
-        border: 1px solid rgba(0, 255, 255, 0.2);
-        /* Borda para cada "card" de aluno */
-        margin-bottom: 15px;
-        /* Espaçamento entre os "cards" */
-        border-radius: 8px;
-        overflow: hidden;
-        /* Garante que as bordas arredondadas funcionem bem */
-        background-color: rgba(30, 30, 50, 0.8);
-        /* Fundo para o card do aluno */
-        box-shadow: 0 4px 15px rgba(0, 255, 255, 0.1);
-    }
-
-    table td {
-        border: none;
-        /* Remove as bordas internas das células */
-        border-bottom: 1px solid rgba(0, 255, 255, 0.1);
-        /* Adiciona uma borda inferior para separar campos */
-        position: relative;
-        /* Necessário para posicionar o label */
-        padding-left: 50%;
-        /* Espaço para o label antes do valor */
-        text-align: right;
-        /* Alinha o valor à direita */
-        font-size: 0.95em;
-    }
-
-    table td:last-child {
-        border-bottom: none;
-        /* Remove a borda inferior da última célula */
-    }
-
-    table td::before {
-        /* Adiciona o "cabeçalho" como um pseudo-elemento antes de cada valor */
-        content: attr(data-label);
-        /* Pega o texto do atributo data-label */
-        position: absolute;
-        left: 0;
-        width: 45%;
-        /* Largura do label */
-        padding-left: 15px;
-        font-weight: bold;
-        color: #00ffcc;
-        /* Cor do label */
-        text-align: left;
-        /* Alinha o label à esquerda */
-        font-family: 'Orbitron', sans-serif;
-        letter-spacing: 0.5px;
-        white-space: nowrap;
-        /* Evita que o label quebre a linha */
-        overflow: hidden;
-        text-overflow: ellipsis;
-        /* Adiciona reticências se o label for muito longo */
-    }
-}
-
-/* Para telas muito pequenas (celulares) */
-@media (max-width: 480px) {
-    h1 {
-        font-size: 1.8em;
-        letter-spacing: 1px;
-    }
-
-    .search-section input[type="text"],
-    #filtroOrigem,
-    #filtroPeriodo {
-       
-        width: 18rem;
-
-    }
-
-    #buttons {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-around;
-        align-content: stretch;
-        flex-direction: row;
-    }
-
-    .search-section button {
-        font-size: 0.9em;
-        padding: 10px 15px;
-    }
-
-
-    table td {
-        padding: 8px 10px;
-        /* Reduz o padding geral das células */
-        padding-left: 48%;
-        /* Ajusta o padding para o label */
-    }
-
-    table td::before {
-        width: 45%;
-        /* Ajusta a largura do label */
-        padding-left: 10px;
-    }
-}
-
-/* Adicione ao seu style.css existente */
 
 /* --- Botão de Ícone para Registro --- */
 #registerButton {
-    position: fixed; /* Fixa-o na janela de visualização */
-    bottom: 30px;    /* 30px da parte inferior */
-    right: 30px;     /* 30px da direita */
-    width: 60px;     /* Tamanho do círculo */
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
     height: 60px;
-    border-radius: 50%; /* Torna-o redondo */
-    background: linear-gradient(45deg, #00ffcc, #007bff); /* Gradiente neon */
+    border-radius: 50%;
+    background: linear-gradient(45deg, #00ffcc, #007bff);
     color: white;
     border: none;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 4px 20px rgba(0, 255, 204, 0.6), 0 0 10px rgba(0, 255, 204, 0.4); /* Sombra neon mais forte */
+    box-shadow: 0 4px 20px rgba(0, 255, 204, 0.6), 0 0 10px rgba(0, 255, 204, 0.4);
     transition: all 0.3s ease;
-    z-index: 1000; /* Garante que fique acima de outro conteúdo */
+    z-index: 1000;
     font-family: 'Orbitron', sans-serif;
     font-size: 0.8em;
     font-weight: bold;
-    flex-direction: column; /* Empilha ícone e texto */
-    padding: 5px; /* Ajusta o preenchimento para melhor ajuste do texto */
-    text-shadow: 0 0 5px rgba(255,255,255,0.5); /* Brilho sutil no texto */
+    flex-direction: column;
+    padding: 5px;
+    text-shadow: 0 0 5px rgba(255,255,255,0.5);
 }
 
 #registerButton svg {
-    width: 28px; /* Tamanho do ícone */
+    width: 28px;
     height: 28px;
-    margin-bottom: 2px; /* Espaço entre ícone e texto */
+    margin-bottom: 2px;
 }
 
 #registerButton:hover {
     transform: scale(1.08) translateY(-2px);
     box-shadow: 0 6px 25px rgba(0, 255, 204, 0.8), 0 0 20px rgba(0, 255, 204, 0.6);
-    background: linear-gradient(45deg, #007bff, #00ffcc); /* Inverte o gradiente no hover */
+    background: linear-gradient(45deg, #007bff, #00ffcc);
 }
 
-/* Botão menor para telas menores */
+/* --- Media Queries para o Botão de Registro --- */
 @media (max-width: 768px) {
     #registerButton {
         width: 50px;
@@ -411,7 +251,7 @@ table tr:hover {
 }
 
 
-/* --- Estilo da Modal --- */
+/* --- Estilo da Modal de Registro (#registrationModal) --- */
 .modal {
     display: none; /* Oculto por padrão */
     position: fixed; /* Permanece no lugar */
@@ -427,21 +267,26 @@ table tr:hover {
     padding: 20px; /* Adiciona algum preenchimento para telas menores */
 }
 
-.modal.visible {
-    display: flex; /* Usa flex para centralizar o conteúdo */
+/* A classe 'active' ou 'visible' pode ser usada para mostrar o modal no JS */
+.modal.active { /* Use 'active' se o JS usa 'classList.add('active')' */
+    display: flex;
+}
+.modal.visible { /* Se o JS usa 'classList.add('visible')' */
+    display: flex;
 }
 
+
 .modal-content {
-    background-color: rgba(30, 30, 50, 0.95); /* Fundo mais escuro que o contêiner principal */
-    margin: auto; /* Para navegadores mais antigos / centralização de fallback */
+    background-color: rgba(30, 30, 50, 0.95);
+    margin: auto;
     padding: 30px;
     border: 1px solid rgba(0, 255, 255, 0.4);
     border-radius: 12px;
-    width: 90%; /* Largura responsiva */
-    max-width: 600px; /* Largura máxima para a modal */
+    width: 90%;
+    max-width: 600px;
     box-shadow: 0 10px 40px rgba(0, 255, 255, 0.3), 0 0 20px rgba(0, 255, 255, 0.2);
     position: relative;
-    animation: zoomIn 0.3s ease-out; /* Animação simples para a aparência da modal */
+    animation: zoomIn 0.3s ease-out;
 }
 
 @keyframes zoomIn {
@@ -455,7 +300,7 @@ table tr:hover {
     }
 }
 
-.close-button {
+.close-button { /* Aplica-se a ambos os botões de fechar (modal e painel lateral) */
     color: #fff;
     font-size: 30px;
     font-weight: bold;
@@ -481,7 +326,6 @@ table tr:hover {
     text-shadow: 0 0 8px #00ffcc;
 }
 
-/* Estilo da Seção de Formulário dentro da Modal */
 .form-section {
     margin-bottom: 25px;
     padding: 15px;
@@ -509,7 +353,7 @@ table tr:hover {
 }
 
 .full-width-input {
-    width: 100%; /* Faz com que os inputs/selects ocupem a largura total do seu contêiner */
+    width: 100%;
     padding: 12px;
     border: 1px solid #00aaff;
     border-radius: 6px;
@@ -534,17 +378,16 @@ table tr:hover {
 }
 
 .status-radio-group label {
-    margin-bottom: 0; /* Sobrescreve a margem padrão do label */
-    display: inline-block; /* Para melhor alinhamento com o botão de rádio */
+    margin-bottom: 0;
+    display: inline-block;
     font-weight: normal;
     color: #e0e0e0;
 }
 
 .status-radio-group input[type="radio"] {
     margin-right: 5px;
-    accent-color: #00ffcc; /* Cor do próprio botão de rádio */
+    accent-color: #00ffcc;
 }
-
 
 .form-button {
     width: 100%;
@@ -581,13 +424,268 @@ table tr:hover {
     font-size: 1.1em;
 }
 
-/* Media query para modal em telas menores */
+/* --- Estilos para o Painel Lateral de Detalhes do Aluno (#studentDetail) --- */
+.student-detail-panel {
+    display: none; /* Oculto por padrão, será mostrado via JS */
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 400px; /* Largura do painel lateral */
+    height: 100%;
+    background-color: rgba(30, 30, 50, 0.98); /* Fundo escuro, quase opaco */
+    box-shadow: -8px 0 30px rgba(0, 255, 255, 0.2); /* Sombra para o lado esquerdo */
+    border-left: 1px solid rgba(0, 255, 255, 0.3);
+    z-index: 1002; /* Maior que o modal de registro */
+    padding: 30px;
+    overflow-y: auto; /* Adiciona rolagem se o conteúdo for muito grande */
+    animation: slideInRight 0.3s ease-out; /* Animação ao aparecer */
+}
+
+.student-detail-panel.active {
+    display: block; /* Mostra o painel quando a classe 'active' é adicionada */
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.student-detail-panel .detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.student-detail-panel .detail-header h2 {
+    font-family: 'Orbitron', sans-serif;
+    color: #00ffcc;
+    font-size: 1.8em;
+    text-shadow: 0 0 8px #00ffcc;
+    margin: 0; /* Remove margem padrão do h2 */
+    text-align: left; /* Alinha o nome à esquerda */
+}
+
+/* O botão de fechar dentro do painel lateral */
+.student-detail-panel .close-button {
+    position: static; /* Remove o posicionamento absoluto para que ele siga o fluxo */
+    margin-left: auto; /* Empurra para a direita */
+    color: #fff;
+}
+
+.student-detail-panel p {
+    font-size: 1.1em;
+    margin-bottom: 20px;
+    color: #e0e0e0;
+}
+
+.student-detail-panel strong {
+    color: #a0a0ff;
+}
+
+/* Estilos para os inputs e botões dentro do painel de detalhes (reutiliza classes existentes) */
+.student-detail-panel .form-section {
+    margin-bottom: 20px;
+}
+
+.student-detail-panel .form-section h3 {
+    text-align: left; /* Alinha os títulos das seções à esquerda */
+}
+
+.student-detail-panel input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #00aaff;
+    border-radius: 6px;
+    background-color: rgba(40, 40, 70, 0.7);
+    color: #00ffcc;
+    outline: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 8px rgba(0, 170, 255, 0.3);
+}
+
+.student-detail-panel input[type="number"]:focus {
+    border-color: #00ffcc;
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
+}
+
+.student-detail-panel .form-group label {
+    margin-bottom: 5px;
+}
+
+.student-detail-panel button {
+    width: 100%;
+    padding: 10px 15px;
+    margin-top: 10px;
+    /* Ajusta a margem superior para botões no painel */
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: linear-gradient(45deg, #007bff, #00ffcc);
+    color: white;
+    font-weight: bold;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
+.student-detail-panel button:hover {
+    background: linear-gradient(45deg, #00ffcc, #007bff);
+    box-shadow: 0 6px 20px rgba(0, 255, 204, 0.4);
+    transform: translateY(-2px);
+}
+
+
+/* --- Media Queries para Responsividade --- */
+
+/* Para telas menores que 768px (tablets e celulares) */
+@media (max-width: 768px) {
+    body {
+        padding: 15px;
+    }
+
+    .container {
+        padding: 25px;
+    }
+
+    h1 {
+        font-size: 2em;
+        margin-bottom: 25px;
+    }
+
+    /* Ajustes para a seção de busca em telas menores */
+    .search-section {
+        flex-direction: column;
+        align-items: stretch; /* Estica os itens para preencher a largura */
+    }
+    .filter-group {
+        max-width: none; /* Remove a largura máxima */
+    }
+    .search-section input[type="text"],
+    #periodoFilter,
+    #cursoFilter {
+        width: 100%; /* Garante que ocupem a largura total */
+    }
+
+    /* --- Estilização da Tabela Responsiva para Empilhamento --- */
+    table,
+    thead,
+    tbody,
+    th,
+    td,
+    tr {
+        display: block;
+    }
+
+    thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    table tr {
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        margin-bottom: 15px;
+        border-radius: 8px;
+        overflow: hidden;
+        background-color: rgba(30, 30, 50, 0.8);
+        box-shadow: 0 4px 15px rgba(0, 255, 255, 0.1);
+    }
+
+    table td {
+        border: none;
+        border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+        position: relative;
+        padding-left: 50%;
+        text-align: right;
+        font-size: 0.95em;
+    }
+
+    table td:last-child {
+        border-bottom: none;
+    }
+
+    table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        width: 45%;
+        padding-left: 15px;
+        font-weight: bold;
+        color: #00ffcc;
+        text-align: left;
+        font-family: 'Orbitron', sans-serif;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Ajustes para o painel lateral de detalhes em telas menores */
+    .student-detail-panel {
+        width: 100%; /* Ocupa a largura total da tela em mobile */
+        left: 0; /* Começa da esquerda */
+        box-shadow: 0 8px 30px rgba(0, 255, 255, 0.2); /* Sombra inferior */
+        border-top: 1px solid rgba(0, 255, 255, 0.3); /* Borda superior */
+        animation: slideInUp 0.3s ease-out; /* Animação para aparecer de baixo para cima */
+    }
+
+    @keyframes slideInUp {
+        from {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+}
+
+/* Para telas muito pequenas (celulares) */
 @media (max-width: 480px) {
-    .modal-content {
+    h1 {
+        font-size: 1.8em;
+        letter-spacing: 1px;
+    }
+
+    /* Aqui, os inputs e selects na seção de busca já estarão 100% devido ao 768px,
+       então não precisamos de 'width: 18rem;' que pode quebrar o layout. */
+
+    #buttons {
+        gap: 10px;
+    }
+
+    .search-section button {
+        font-size: 0.9em;
+        padding: 10px 15px;
+    }
+
+    table td {
+        padding: 8px 10px;
+        padding-left: 48%;
+    }
+
+    table td::before {
+        width: 45%;
+        padding-left: 10px;
+    }
+
+    /* Modal e painel lateral em telas muito pequenas */
+    .modal-content,
+    .student-detail-panel {
         padding: 20px;
         width: 95%; /* Faz com que ocupe mais largura em telas muito pequenas */
     }
-    .modal-content h2 {
+    .modal-content h2,
+    .student-detail-panel .detail-header h2 {
         font-size: 1.6em;
     }
     .form-section h3 {
@@ -598,7 +696,7 @@ table tr:hover {
         font-size: 0.9em;
     }
     .status-radio-group {
-        flex-direction: column; /* Empilha as opções de rádio verticalmente */
+        flex-direction: column;
         align-items: flex-start;
         gap: 10px;
     }
