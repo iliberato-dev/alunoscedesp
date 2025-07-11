@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = `${WEB_APP_URL}?${params.toString()}`;
 
         try {
-            const response = await fetch(url);
+            const response = await fetch(WEB_APP_URL);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
