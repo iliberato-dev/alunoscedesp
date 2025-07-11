@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const noResultsMessage = document.getElementById('noResults');
 
     // Seletores dos elementos do Modal de Registro de Aluno
-    const registerButton = document.getElementById('registerButton');
+    // REMOVIDO: const registerButton = document.getElementById('registerButton');
     const registrationModal = document.getElementById('registrationModal');
     const closeRegistrationModalButton = document.getElementById('closeRegistrationModalButton');
     const filtroPeriodoModal = document.getElementById('filtroPeriodoModal');
@@ -89,56 +89,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Função para exibir alunos na tabela principal
-function displayStudents(students) {
-    resultTableBody.innerHTML = '';
-    noResultsMessage.classList.add('hidden'); // Esconde a mensagem de "nenhum aluno" por padrão
+    function displayStudents(students) {
+        resultTableBody.innerHTML = '';
+        noResultsMessage.classList.add('hidden'); // Esconde a mensagem de "nenhum aluno" por padrão
 
-    if (students.length === 0) {
-        noResultsMessage.classList.remove('hidden');
-        return;
+        if (students.length === 0) {
+            noResultsMessage.classList.remove('hidden');
+            return;
+        }
+
+        students.forEach(student => {
+            const row = resultTableBody.insertRow();
+
+            // Correção: Crie a célula UMA VEZ e adicione data-label E textContent
+            let cell; // Variável para a célula atual
+
+            cell = row.insertCell(); // Adiciona no final (ou row.insertCell(0) e empurra, mas sempre à frente)
+            cell.setAttribute('data-label', 'Nome:');
+            cell.textContent = student.Nome;
+
+            cell = row.insertCell();
+            cell.setAttribute('data-label', 'Faltas:');
+            cell.textContent = student.Faltas;
+
+            cell = row.insertCell();
+            cell.setAttribute('data-label', 'Nota 1º Bimestre:');
+            cell.textContent = student.Nota1 !== 0 ? student.Nota1 : '-';
+
+            cell = row.insertCell();
+            cell.setAttribute('data-label', 'Nota 2º Bimestre:');
+            cell.textContent = student.Nota2 !== 0 ? student.Nota2 : '-';
+
+            cell = row.insertCell();
+            cell.setAttribute('data-label', 'Nota 3º Bimestre:');
+            cell.textContent = student.Nota3 !== 0 ? student.Nota3 : '-';
+
+            cell = row.insertCell();
+            cell.setAttribute('data-label', 'Média:');
+            cell.textContent = student.Media !== 0 ? student.Media.toFixed(1) : '-';
+
+            cell = row.insertCell();
+            cell.setAttribute('data-label', 'Situação:');
+            cell.textContent = student.Situacao;
+
+            cell = row.insertCell();
+            cell.setAttribute('data-label', 'Origem:');
+            cell.textContent = student.Origem; // Coluna de origem (nome da aba/curso)
+
+            row.addEventListener('click', () => showStudentDetail(student));
+        });
     }
-
-    students.forEach(student => {
-        const row = resultTableBody.insertRow();
-
-        // Correção: Crie a célula UMA VEZ e adicione data-label E textContent
-        let cell; // Variável para a célula atual
-
-        cell = row.insertCell(); // Adiciona no final (ou row.insertCell(0) e empurra, mas sempre à frente)
-        cell.setAttribute('data-label', 'Nome:');
-        cell.textContent = student.Nome;
-
-        cell = row.insertCell();
-        cell.setAttribute('data-label', 'Faltas:');
-        cell.textContent = student.Faltas;
-
-        cell = row.insertCell();
-        cell.setAttribute('data-label', 'Nota 1º Bimestre:');
-        cell.textContent = student.Nota1 !== 0 ? student.Nota1 : '-';
-
-        cell = row.insertCell();
-        cell.setAttribute('data-label', 'Nota 2º Bimestre:');
-        cell.textContent = student.Nota2 !== 0 ? student.Nota2 : '-';
-
-        cell = row.insertCell();
-        cell.setAttribute('data-label', 'Nota 3º Bimestre:');
-        cell.textContent = student.Nota3 !== 0 ? student.Nota3 : '-';
-
-        cell = row.insertCell();
-        cell.setAttribute('data-label', 'Média:');
-        cell.textContent = student.Media !== 0 ? student.Media.toFixed(1) : '-';
-
-        cell = row.insertCell();
-        cell.setAttribute('data-label', 'Situação:');
-        cell.textContent = student.Situacao;
-
-        cell = row.insertCell();
-        cell.setAttribute('data-label', 'Origem:');
-        cell.textContent = student.Origem; // Coluna de origem (nome da aba/curso)
-
-        row.addEventListener('click', () => showStudentDetail(student));
-    });
-}
 
     // Função para mostrar detalhes do aluno no painel lateral
     function showStudentDetail(student) {
@@ -223,8 +223,8 @@ function displayStudents(students) {
                 },
                 body: JSON.stringify({
                     action: 'registrarPresenca', // Ação no Apps Script
-                    alunoId: alunoId,       // Envia o ID único do aluno
-                    status: status,         // 'P' ou 'A'
+                    alunoId: alunoId,        // Envia o ID único do aluno
+                    status: status,          // 'P' ou 'A'
                     data: studentDetail.classList.contains('active') ? new Date().toISOString().slice(0, 10) : dataRegistro // Usa data atual se do painel, senão usa do input
                 }),
             });
@@ -251,7 +251,8 @@ function displayStudents(students) {
 
     // --- Funções e Event Listeners para o Modal de Registro Principal ---
 
-    // Abre o modal de registro
+    // REMOVIDO: Abre o modal de registro
+    /*
     registerButton.addEventListener('click', () => {
         registrationModal.classList.add('active');
         // Limpa campos e preenche a data atual
@@ -265,6 +266,7 @@ function displayStudents(students) {
         feedbackMessage.textContent = '';
         populateStudentSelect(currentStudentsData); // Popula o select com os alunos carregados
     });
+    */
 
     // Fecha o modal de registro
     closeRegistrationModalButton.addEventListener('click', () => {
