@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Lógica do Modal de Registro ---
     registerButton.addEventListener('click', () => {
         console.log("Botão clickado !!!")
-        registrationModal.classList.remove('hidden');
+        registrationModal.classList.add('active'); // Isso irá aplicar display: flex; e mostrar o modal
         // Preenche o campo de data com a data atual
         const today = new Date();
         dataPresencaInput.value = today.toISOString().slice(0, 10);
