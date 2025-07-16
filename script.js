@@ -1,5 +1,8 @@
-// A URL do seu Web App implantado (substitua pela sua URL real)
-const WEB_APP_URL = '/api/appsscript'; // SUBSTITUA PELA SUA URL REAL
+// Detecta se está rodando localmente (Live Server) ou no ambiente implantado
+const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const WEB_APP_URL = IS_LOCAL
+    ? 'https://script.google.com/macros/s/AKfycbzNq3Hz1Pvlx3Ty4YGJvj0UM4jQNe2adOEQWyomzpTnBHooEzgHa1TGMWfcd8mpzTDe/exec'
+    : '/api/appsscript';
 
 let allStudentsRawData = []; // Armazena todos os alunos carregados (dados brutos para os modais)
 let currentFilteredStudents = []; // Armazena os alunos filtrados atualmente na tabela principal
@@ -141,8 +144,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Adiciona listeners para os botões do painel de detalhes
         updateNotesButton.onclick = () => updateNotes(selectedStudentId, detailNota1.value, detailNota2.value, detailNota3.value);
-        markPresentButton.onclick = () => registrarPresencaOuFalta(selectedStudentId, 'P');
-        markAbsentButton.onclick = () => registrarPresencaOuFalta(selectedStudentId, 'A');
+        // Aqui: passa undefined para dataRegistro para usar a data atual
+        markPresentButton.onclick = () => registrarPresencaOuFalta(selectedStudentId, 'P', undefined);
+        markAbsentButton.onclick = () => registrarPresencaOuFalta(selectedStudentId, 'A', undefined);
 
         studentDetail.classList.add('active'); // Mostra o painel
     };
@@ -196,13 +200,18 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Função para registrar presença ou falta (usada tanto no painel de detalhes quanto no modal)
-    const registrarPresencaOuFalta = async (alunoId, status) => {
+    const registrarPresencaOuFalta = async (alunoId, status, dataRegistro = null) => {
         if (!alunoId) {
             showFeedback('Nenhum aluno selecionado para registrar presença/falta.', 'error');
             return;
         }
 
-        const dataRegistro = dataPresencaInput.value; // Pega a data do input do modal ou usa a data atual
+        // Se dataRegistro não for passada, usa a data atual (caso do painel de detalhes)
+        if (!dataRegistro) {
+            const today = new Date();
+            dataRegistro = today.toISOString().slice(0, 10);
+        }
+
         if (!dataRegistro) {
             showFeedback('Por favor, selecione uma data para o registro de presença/falta.', 'error');
             return;
@@ -315,7 +324,8 @@ closeRegistrationModalButton.addEventListener('click', () => {
     submitPresencaButton.addEventListener('click', () => {
         const alunoIdParaRegistro = alunoSelecionadoSelect.value;
         const statusSelecionado = document.querySelector('input[name="statusPresenca"]:checked').value;
-        registrarPresencaOuFalta(alunoIdParaRegistro, statusSelecionado);
+        // Aqui: passa explicitamente a data do input do modal
+        registrarPresencaOuFalta(alunoIdParaRegistro, statusSelecionado, dataPresencaInput.value);
     });
 
     // Event listener para o botão de atualizar notas no modal
