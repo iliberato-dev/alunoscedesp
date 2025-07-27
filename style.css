@@ -1,800 +1,1154 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap");
 
-/* Definição de variáveis CSS */
+/* Definição de variáveis CSS - Design CEDESP */
 :root {
-    /* Cores */
-    --color-bg-dark-primary: #0f0c29;
-    --color-bg-dark-secondary: #302b63;
-    --color-bg-dark-tertiary: #24243e;
-    --color-bg-container: rgba(30, 30, 50, 0.9);
-    --color-bg-results-table: rgba(20, 20, 40, 0.8);
-    --color-bg-form-section: rgba(20, 20, 40, 0.5);
-    --color-bg-input: rgba(40, 40, 70, 0.7);
-    --color-bg-modal-content: rgba(30, 30, 50, 0.95);
-    --color-overlay-dark: rgba(0, 0, 0, 0.8);
+  /* Cores Principais - Paleta CEDESP (Tema Escuro) */
+  --color-bg-primary: #1a2951;
+  --color-bg-secondary: #233a6b;
+  --color-bg-tertiary: #2d4785;
+  --color-bg-surface: rgba(26, 41, 81, 0.8);
+  --color-bg-surface-hover: rgba(35, 58, 107, 0.9);
+  --color-bg-card: rgba(26, 41, 81, 0.6);
+  --color-bg-input: rgba(255, 255, 255, 0.1);
+  --color-bg-modal: rgba(26, 41, 81, 0.95);
+  --color-overlay: rgba(26, 41, 81, 0.8);
 
-    --color-neon-cyan: #00ffcc;
-    --color-accent-blue: #007bff;
-    --color-text-light: #e0e0e0;
-    --color-text-muted: #d0d0d0;
-    --color-label-blue: #a0a0ff;
-    --color-placeholder: #6a6a90;
-    --color-error: #ff6666;
+  /* Cores CEDESP - Identidade Visual */
+  --color-primary: #1a2951; /* Azul CEDESP principal */
+  --color-primary-light: #2d4785;
+  --color-secondary: #f4c430; /* Dourado CEDESP */
+  --color-accent: #ffd700; /* Dourado claro */
+  --color-success: #28a745;
+  --color-warning: #ffc107;
+  --color-error: #dc3545;
 
-    /* Bordas e Sombras */
-    --border-subtle-cyan: 1px solid rgba(0, 255, 255, 0.3);
-    --border-input-blue: 1px solid #00aaff;
-    --border-dashed-cyan: 1px dashed rgba(0, 255, 255, 0.1);
-    --border-table-cell: 1px solid rgba(0, 255, 255, 0.15);
+  /* Cores de Texto */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #f4c430; /* Dourado para destaques */
+  --color-text-muted: #b8c5d6;
+  --color-text-disabled: #8a9ab0;
 
-    --shadow-container: 0 8px 30px rgba(0, 255, 255, 0.2), 0 0 15px rgba(0, 255, 255, 0.1);
-    --shadow-input-initial: 0 0 8px rgba(0, 170, 255, 0.3);
-    --shadow-input-focus: 0 0 15px rgba(0, 255, 204, 0.5);
-    --shadow-button-initial: 0 4px 15px rgba(0, 123, 255, 0.3);
-    --shadow-button-hover: 0 6px 20px rgba(0, 255, 204, 0.4);
-    --shadow-register-button-initial: 0 4px 20px rgba(0, 255, 204, 0.6), 0 0 10px rgba(0, 255, 204, 0.4);
-    --shadow-register-button-hover: 0 6px 25px rgba(0, 255, 204, 0.8), 0 0 20px rgba(0, 255, 204, 0.6);
-    --shadow-modal-content: 0 10px 40px rgba(0, 255, 255, 0.3), 0 0 20px rgba(0, 255, 255, 0.2);
-    --shadow-panel-left: -8px 0 30px rgba(0, 255, 255, 0.2);
-    --shadow-table-row-mobile: 0 4px 15px rgba(0, 255, 255, 0.1);
+  /* Gradientes CEDESP */
+  --gradient-primary: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-primary-light)
+  );
+  --gradient-secondary: linear-gradient(
+    135deg,
+    var(--color-secondary),
+    var(--color-accent)
+  );
+  --gradient-surface: linear-gradient(
+    135deg,
+    var(--color-bg-primary),
+    var(--color-bg-secondary)
+  );
+  --gradient-accent: linear-gradient(
+    90deg,
+    var(--color-accent),
+    var(--color-secondary)
+  );
 
-    /* Fontes */
-    --font-orbitron: 'Orbitron', sans-serif;
-    --font-roboto-mono: 'Roboto Mono', monospace;
+  /* Bordas e Sombras - Design CEDESP */
+  --border-radius-sm: 6px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 16px;
+  --border-radius-xl: 24px;
+
+  --border-subtle: 1px solid rgba(244, 196, 48, 0.2);
+  --border-input: 1px solid rgba(244, 196, 48, 0.3);
+  --border-focus: 2px solid var(--color-secondary);
+
+  --shadow-sm: 0 2px 8px rgba(26, 41, 81, 0.3);
+  --shadow-md: 0 4px 16px rgba(26, 41, 81, 0.4);
+  --shadow-lg: 0 8px 32px rgba(26, 41, 81, 0.5);
+  --shadow-focus: 0 0 0 3px rgba(244, 196, 48, 0.3);
+  --shadow-glow: 0 0 20px rgba(244, 196, 48, 0.4);
+
+  /* Fontes - Tipografia Institucional */
+  --font-primary: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+
+  /* Transições */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow: 0.4s ease;
 }
 
-/* Reset básico para todos os elementos */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* Tema Claro - Paleta CEDESP Light */
+[data-theme="light"] {
+  /* Cores Principais - Tema Claro */
+  --color-bg-primary: #f8f9fc;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #e8ecf4;
+  --color-bg-surface: rgba(255, 255, 255, 0.9);
+  --color-bg-surface-hover: rgba(248, 249, 252, 0.95);
+  --color-bg-card: rgba(255, 255, 255, 0.8);
+  --color-bg-input: rgba(26, 41, 81, 0.05);
+  --color-bg-modal: rgba(255, 255, 255, 0.98);
+  --color-overlay: rgba(26, 41, 81, 0.3);
+
+  /* Cores de Texto - Tema Claro */
+  --color-text-primary: #1a2951;
+  --color-text-secondary: #1a2951; /* Azul para destaques */
+  --color-text-muted: #6b7280;
+  --color-text-disabled: #9ca3af;
+
+  /* Gradientes - Tema Claro */
+  --gradient-primary: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-primary-light)
+  );
+  --gradient-secondary: linear-gradient(
+    135deg,
+    var(--color-secondary),
+    var(--color-accent)
+  );
+  --gradient-surface: linear-gradient(
+    135deg,
+    var(--color-bg-primary),
+    var(--color-bg-secondary)
+  );
+  --gradient-accent: linear-gradient(
+    90deg,
+    var(--color-accent),
+    var(--color-secondary)
+  );
+
+  /* Bordas e Sombras - Tema Claro */
+  --border-subtle: 1px solid rgba(26, 41, 81, 0.15);
+  --border-input: 1px solid rgba(26, 41, 81, 0.2);
+  --border-focus: 2px solid var(--color-secondary);
+
+  --shadow-sm: 0 2px 8px rgba(26, 41, 81, 0.1);
+  --shadow-md: 0 4px 16px rgba(26, 41, 81, 0.15);
+  --shadow-lg: 0 8px 32px rgba(26, 41, 81, 0.2);
+  --shadow-focus: 0 0 0 3px rgba(244, 196, 48, 0.3);
+  --shadow-glow: 0 0 20px rgba(244, 196, 48, 0.4);
+
+  /* Fontes - Tipografia Institucional */
+  --font-primary: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+
+  /* Transições */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow: 0.4s ease;
+}
+
+/* Reset e Base Styles */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 /* Estilos globais para o corpo da página */
 body {
-    font-family: var(--font-roboto-mono);
-    background: linear-gradient(135deg, var(--color-bg-dark-primary), var(--color-bg-dark-secondary), var(--color-bg-dark-tertiary));
-    color: var(--color-text-light);
-    margin: 0;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
-    overflow-x: hidden;
+  font-family: var(--font-primary);
+  font-weight: 400;
+  line-height: 1.6;
+  background: var(--gradient-surface);
+  color: var(--color-text-primary);
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Estilos para o container principal da aplicação */
+/* Container principal - Design Clean */
 .container {
-    background-color: var(--color-bg-container);
-    padding: 35px;
-    border-radius: 12px;
-    box-shadow: var(--shadow-container);
-    width: 100%;
-    max-width: 950px;
-    box-sizing: border-box;
-    border: var(--border-subtle-cyan);
-    animation: fadeIn 1s ease-out;
+  background: var(--color-bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 2.5rem;
+  border-radius: var(--border-radius-xl);
+  border: var(--border-subtle);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 1200px;
+  animation: slideUp 0.6s ease-out;
 }
 
-/* Animação de fade-in para o container */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Animação de entrada suave */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* Estilos para o título principal (h1) */
+/* Header Section */
+header {
+  text-align: center;
+  margin-bottom: 3rem;
+  position: relative;
+}
+
+.header-content {
+  display: inline-block;
+}
+
+/* Botão de Toggle do Tema */
+.theme-toggle {
+  position: absolute;
+  top: -34px;
+  right: -35px;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-normal);
+  border: var(--border-subtle);
+  backdrop-filter: blur(10px);
+}
+
+.theme-toggle:hover {
+  background: var(--color-bg-surface-hover);
+  transform: scale(1.05);
+  box-shadow: var(--shadow-md);
+}
+
+.theme-toggle svg {
+  transition: opacity var(--transition-fast);
+}
+
+/* Tema claro - mostrar lua, esconder sol */
+[data-theme="light"] .theme-toggle .sun-icon {
+  display: none !important;
+}
+
+[data-theme="light"] .theme-toggle .moon-icon {
+  display: block !important;
+}
+
+/* Tema escuro - mostrar sol, esconder lua */
+.theme-toggle .sun-icon {
+  display: block;
+}
+
+.theme-toggle .moon-icon {
+  display: none;
+}
+
+/* Tema claro - estilos específicos para o botão toggle */
+[data-theme="light"] .theme-toggle {
+  background: var(--color-bg-surface);
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+[data-theme="light"] .theme-toggle:hover {
+  background: var(--color-primary);
+  color: var(--color-bg-primary);
+  transform: scale(1.05);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Título principal - Tipografia CEDESP */
 h1 {
-    font-family: var(--font-orbitron);
-    text-align: center;
-    color: var(--color-neon-cyan);
-    text-shadow: 0 0 10px var(--color-neon-cyan), 0 0 20px var(--color-neon-cyan);
-    margin-bottom: 30px;
-    font-size: 2.5em;
-    letter-spacing: 2px;
+  font-family: var(--font-primary);
+  font-weight: 700;
+  font-size: clamp(2rem, 5vw, 3rem);
+  background: var(--gradient-secondary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 4px rgba(26, 41, 81, 0.3);
 }
 
-/* Seção de busca e filtros */
+/* Subtitle */
+.subtitle {
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+  font-weight: 400;
+  margin: 0;
+  letter-spacing: 0.025em;
+}
+
+/* Seção de busca - Layout Grid Moderno */
 .search-section {
-    margin-bottom: 30px;
-    display: flex;
-    flex-direction: column;
-    flex-wrap: wrap;
-    gap: 15px;
-    align-items: center;
-    justify-content: center;
+  margin-bottom: 2.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  align-items: end;
 }
 
-/* Grupos de filtro individuais (label + input/select) */
+/* Grupos de filtro - Design Clean */
 .filter-group {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: 27rem;
-    align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-/* Estilos para os rótulos (labels) na seção de busca */
+/* Labels - Tipografia Refinada */
 .search-section label {
-    font-weight: bold;
-    color: var(--color-label-blue);
-    text-align: center;
-    margin-bottom: 5px;
-    display: block;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
 }
 
-/* Estilos para inputs de texto e selects de filtro */
+/* Inputs e Selects - Design Minimalista */
 .search-section input[type="text"],
 #periodoFilter,
 #cursoFilter {
-    flex-grow: 1;
-    padding: 12px;
-    border: var(--border-input-blue);
-    border-radius: 6px;
-    background-color: var(--color-bg-input);
-    color: var(--color-neon-cyan);
-    width: 100%;
-    display: block;
-    outline: none;
-    transition: all 0.3s ease;
-    box-shadow: var(--shadow-input-initial);
+  padding: 0.875rem 1rem;
+  border: var(--border-input);
+  border-radius: var(--border-radius-md);
+  background: var(--color-bg-input);
+  backdrop-filter: blur(10px);
+  color: var(--color-text-primary);
+  font-size: 0.95rem;
+  font-family: var(--font-primary);
+  outline: none;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Estilos para placeholders */
-.search-section input[type="text"]::placeholder,
-#periodoFilter::placeholder,
-#cursoFilter::placeholder {
-    color: var(--color-placeholder);
+/* Estilos específicos para selects */
+#periodoFilter,
+#cursoFilter,
+#filtroPeriodoModal,
+#filtroOrigemModal,
+#alunoSelecionado {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-primary);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f4c430' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1rem;
+  padding-right: 3rem;
+  border: var(--border-input);
 }
 
-/* Estilos de foco para inputs e selects */
+/* Tema claro - ícones dos selects */
+[data-theme="light"] #periodoFilter,
+[data-theme="light"] #cursoFilter,
+[data-theme="light"] #filtroPeriodoModal,
+[data-theme="light"] #filtroOrigemModal,
+[data-theme="light"] #alunoSelecionado {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231a2951' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+
+/* Tema claro - selects no modal */
+[data-theme="light"] .full-width-input select,
+[data-theme="light"] select.full-width-input {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231a2951' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+
+/* Estilos para options dos selects */
+#periodoFilter option,
+#cursoFilter option,
+#filtroPeriodoModal option,
+#filtroOrigemModal option,
+#alunoSelecionado option,
+.full-width-input option,
+select.full-width-input option {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  padding: 0.5rem;
+  border: none;
+  transition: all var(--transition-fast);
+}
+
+/* Hover para options dos selects */
+#periodoFilter option:hover,
+#cursoFilter option:hover,
+#filtroPeriodoModal option:hover,
+#filtroOrigemModal option:hover,
+#alunoSelecionado option:hover,
+.full-width-input option:hover,
+select.full-width-input option:hover {
+  background: var(--color-bg-surface-hover);
+  color: var(--color-text-secondary);
+}
+
+/* Tema claro - options hover */
+[data-theme="light"] #periodoFilter option:hover,
+[data-theme="light"] #cursoFilter option:hover,
+[data-theme="light"] #filtroPeriodoModal option:hover,
+[data-theme="light"] #filtroOrigemModal option:hover,
+[data-theme="light"] #alunoSelecionado option:hover,
+[data-theme="light"] .full-width-input option:hover,
+[data-theme="light"] select.full-width-input option:hover {
+  background: var(--color-bg-surface);
+  color: var(--color-primary);
+}
+
+/* Options selecionados/ativos */
+#periodoFilter option:checked,
+#cursoFilter option:checked,
+#filtroPeriodoModal option:checked,
+#filtroOrigemModal option:checked,
+#alunoSelecionado option:checked,
+.full-width-input option:checked,
+select.full-width-input option:checked,
+#periodoFilter option:focus,
+#cursoFilter option:focus,
+#filtroPeriodoModal option:focus,
+#filtroOrigemModal option:focus,
+#alunoSelecionado option:focus,
+.full-width-input option:focus,
+select.full-width-input option:focus {
+  background: var(--color-secondary);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Placeholders */
+.search-section input[type="text"]::placeholder {
+  color: var(--color-text-disabled);
+  font-style: italic;
+}
+
+/* Estados de foco - Design CEDESP */
 .search-section input[type="text"]:focus,
 #periodoFilter:focus,
-#cursoFilter:focus {
-    border-color: var(--color-neon-cyan);
-    box-shadow: var(--shadow-input-focus);
+#cursoFilter:focus,
+#filtroPeriodoModal:focus,
+#filtroOrigemModal:focus,
+#alunoSelecionado:focus {
+  border-color: var(--color-secondary);
+  box-shadow: var(--shadow-focus);
+  background: rgba(244, 196, 48, 0.1);
+  color: var(--color-text-primary);
 }
 
-/* Container para os botões de ação */
+/* Container de botões - Layout Flexível */
 #buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    justify-content: center;
-    width: 100%;
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1rem;
 }
 
-/* Estilos gerais para todos os botões na seção de busca */
+/* Botões - Design CEDESP */
 .search-section button {
-    padding: 12px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    background: linear-gradient(45deg, var(--color-accent-blue), var(--color-neon-cyan));
-    color: white;
-    font-weight: bold;
-    font-family: var(--font-orbitron);
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
-    flex-shrink: 0;
-    box-shadow: var(--shadow-button-initial);
+  padding: 0.875rem 1.5rem;
+  border: none;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  background: var(--gradient-secondary);
+  color: var(--color-primary);
+  font-weight: 600;
+  font-family: var(--font-primary);
+  font-size: 0.875rem;
+  letter-spacing: 0.025em;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-secondary);
 }
 
-/* Efeito hover para os botões da seção de busca */
+/* Efeito hover nos botões */
 .search-section button:hover {
-    background: linear-gradient(45deg, var(--color-neon-cyan), var(--color-accent-blue));
-    box-shadow: var(--shadow-button-hover);
-    transform: translateY(-2px);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+  background: var(--gradient-accent);
 }
 
-/* Container da tabela de resultados */
+.search-section button:active {
+  transform: translateY(0);
+}
+
+/* Container da tabela - Design Glass */
 .results-container {
-    overflow-x: auto;
-    background-color: var(--color-bg-results-table);
-    border-radius: 8px;
-    box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.1);
-    padding: 15px;
+  background: var(--color-bg-surface);
+  backdrop-filter: blur(20px);
+  border-radius: var(--border-radius-lg);
+  border: var(--border-subtle);
+  padding: 1.5rem;
+  overflow: hidden;
 }
 
-/* Estilos da tabela */
+/* Wrapper da tabela */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--border-radius-md);
+}
+
+/* Tabela - Design Clean */
 table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--color-bg-card);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
 }
 
-/* Estilos para cabeçalhos e células da tabela */
+/* Cabeçalhos e células */
 table th,
 table td {
-    border: var(--border-table-cell);
-    padding: 12px 15px;
-    text-align: left;
-    color: var(--color-text-muted);
+  padding: 1rem 1.5rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Estilos para os cabeçalhos da tabela */
+/* Cabeçalhos da tabela */
 table th {
-    background-color: rgba(0, 255, 255, 0.1);
-    color: var(--color-neon-cyan);
-    font-weight: bold;
-    text-transform: uppercase;
-    font-family: var(--font-orbitron);
-    letter-spacing: 0.5px;
+  background: var(--color-bg-surface-hover);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
-/* Fundo alternado para linhas da tabela (pares) */
-table tr:nth-child(even) {
-    background-color: rgba(0, 0, 0, 0.1);
+table th:first-child {
+  border-top-left-radius: var(--border-radius-md);
 }
 
-/* Efeito hover para linhas da tabela */
-table tr:hover {
-    background-color: rgba(0, 255, 255, 0.05);
-    cursor: pointer;
+table th:last-child {
+  border-top-right-radius: var(--border-radius-md);
 }
 
-/* Mensagem de "nenhum resultado" */
+/* Células da tabela */
+table td {
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+  transition: background-color var(--transition-fast);
+}
+
+/* Linhas da tabela - Efeito Hover Sutil */
+table tbody tr:hover {
+  background: var(--color-bg-surface-hover);
+  cursor: pointer;
+}
+
+table tbody tr:last-child td:first-child {
+  border-bottom-left-radius: var(--border-radius-md);
+}
+
+table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: var(--border-radius-md);
+}
+
+table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Mensagem de resultados vazios */
 #noResults {
-    text-align: center;
-    color: var(--color-error);
-    margin-top: 20px;
-    font-style: italic;
-    font-weight: bold;
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 3rem 1.5rem;
+  font-style: italic;
 }
 
-/* Classe utilitária para esconder elementos */
+#noResults p {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* Utilitários */
 .hidden {
-    display: none !important;
+  display: none !important;
 }
 
-/* --- Botão de Ícone Flutuante para Registro (#registerButton) --- */
+/* Botão Flutuante - Design CEDESP */
 #registerButton {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: linear-gradient(45deg, var(--color-neon-cyan), var(--color-accent-blue));
-    color: white;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: var(--shadow-register-button-initial);
-    transition: all 0.3s ease;
-    z-index: 1000;
-    font-family: var(--font-orbitron);
-    font-size: 0.8em;
-    font-weight: bold;
-    flex-direction: column;
-    padding: 5px;
-    text-shadow: 0 0 5px rgba(255,255,255,0.5);
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--gradient-secondary);
+  color: var(--color-primary);
+  border: 2px solid var(--color-secondary);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: var(--shadow-lg);
+  transition: all var(--transition-normal);
+  z-index: 1000;
+  font-family: var(--font-primary);
+  font-weight: 600;
+  font-size: 0.75rem;
+  backdrop-filter: blur(20px);
 }
 
 #registerButton svg {
-    width: 28px;
-    height: 28px;
-    margin-bottom: 2px;
+  width: 24px;
+  height: 24px;
+  margin-bottom: 2px;
 }
 
-/* Efeito hover para o botão de registro */
 #registerButton:hover {
-    transform: scale(1.08) translateY(-2px);
-    box-shadow: var(--shadow-register-button-hover);
-    background: linear-gradient(45deg, var(--color-accent-blue), var(--color-neon-cyan));
+  transform: scale(1.1) translateY(-4px);
+  box-shadow: var(--shadow-glow);
+  background: var(--gradient-accent);
 }
 
-/* --- Estilos da Modal de Registro (#registrationModal) --- */
+/* Modal - Design Glass Morphism */
 .modal {
-    display: none;
-    position: fixed;
-    z-index: 1001;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: var(--color-overlay-dark);
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
+  display: none;
+  position: fixed;
+  z-index: 1001;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--color-overlay);
+  backdrop-filter: blur(10px);
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem;
 }
 
-/* Classe 'active' para exibir o modal (adicionada via JavaScript) */
 .modal.active {
-    display: flex;
+  display: flex;
 }
 
-/* Estilos para o conteúdo interno do modal */
+/* Conteúdo do Modal */
 .modal-content {
-    background-color: var(--color-bg-modal-content);
-    margin: auto;
-    padding: 30px;
-    border: 1px solid rgba(0, 255, 255, 0.4); /* Mantido literal por ser levemente diferente das bordas de outros elementos */
-    border-radius: 12px;
-    width: 90%;
-    max-width: 600px;
-    box-shadow: var(--shadow-modal-content);
-    position: relative;
-    animation: zoomIn 0.3s ease-out;
+  background: var(--color-bg-modal);
+  backdrop-filter: blur(30px);
+  border: var(--border-subtle);
+  border-radius: var(--border-radius-xl);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  animation: modalSlide 0.3s ease-out;
+  padding: 2rem;
 }
 
-/* Animação de zoom-in para o conteúdo do modal */
-@keyframes zoomIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
+@keyframes modalSlide {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
-/* Estilos para o botão de fechar (X) - usado tanto no modal quanto no painel lateral */
+/* Botão fechar */
 .close-button {
-    color: #fff;
-    font-size: 30px;
-    font-weight: bold;
-    position: absolute;
-    top: 10px;
-    right: 20px;
-    cursor: pointer;
-    transition: color 0.3s ease;
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+  padding: 0.5rem;
+  border-radius: var(--border-radius-sm);
 }
 
-/* Efeito hover/focus para o botão de fechar */
-.close-button:hover,
-.close-button:focus {
-    color: var(--color-neon-cyan);
-    text-decoration: none;
+.close-button:hover {
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
 }
 
-/* Título dentro do conteúdo do modal */
+/* Títulos do Modal */
 .modal-content h2 {
-    font-family: var(--font-orbitron);
-    color: var(--color-neon-cyan);
-    text-align: center;
-    margin-bottom: 25px;
-    font-size: 2em;
-    text-shadow: 0 0 8px var(--color-neon-cyan);
+  font-family: var(--font-primary);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.75rem;
 }
 
-/* Seções de formulário dentro do modal */
+/* Seções do formulário */
 .form-section {
-    margin-bottom: 25px;
-    padding: 15px;
-    border: var(--border-dashed-cyan);
-    border-radius: 8px;
-    background-color: var(--color-bg-form-section);
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--color-bg-surface);
+  border-radius: var(--border-radius-md);
+  border: var(--border-subtle);
 }
 
-/* Títulos das seções de formulário */
 .form-section h3 {
-    color: var(--color-label-blue);
-    margin-bottom: 15px;
-    font-size: 1.3em;
-    text-align: center;
+  color: var(--color-text-secondary);
+  margin-bottom: 1.5rem;
+  font-size: 1.125rem;
+  font-weight: 500;
+  text-align: center;
 }
 
-/* Grupos de formulário (label + input/select) */
+/* Grupos de formulário */
 .form-group {
-    margin-bottom: 15px;
+  margin-bottom: 1.5rem;
 }
 
-/* Labels dentro dos grupos de formulário */
 .form-group label {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--color-text-light);
-    font-weight: bold;
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
-/* Inputs de largura total dentro dos formulários */
+/* Inputs de largura total */
 .full-width-input {
-    width: 100%;
-    padding: 12px;
-    border: var(--border-input-blue);
-    border-radius: 6px;
-    background-color: var(--color-bg-input);
-    color: var(--color-neon-cyan);
-    outline: none;
-    transition: all 0.3s ease;
-    box-shadow: var(--shadow-input-initial);
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: var(--border-input);
+  border-radius: var(--border-radius-md);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-primary);
+  font-family: var(--font-primary);
+  outline: none;
+  transition: all var(--transition-normal);
 }
 
-/* Efeito de foco para inputs de largura total */
+/* Estilos específicos para selects no modal */
+.full-width-input select,
+select.full-width-input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f4c430' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1rem;
+  padding-right: 3rem;
+}
+
+/* Options para selects no modal */
+.full-width-input option,
+select.full-width-input option {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  padding: 0.5rem;
+}
+
 .full-width-input:focus {
-    border-color: var(--color-neon-cyan);
-    box-shadow: var(--shadow-input-focus);
+  border-color: var(--color-secondary);
+  box-shadow: var(--shadow-focus);
+  background: rgba(244, 196, 48, 0.1);
 }
 
-/* Grupo de botões de rádio para status (Presente/Ausente) */
+/* Grupo de radio buttons */
 .status-radio-group {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  background: var(--color-bg-input);
+  border-radius: var(--border-radius-md);
+  border: var(--border-input);
 }
 
-/* Labels dentro do grupo de rádio */
 .status-radio-group label {
-    margin-bottom: 0;
-    display: inline-block;
-    font-weight: normal;
-    color: var(--color-text-light);
+  margin: 0;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
 }
 
-/* Inputs de rádio */
 .status-radio-group input[type="radio"] {
-    margin-right: 5px;
-    accent-color: var(--color-neon-cyan);
+  margin: 0;
+  accent-color: var(--color-primary);
 }
 
-/* Botões de formulário (dentro do modal) */
+/* Botões de formulário - CEDESP */
 .form-button {
-    width: 100%;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    background: linear-gradient(45deg, var(--color-accent-blue), var(--color-neon-cyan));
-    color: white;
-    font-weight: bold;
-    font-family: var(--font-orbitron);
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
-    box-shadow: var(--shadow-button-initial);
-    margin-top: 15px;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  border: none;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  background: var(--gradient-secondary);
+  color: var(--color-primary);
+  font-weight: 600;
+  font-family: var(--font-primary);
+  font-size: 0.875rem;
+  letter-spacing: 0.025em;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
+  margin-top: 1rem;
+  border: 1px solid var(--color-secondary);
 }
 
-/* Efeito hover para botões de formulário */
 .form-button:hover {
-    background: linear-gradient(45deg, var(--color-neon-cyan), var(--color-accent-blue));
-    box-shadow: var(--shadow-button-hover);
-    transform: translateY(-2px);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+  background: var(--gradient-accent);
 }
 
-/* Separador dentro do formulário */
+/* Separador */
 .form-separator {
-    border: none;
-    border-top: 1px dashed rgba(0, 255, 255, 0.2);
-    margin: 30px 0;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 2rem 0;
 }
 
-/* Mensagens de feedback (sucesso/erro) no modal */
+/* Mensagens de feedback */
 .feedback-message {
-    text-align: center;
-    margin-top: 20px;
-    font-weight: bold;
-    font-size: 1.1em;
+  text-align: center;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: var(--border-radius-md);
+  font-weight: 500;
 }
 
-/* Cores específicas para mensagens de feedback */
 .feedback-message.success {
-    color: var(--color-neon-cyan);
+  color: var(--color-success);
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 .feedback-message.error {
-    color: var(--color-error);
+  color: var(--color-error);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-
-/* --- Estilos para o Painel Lateral de Detalhes do Aluno (#studentDetail) --- */
+/* Painel Lateral - Design Slide */
 .student-detail-panel {
-    display: none;
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 400px;
-    height: 100%;
-    background-color: rgba(30, 30, 50, 0.98); /* Mantido literal por ser levemente mais opaco */
-    box-shadow: var(--shadow-panel-left);
-    border-left: var(--border-subtle-cyan);
-    z-index: 1002;
-    padding: 30px;
-    overflow-y: auto;
-    animation: slideInRight 0.3s ease-out;
+  display: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 420px;
+  height: 100%;
+  background: var(--color-bg-modal);
+  backdrop-filter: blur(30px);
+  border-left: var(--border-subtle);
+  box-shadow: var(--shadow-lg);
+  z-index: 1002;
+  padding: 2rem;
+  overflow-y: auto;
+  animation: slideInRight 0.3s ease-out;
 }
 
-/* Classe 'active' para exibir o painel lateral (adicionada via JavaScript) */
 .student-detail-panel.active {
-    display: block;
+  display: block;
 }
 
-/* Animação de deslize da direita para o painel lateral */
 @keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Cabeçalho do painel */
+.student-detail-panel .detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.student-detail-panel .detail-header h2 {
+  font-family: var(--font-primary);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.student-detail-panel .close-button {
+  position: static;
+  margin: 0;
+}
+
+/* Conteúdo do painel */
+.student-detail-panel p {
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  color: var(--color-text-primary);
+  padding: 1rem;
+  background: var(--color-bg-surface);
+  border-radius: var(--border-radius-md);
+  border: var(--border-subtle);
+}
+
+.student-detail-panel strong {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+/* Formulários no painel */
+.student-detail-panel .form-section {
+  margin-bottom: 1.5rem;
+}
+
+.student-detail-panel .form-section h3 {
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.student-detail-panel input[type="number"] {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: var(--border-input);
+  border-radius: var(--border-radius-md);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-primary);
+  font-family: var(--font-primary);
+  outline: none;
+  transition: all var(--transition-normal);
+}
+
+.student-detail-panel input[type="number"]:focus {
+  border-color: var(--color-secondary);
+  box-shadow: var(--shadow-focus);
+  background: rgba(244, 196, 48, 0.1);
+}
+
+.student-detail-panel .form-group label {
+  margin-bottom: 0.5rem;
+}
+
+.student-detail-panel button {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  margin-top: 0.75rem;
+  border: none;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  background: var(--gradient-secondary);
+  color: var(--color-primary);
+  font-weight: 600;
+  font-family: var(--font-primary);
+  font-size: 0.875rem;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-secondary);
+}
+
+.student-detail-panel button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+  background: var(--gradient-accent);
+}
+
+/* Responsividade - Design Adaptativo */
+@media (max-width: 768px) {
+  body {
+    padding: 1rem;
+  }
+
+  .container {
+    padding: 1.5rem;
+    border-radius: var(--border-radius-lg);
+  }
+
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  /* Grid adaptativo para filtros */
+  .search-section {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  #buttons {
+    grid-column: 1;
+    gap: 0.75rem;
+  }
+
+  .search-section button {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  /* Tabela responsiva - Cards */
+  .results-container {
+    padding: 1rem;
+  }
+
+  table,
+  thead,
+  tbody,
+  th,
+  td,
+  tr {
+    display: block;
+  }
+
+  thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  table tr {
+    background: var(--color-bg-surface);
+    border: var(--border-subtle);
+    border-radius: var(--border-radius-md);
+    margin-bottom: 1rem;
+    padding: 1rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  table td {
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+    padding: 0.75rem 0;
+    padding-left: 40%;
+    text-align: right;
+    font-size: 0.9rem;
+  }
+
+  table td:last-child {
+    border-bottom: none;
+  }
+
+  table td::before {
+    content: attr(data-label) ":";
+    position: absolute;
+    left: 0;
+    width: 35%;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-align: left;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+  }
+
+  /* Painel lateral responsivo */
+  .student-detail-panel {
+    width: 100%;
+    animation: slideInUp 0.3s ease-out;
+  }
+
+  @keyframes slideInUp {
     from {
-        transform: translateX(100%);
-        opacity: 0;
+      transform: translateY(100%);
+      opacity: 0;
     }
     to {
-        transform: translateX(0);
-        opacity: 1;
+      transform: translateY(0);
+      opacity: 1;
     }
+  }
+
+  /* Botão flutuante responsivo */
+  #registerButton {
+    width: 56px;
+    height: 56px;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    font-size: 0.7rem;
+  }
+
+  #registerButton svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  #registerButton span {
+    display: none;
+  }
 }
 
-/* Cabeçalho dentro do painel de detalhes */
-.student-detail-panel .detail-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
-}
-
-/* Título do nome do aluno no painel de detalhes */
-.student-detail-panel .detail-header h2 {
-    font-family: var(--font-orbitron);
-    color: var(--color-neon-cyan);
-    font-size: 1.8em;
-    text-shadow: 0 0 8px var(--color-neon-cyan);
-    margin: 0;
-    text-align: left;
-}
-
-/* O botão de fechar dentro do painel lateral (sobrescreve a regra .close-button global) */
-.student-detail-panel .close-button {
-    position: static;
-    margin-left: auto;
-    color: #fff;
-    width: 10rem;
-}
-
-/* Parágrafos de texto no painel de detalhes */
-.student-detail-panel p {
-    font-size: 1.1em;
-    margin-bottom: 20px;
-    color: var(--color-text-light);
-}
-
-/* Texto em negrito no painel de detalhes */
-.student-detail-panel strong {
-    color: var(--color-label-blue);
-}
-
-/* Estilos para as seções de formulário dentro do painel de detalhes (reutiliza .form-section) */
-.student-detail-panel .form-section {
-    margin-bottom: 20px;
-}
-
-/* Títulos das seções de formulário no painel */
-.student-detail-panel .form-section h3 {
-    text-align: left;
-}
-
-/* Inputs de número (notas) dentro do painel de detalhes */
-.student-detail-panel input[type="number"] {
-    width: 100%;
-    padding: 10px;
-    border: var(--border-input-blue);
-    border-radius: 6px;
-    background-color: var(--color-bg-input);
-    color: var(--color-neon-cyan);
-    outline: none;
-    transition: all 0.3s ease;
-    box-shadow: var(--shadow-input-initial);
-}
-
-/* Efeito de foco para inputs de número no painel */
-.student-detail-panel input[type="number"]:focus {
-    border-color: var(--color-neon-cyan);
-    box-shadow: var(--shadow-input-focus);
-}
-
-/* Labels dentro dos grupos de formulário no painel */
-.student-detail-panel .form-group label {
-    margin-bottom: 5px;
-}
-
-/* Botões dentro do painel de detalhes */
-.student-detail-panel button {
-    width: 100%;
-    padding: 10px 15px;
-    margin-top: 10px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    background: linear-gradient(45deg, var(--color-accent-blue), var(--color-neon-cyan));
-    color: white;
-    font-weight: bold;
-    font-family: var(--font-orbitron);
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
-    box-shadow: var(--shadow-button-initial);
-}
-
-/* Efeito hover para botões no painel de detalhes */
-.student-detail-panel button:hover {
-    background: linear-gradient(45deg, var(--color-neon-cyan), var(--color-accent-blue));
-    box-shadow: var(--shadow-button-hover);
-    transform: translateY(-2px);
-}
-
-
-/* --- Media Queries para Responsividade --- */
-
-/* Para telas menores que 768px (tablets e celulares) */
-@media (max-width: 768px) {
-    body {
-        padding: 15px;
-    }
-
-    .container {
-        padding: 25px;
-    }
-
-    h1 {
-        font-size: 2em;
-        margin-bottom: 25px;
-    }
-
-    /* Ajustes para a seção de busca em telas menores */
-    .search-section {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    .filter-group {
-        max-width: none;
-    }
-    .search-section input[type="text"],
-    #periodoFilter,
-    #cursoFilter {
-        width: 100%;
-    }
-
-    /* --- Estilização da Tabela Responsiva para Empilhamento --- */
-    table,
-    thead,
-    tbody,
-    th,
-    td,
-    tr {
-        display: block;
-    }
-
-    thead tr {
-        position: absolute;
-        top: -9999px;
-        left: -9999px;
-    }
-
-    table tr {
-        border: 1px solid rgba(0, 255, 255, 0.2);
-        margin-bottom: 15px;
-        border-radius: 8px;
-        overflow: hidden;
-        background-color: rgba(30, 30, 50, 0.8);
-        box-shadow: var(--shadow-table-row-mobile);
-    }
-
-    table td {
-        border: none;
-        border-bottom: 1px solid rgba(0, 255, 255, 0.1);
-        position: relative;
-        padding-left: 50%;
-        text-align: right;
-        font-size: 0.95em;
-    }
-
-    table td:last-child {
-        border-bottom: none;
-    }
-
-    /* Adiciona o "rótulo" da coluna antes do conteúdo da célula */
-    table td::before {
-        content: attr(data-label);
-        position: absolute;
-        left: 0;
-        width: 45%;
-        padding-left: 15px;
-        font-weight: bold;
-        color: var(--color-neon-cyan);
-        text-align: left;
-        font-family: var(--font-orbitron);
-        letter-spacing: 0.5px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    /* Ajustes para o painel lateral de detalhes em telas menores */
-    .student-detail-panel {
-        width: 100%;
-        left: 0;
-        box-shadow: 0 8px 30px rgba(0, 255, 255, 0.2);
-        border-top: var(--border-subtle-cyan);
-        animation: slideInUp 0.3s ease-out;
-    }
-
-    /* Animação para o painel lateral em telas pequenas */
-    @keyframes slideInUp {
-        from {
-            transform: translateY(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    }
-
-    /* Botão de registro flutuante em telas médias/pequenas */
-    #registerButton {
-        width: 50px;
-        height: 50px;
-        font-size: 0.7em;
-        bottom: 20px;
-        right: 20px;
-    }
-    #registerButton svg {
-        width: 24px;
-        height: 24px;
-    }
-    #registerButton span {
-        display: none;
-    }
-}
-
-/* Para telas muito pequenas (celulares) */
 @media (max-width: 480px) {
-    h1 {
-        font-size: 1.8em;
-        letter-spacing: 1px;
-    }
+  .container {
+    padding: 1rem;
+  }
 
-    #buttons {
-        gap: 10px;
-    }
+  h1 {
+    font-size: 1.75rem;
+  }
 
-    .search-section button {
-        font-size: 0.9em;
-        padding: 10px 15px;
-    }
+  .search-section button {
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+  }
 
-    table td {
-        padding: 8px 10px;
-        padding-left: 48%;
-    }
+  table td {
+    padding-left: 45%;
+    font-size: 0.85rem;
+  }
 
-    table td::before {
-        width: 45%;
-        padding-left: 10px;
-    }
+  table td::before {
+    width: 42%;
+    font-size: 0.75rem;
+  }
 
-    /* Modal e painel lateral em telas muito pequenas */
-    .modal-content,
-    .student-detail-panel {
-        padding: 20px;
-        width: 95%;
-    }
-    .modal-content h2,
-    .student-detail-panel .detail-header h2 {
-        font-size: 1.6em;
-    }
-    .form-section h3 {
-        font-size: 1.1em;
-    }
-    .form-button {
-        padding: 10px 15px;
-        font-size: 0.9em;
-    }
-    .status-radio-group {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
+  .modal-content,
+  .student-detail-panel {
+    padding: 1rem;
+    margin: 0.5rem;
+  }
 
-    #registerButton {
-        bottom: 15px;
-        right: 15px;
-    }
+  .modal-content h2,
+  .student-detail-panel .detail-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .form-section h3 {
+    font-size: 1rem;
+  }
+
+  .status-radio-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  #registerButton {
+    width: 52px;
+    height: 52px;
+    bottom: 1rem;
+    right: 1rem;
+  }
 }
