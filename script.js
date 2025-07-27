@@ -1,6 +1,7 @@
 // === CONFIGURAÇÃO DO SISTEMA CEDESP ===
 // IMPORTANTE: Substitua esta URL pela URL do seu Web App do Google Apps Script
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzNq3Hz1Pvlx3Ty4YGJvj0UM4jQNe2adOEQWyomzpTnBHooEzgHa1TGMWfcd8mpzTDe/exec";
+const WEB_APP_URL =
+  "https://script.google.com/macros/s/AKfycbzNq3Hz1Pvlx3Ty4YGJvj0UM4jQNe2adOEQWyomzpTnBHooEzgHa1TGMWfcd8mpzTDe/exec";
 
 // Detecta ambiente (local vs produção)
 const IS_LOCAL =
@@ -19,6 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   inicializarToggleTheme();
   initializeEventListeners();
+  initializeViewToggle();
   carregarTodosAlunos();
 });
 
@@ -120,6 +122,57 @@ function atualizarIconeTheme(tema) {
       moonIcon.style.display = "none";
     }
   }
+}
+
+// === TOGGLE VISUALIZAÇÃO CARDS/TABELA ===
+let currentView = "cards"; // cards ou table
+
+function initializeViewToggle() {
+  const cardViewBtn = document.getElementById("cardViewBtn");
+  const tableViewBtn = document.getElementById("tableViewBtn");
+
+  if (cardViewBtn && tableViewBtn) {
+    cardViewBtn.addEventListener("click", () => switchView("cards"));
+    tableViewBtn.addEventListener("click", () => switchView("table"));
+  }
+
+  // Carrega visualização salva ou usa cards como padrão
+  const savedView = localStorage.getItem("viewMode") || "cards";
+  switchView(savedView);
+}
+
+function switchView(view) {
+  currentView = view;
+  localStorage.setItem("viewMode", view);
+
+  const cardViewBtn = document.getElementById("cardViewBtn");
+  const tableViewBtn = document.getElementById("tableViewBtn");
+  const cardsContainer = document.getElementById("cardsContainer");
+  const tableContainer = document.getElementById("tableContainer");
+
+  // Atualiza botões
+  if (cardViewBtn && tableViewBtn) {
+    cardViewBtn.classList.toggle("active", view === "cards");
+    tableViewBtn.classList.toggle("active", view === "table");
+  }
+
+  // Mostra/esconde containers
+  if (cardsContainer && tableContainer) {
+    if (view === "cards") {
+      cardsContainer.classList.remove("hidden");
+      tableContainer.classList.add("hidden");
+    } else {
+      cardsContainer.classList.add("hidden");
+      tableContainer.classList.remove("hidden");
+    }
+  }
+
+  // Re-exibe os resultados na nova visualização
+  if (currentFilteredStudents.length > 0) {
+    exibirResultados(currentFilteredStudents);
+  }
+
+  console.log(`👁️ Visualização alterada para: ${view}`);
 }
 
 // === FUNÇÕES DE API ===
@@ -337,11 +390,12 @@ async function atualizarNotas() {
 // === FUNÇÕES DE INTERFACE ===
 function exibirResultados(alunos) {
   const resultTableBody = document.getElementById("resultTableBody");
+  const studentsGrid = document.getElementById("studentsGrid");
   const noResultsMessage = document.getElementById("noResults");
 
-  if (!resultTableBody) return;
-
-  resultTableBody.innerHTML = "";
+  // Limpa os containers
+  if (resultTableBody) resultTableBody.innerHTML = "";
+  if (studentsGrid) studentsGrid.innerHTML = "";
 
   if (alunos.length === 0) {
     mostrarMensagemSemResultados();
@@ -351,6 +405,162 @@ function exibirResultados(alunos) {
   if (noResultsMessage) {
     noResultsMessage.style.display = "none";
   }
+
+  // Escolhe qual visualização usar
+  if (currentView === "cards") {
+    exibirResultadosComoCards(alunos);
+  } else {
+    exibirResultadosComoTabela(alunos);
+  }
+
+  console.log(`📋 ${alunos.length} alunos exibidos em ${currentView}`);
+}
+
+function exibirResultadosComoCards(alunos) {
+  const studentsGrid = document.getElementById("studentsGrid");
+  if (!studentsGrid) return;
+
+  alunos.forEach((aluno) => {
+    // Calcula média e situação localmente para garantir consistência
+    const calculado = calcularMediaESituacao(aluno);
+    const mediaExibir =
+      calculado.media > 0 ? calculado.media : aluno.Media || 0;
+    const situacaoExibir = calculado.situacao;
+
+    // Cria o card do aluno
+    const card = document.createElement("div");
+    card.className = "student-card";
+    card.innerHTML = createStudentCardHTML(aluno, mediaExibir, situacaoExibir);
+
+    studentsGrid.appendChild(card);
+  });
+}
+
+function createStudentCardHTML(aluno, media, situacao) {
+  const iniciais = aluno.Nome.split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  const nota1 = aluno.Nota1 || "";
+  const nota2 = aluno.Nota2 || "";
+  const nota3 = aluno.Nota3 || "";
+  const faltas = aluno.Faltas || 0;
+
+  return `
+    <div class="card-header">
+      <div class="student-avatar">${iniciais}</div>
+      <div class="student-info">
+        <h3>${aluno.Nome}</h3>
+        <div class="student-meta">
+          <div class="meta-item">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+            </svg>
+            ID: ${aluno.ID_Unico}
+          </div>
+          <div class="meta-item">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3zm0 3v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6H2zm3 2h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
+            </svg>
+            ${aluno.Origem} - ${aluno.Periodo}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-grades">
+      <div class="grades-grid">
+        <div class="grade-item">
+          <div class="grade-label">1º Bim</div>
+          <div class="grade-value ${!nota1 ? "empty" : ""}">${
+    nota1 || "-"
+  }</div>
+        </div>
+        <div class="grade-item">
+          <div class="grade-label">2º Bim</div>
+          <div class="grade-value ${!nota2 ? "empty" : ""}">${
+    nota2 || "-"
+  }</div>
+        </div>
+        <div class="grade-item">
+          <div class="grade-label">3º Bim</div>
+          <div class="grade-value ${!nota3 ? "empty" : ""}">${
+    nota3 || "-"
+  }</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-performance">
+      <div class="performance-item">
+        <div class="performance-label">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M4 2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2zm2-1a1 1 0 0 0-1 1v12h6V2a1 1 0 0 0-1-1H6z"/>
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+          </svg>
+          Média
+        </div>
+        <div class="performance-value media">${
+          typeof media === "number" ? media.toFixed(1) : media || "-"
+        }</div>
+      </div>
+      <div class="performance-item">
+        <div class="performance-label">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+          </svg>
+          Faltas
+        </div>
+        <div class="performance-value faltas">${faltas}</div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin: 1rem 0;">
+      <div class="situation-badge ${situacao.toLowerCase().replace(" ", "-")}">
+        ${getSituationIcon(situacao)}
+        ${situacao}
+      </div>
+    </div>
+
+    <div class="card-actions">
+      <button class="card-action-btn primary" onclick="abrirPainelDetalhes('${
+        aluno.ID_Unico
+      }')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+          <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+        </svg>
+        Ver Detalhes
+      </button>
+    </div>
+  `;
+}
+
+function getSituationIcon(situacao) {
+  switch (situacao.toLowerCase()) {
+    case "aprovado":
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
+        <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
+      </svg>`;
+    case "reprovado":
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
+        <path d="M6.146 6.146a.5.5 0 0 1 .708 0L8 7.293l1.146-1.147a.5.5 0 1 1 .708.708L8.707 8l1.147 1.146a.5.5 0 0 1-.708.708L8 8.707 6.854 9.854a.5.5 0 0 1-.708-.708L7.293 8 6.146 6.854a.5.5 0 0 1 0-.708z"/>
+      </svg>`;
+    default:
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+        <path d="M5 6.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zm.25 2.25a.25.25 0 0 0-.5 0v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5zM12.5 6.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0z"/>
+      </svg>`;
+  }
+}
+
+function exibirResultadosComoTabela(alunos) {
+  const resultTableBody = document.getElementById("resultTableBody");
+  if (!resultTableBody) return;
 
   alunos.forEach((aluno) => {
     // Calcula média e situação localmente para garantir consistência
@@ -383,8 +593,6 @@ function exibirResultados(alunos) {
         `;
     resultTableBody.appendChild(linha);
   });
-
-  console.log(`📋 ${alunos.length} alunos exibidos na tabela`);
 }
 
 function abrirPainelDetalhes(alunoId) {
