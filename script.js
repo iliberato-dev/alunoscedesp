@@ -1,365 +1,687 @@
-// Detecta se está rodando localmente (Live Server) ou no ambiente implantado
-const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-const WEB_APP_URL = IS_LOCAL
-    ? 'https://script.google.com/macros/s/AKfycbzNq3Hz1Pvlx3Ty4YGJvj0UM4jQNe2adOEQWyomzpTnBHooEzgHa1TGMWfcd8mpzTDe/exec'
-    : '/api/appsscript';
+// === CONFIGURAÇÃO DO SISTEMA CEDESP ===
+// IMPORTANTE: Substitua esta URL pela URL do seu Web App do Google Apps Script
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzNq3Hz1Pvlx3Ty4YGJvj0UM4jQNe2adOEQWyomzpTnBHooEzgHa1TGMWfcd8mpzTDe/exec";
 
-let allStudentsRawData = []; // Armazena todos os alunos carregados (dados brutos para os modais)
-let currentFilteredStudents = []; // Armazena os alunos filtrados atualmente na tabela principal
-let selectedStudentId = null; // Armazena o ID_Unico do aluno selecionado no painel de detalhes
+// Detecta ambiente (local vs produção)
+const IS_LOCAL =
+  location.hostname === "localhost" || location.hostname === "127.0.0.1";
+const API_URL = IS_LOCAL ? WEB_APP_URL : "/api/appsscript";
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Referências aos elementos do DOM para a consulta principal
-    const searchInput = document.getElementById('searchInput');
-    const searchButton = document.getElementById('searchButton');
-    const clearSearchButton = document.getElementById('clearSearchButton');
-    const showAllButton = document.getElementById('showAllButton');
-    const periodoFilter = document.getElementById('periodoFilter');
-    const cursoFilter = document.getElementById('cursoFilter');
-    const resultTableBody = document.getElementById('resultTableBody');
-    const noResultsMessage = document.getElementById('noResults');
+// === VARIÁVEIS GLOBAIS ===
+let allStudentsRawData = [];
+let currentFilteredStudents = [];
+let selectedStudentId = null;
 
-    // Referências aos elementos do DOM para o painel de detalhes do aluno
-    const studentDetail = document.getElementById('studentDetail');
-    const closeDetailPanelButton = document.getElementById('closeDetailPanel');
-    const detailName = document.getElementById('detailName');
-    const detailFaltas = document.getElementById('detailFaltas');
-    const detailNota1 = document.getElementById('detailNota1');
-    const detailNota2 = document.getElementById('detailNota2');
-    const detailNota3 = document.getElementById('detailNota3');
-    const updateNotesButton = document.getElementById('updateNotesButton');
-    const markPresentButton = document.getElementById('markPresentButton');
-    const markAbsentButton = document.getElementById('markAbsentButton');
+// === INICIALIZAÇÃO ===
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("🚀 Sistema CEDESP Universal carregado");
+  console.log("🔗 Usando API:", API_URL);
 
-    // Referências aos elementos do DOM para o modal de registro
-    const registerButton = document.getElementById('registerButton');
-    const registrationModal = document.getElementById('registrationModal');
-    const closeRegistrationModalButton = document.getElementById('closeRegistrationModalButton');
-    const filtroPeriodoModal = document.getElementById('filtroPeriodoModal');
-    const filtroOrigemModal = document.getElementById('filtroOrigemModal');
-    const alunoSelecionadoSelect = document.getElementById('alunoSelecionado');
-    const dataPresencaInput = document.getElementById('dataPresenca');
-    const presenteRadio = document.getElementById('presente');
-    const ausenteRadio = document.getElementById('ausente');
-    const submitPresencaButton = document.getElementById('submitPresenca');
-    const nota1Input = document.getElementById('nota1');
-    const nota2Input = document.getElementById('nota2');
-    const nota3Input = document.getElementById('nota3');
-    const submitNotasButton = document.getElementById('submitNotas');
-    const feedbackMessage = document.getElementById('feedbackMessage');
-
-    // Função para mostrar feedback ao usuário
-    const showFeedback = (message, type = 'success') => {
-        feedbackMessage.textContent = message;
-        feedbackMessage.className = `feedback-message ${type}`;
-        feedbackMessage.classList.remove('hidden');
-        setTimeout(() => {
-            feedbackMessage.classList.add('hidden');
-        }, 5000); // Esconde a mensagem após 5 segundos
-    };
-
-    // Função para buscar e exibir os alunos
-    const fetchAndDisplayStudents = async (filters = {}) => {
-        resultTableBody.innerHTML = '<tr><td colspan="8">Carregando...</td></tr>';
-        noResultsMessage.classList.add('hidden');
-
-        const params = new URLSearchParams(filters);
-        const url = `${WEB_APP_URL}?${params.toString()}`;
-
-        try {
-            const response = await fetch(WEB_APP_URL);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-
-            allStudentsRawData = data.saida || []; // Armazena todos os alunos para o modal
-            currentFilteredStudents = allStudentsRawData; // Por padrão, a tabela exibe todos ao carregar
-
-            // Aplica os filtros da busca principal à lista completa
-            const filteredForTable = allStudentsRawData.filter(student => {
-                const nomeMatch = filters.nomeAluno ? String(student.Nome).toLowerCase().includes(filters.nomeAluno.toLowerCase()) : true;
-                const periodoMatch = filters.periodo ? String(student.Periodo).toLowerCase() === filters.periodo.toLowerCase() : true;
-                const cursoMatch = filters.curso ? String(student.Origem).toUpperCase() === filters.curso.toUpperCase() : true;
-                return nomeMatch && periodoMatch && cursoMatch;
-            });
-            displayStudents(filteredForTable);
-
-        } catch (error) {
-            console.error('Erro ao buscar alunos:', error);
-            resultTableBody.innerHTML = '<tr><td colspan="8">Erro ao carregar dados. Tente novamente.</td></tr>';
-            noResultsMessage.classList.remove('hidden');
-            noResultsMessage.textContent = `Erro ao carregar dados: ${error.message}`;
-        }
-    };
-
-    // Função para exibir os alunos na tabela principal
-    const displayStudents = (students) => {
-        resultTableBody.innerHTML = ''; // Limpa a tabela
-        if (students.length === 0) {
-            noResultsMessage.classList.remove('hidden');
-            noResultsMessage.textContent = 'Nenhum aluno encontrado com os filtros aplicados.';
-            return;
-        }
-
-        noResultsMessage.classList.add('hidden');
-        students.forEach(student => {
-            const row = resultTableBody.insertRow();
-            // Adiciona data-label para responsividade da tabela
-            row.insertCell(0).setAttribute('data-label', 'Nome');
-            row.cells[0].textContent = student.Nome;
-            row.insertCell(1).setAttribute('data-label', 'Faltas');
-            row.cells[1].textContent = student.Faltas;
-            row.insertCell(2).setAttribute('data-label', '1º Bim.');
-            row.cells[2].textContent = student.Nota1 || '';
-            row.insertCell(3).setAttribute('data-label', '2º Bim.');
-            row.cells[3].textContent = student.Nota2 || '';
-            row.insertCell(4).setAttribute('data-label', '3º Bim.');
-            row.cells[4].textContent = student.Nota3 || '';
-            row.insertCell(5).setAttribute('data-label', 'Média');
-            row.cells[5].textContent = student.Media ? student.Media.toFixed(1) : '';
-            row.insertCell(6).setAttribute('data-label', 'Situação');
-            row.cells[6].textContent = student.Situacao;
-            row.insertCell(7).setAttribute('data-label', 'Origem');
-            row.cells[7].textContent = student.Origem;
-
-            row.addEventListener('click', () => showStudentDetail(student));
-        });
-    };
-
-    // Função para mostrar o painel de detalhes do aluno
-    const showStudentDetail = (student) => {
-        selectedStudentId = student.ID_Unico; // Armazena o ID_Unico do aluno selecionado
-        detailName.textContent = student.Nome;
-        detailFaltas.textContent = student.Faltas;
-        detailNota1.value = student.Nota1 > 0 ? student.Nota1 : ''; // Só mostra se a nota for maior que 0
-        detailNota2.value = student.Nota2 > 0 ? student.Nota2 : '';
-        detailNota3.value = student.Nota3 > 0 ? student.Nota3 : '';
-
-        // Adiciona um listener para fechar o painel
-        closeDetailPanelButton.onclick = () => {
-            studentDetail.classList.remove('active');
-            selectedStudentId = null; // Limpa o ID selecionado
-        };
-
-        // Adiciona listeners para os botões do painel de detalhes
-        updateNotesButton.onclick = () => updateNotes(selectedStudentId, detailNota1.value, detailNota2.value, detailNota3.value);
-        // Aqui: passa undefined para dataRegistro para usar a data atual
-        markPresentButton.onclick = () => registrarPresencaOuFalta(selectedStudentId, 'P', undefined);
-        markAbsentButton.onclick = () => registrarPresencaOuFalta(selectedStudentId, 'A', undefined);
-
-        studentDetail.classList.add('active'); // Mostra o painel
-    };
-
-    // Função para atualizar notas (usada tanto no painel de detalhes quanto no modal)
-    const updateNotes = async (alunoId, n1, n2, n3) => {
-        if (!alunoId) {
-            showFeedback('Nenhum aluno selecionado para atualizar as notas.', 'error');
-            return;
-        }
-
-        if (confirm(`Confirma a atualização das notas para o aluno ID: ${alunoId}?`)) {
-            try {
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'atualizarNotas',
-                        alunoId: alunoId, // Enviando o ID_Unico
-                        nota1: n1 !== '' ? parseFloat(String(n1).replace(',', '.')) : null,
-                        nota2: n2 !== '' ? parseFloat(String(n2).replace(',', '.')) : null,
-                        nota3: n3 !== '' ? parseFloat(String(n3).replace(',', '.')) : null,
-                    }),
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const result = await response.json();
-                if (result.success) {
-                    showFeedback('Notas atualizadas com sucesso!', 'success');
-                    fetchAndDisplayStudents({ // Recarrega os dados após a atualização
-                        nomeAluno: searchInput.value,
-                        periodo: periodoFilter.value,
-                        curso: cursoFilter.value
-                    });
-                    studentDetail.classList.remove('active'); // Fecha o painel de detalhes
-                    registrationModal.classList.add('hidden'); // Fecha o modal (se aberto)
-                } else {
-                    showFeedback(`Erro ao atualizar notas: ${result.error || 'Erro desconhecido'}`, 'error');
-                    console.error('Erro do servidor:', result.error);
-                }
-            } catch (error) {
-                console.error('Erro na requisição de atualização de notas:', error);
-                showFeedback(`Erro ao conectar com o servidor: ${error.message}`, 'error');
-            }
-        }
-    };
-
-    // Função para registrar presença ou falta (usada tanto no painel de detalhes quanto no modal)
-    const registrarPresencaOuFalta = async (alunoId, status, dataRegistro = null) => {
-        if (!alunoId) {
-            showFeedback('Nenhum aluno selecionado para registrar presença/falta.', 'error');
-            return;
-        }
-
-        // Se dataRegistro não for passada, usa a data atual (caso do painel de detalhes)
-        if (!dataRegistro) {
-            const today = new Date();
-            dataRegistro = today.toISOString().slice(0, 10);
-        }
-
-        if (!dataRegistro) {
-            showFeedback('Por favor, selecione uma data para o registro de presença/falta.', 'error');
-            return;
-        }
-
-        let confirmMessage = status === 'P'
-            ? `Confirma a presença para o aluno ID: ${alunoId} na data ${dataRegistro}?`
-            : `Confirma a falta para o aluno ID: ${alunoId} na data ${dataRegistro}? Isso incrementará as faltas.`;
-
-        if (confirm(confirmMessage)) {
-            try {
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'registrarPresenca',
-                        alunoId: alunoId, // Enviando o ID_Unico
-                        status: status,
-                        data: dataRegistro
-                    }),
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const result = await response.json();
-                if (result.success) {
-                    showFeedback(result.message, 'success');
-                    fetchAndDisplayStudents({ // Recarrega os dados após a atualização
-                        nomeAluno: searchInput.value,
-                        periodo: periodoFilter.value,
-                        curso: cursoFilter.value
-                    });
-                    studentDetail.classList.remove('active'); // Fecha o painel de detalhes
-                    registrationModal.classList.add('hidden'); // Fecha o modal (se aberto)
-                } else {
-                    showFeedback(`Erro ao registrar: ${result.error || 'Erro desconhecido'}`, 'error');
-                    console.error('Erro do servidor:', result.error);
-                }
-            } catch (error) {
-                console.error('Erro na requisição de registro de presença/falta:', error);
-                showFeedback(`Erro ao conectar com o servidor: ${error.message}`, 'error');
-            }
-        }
-    };
-
-    // --- Lógica do Modal de Registro ---
-registerButton.addEventListener('click', () => {
-    console.log("Botão clickado !!!");
-    // Remove a classe 'hidden' caso ela esteja presente (estado inicial do HTML)
-    registrationModal.classList.remove('hidden');
-    // Adiciona a classe 'active' para exibir o modal (conforme seu CSS .modal.active)
-    registrationModal.classList.add('active');
-    // Preenche o campo de data com a data atual
-    const today = new Date();
-    dataPresencaInput.value = today.toISOString().slice(0, 10);
-    // Garante que o rádio "Presente" esteja selecionado por padrão
-    presenteRadio.checked = true;
-    // Limpa as notas
-    nota1Input.value = '';
-    nota2Input.value = '';
-    nota3Input.value = '';
-    // Reseta os filtros de seleção de aluno no modal
-    filtroPeriodoModal.value = '';
-    filtroOrigemModal.value = '';
-    populateAlunoSelect(); // Popula com todos os alunos inicialmente
+  inicializarToggleTheme();
+  initializeEventListeners();
+  carregarTodosAlunos();
 });
 
-closeRegistrationModalButton.addEventListener('click', () => {
-    // Remove a classe 'active' para esconder o modal
-    registrationModal.classList.remove('active');
-    // Opcional: Adiciona a classe 'hidden' de volta para o estado inicial,
-    // mas o 'display: none' do .modal já deveria ser suficiente.
-    // Se o modal não sumir, descomente a linha abaixo.
-    // registrationModal.classList.add('hidden');
-    showFeedback('', 'hidden'); // Limpa qualquer feedback
-});
+// === CONFIGURAÇÃO DE EVENTOS ===
+function initializeEventListeners() {
+  // Busca principal
+  const searchButton = document.getElementById("searchButton");
+  const clearSearchButton = document.getElementById("clearSearchButton");
+  const showAllButton = document.getElementById("showAllButton");
+  const searchInput = document.getElementById("searchInput");
 
+  if (searchButton) searchButton.addEventListener("click", buscarAlunos);
+  if (clearSearchButton)
+    clearSearchButton.addEventListener("click", limparFiltros);
+  if (showAllButton)
+    showAllButton.addEventListener("click", carregarTodosAlunos);
+  if (searchInput) {
+    searchInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") buscarAlunos();
+    });
+  }
 
-    // Função para popular o select de alunos no modal
-    const populateAlunoSelect = () => {
-        alunoSelecionadoSelect.innerHTML = '<option value="">Selecione um aluno</option>';
-        const filtroPeriodo = filtroPeriodoModal.value.toLowerCase();
-        const filtroOrigem = filtroOrigemModal.value.toUpperCase();
+  // Filtros
+  const periodoFilter = document.getElementById("periodoFilter");
+  const cursoFilter = document.getElementById("cursoFilter");
 
-        const filteredStudentsForModal = allStudentsRawData.filter(student => {
-            const periodoMatch = filtroPeriodo ? String(student.Periodo).toLowerCase() === filtroPeriodo : true;
-            const origemMatch = filtroOrigem ? String(student.Origem).toUpperCase() === filtroOrigem : true;
-            return periodoMatch && origemMatch;
-        });
+  if (periodoFilter) periodoFilter.addEventListener("change", aplicarFiltros);
+  if (cursoFilter) cursoFilter.addEventListener("change", aplicarFiltros);
 
-        filteredStudentsForModal.sort((a, b) => String(a.Nome).localeCompare(String(b.Nome))); // Ordena por nome
+  // Painel de detalhes
+  const closeDetailPanelButton = document.getElementById("closeDetailPanel");
+  const updateNotesButton = document.getElementById("updateNotesButton");
+  const markPresentButton = document.getElementById("markPresentButton");
+  const markAbsentButton = document.getElementById("markAbsentButton");
 
-        filteredStudentsForModal.forEach(student => {
-            const option = document.createElement('option');
-            option.value = student.ID_Unico; // O valor da option será o ID_Unico do aluno
-            option.textContent = `${student.Nome} (${student.Origem})`;
-            alunoSelecionadoSelect.appendChild(option);
-        });
+  if (closeDetailPanelButton)
+    closeDetailPanelButton.addEventListener("click", fecharPainelDetalhes);
+  if (updateNotesButton)
+    updateNotesButton.addEventListener("click", atualizarNotas);
+  if (markPresentButton)
+    markPresentButton.addEventListener("click", () =>
+      registrarPresencaFalta("P")
+    );
+  if (markAbsentButton)
+    markAbsentButton.addEventListener("click", () =>
+      registrarPresencaFalta("A")
+    );
+
+  // Modal de registro
+  const registerButton = document.getElementById("registerButton");
+  const closeRegistrationModalButton = document.getElementById(
+    "closeRegistrationModalButton"
+  );
+  const submitPresencaButton = document.getElementById("submitPresenca");
+
+  if (registerButton)
+    registerButton.addEventListener("click", abrirModalRegistro);
+  if (closeRegistrationModalButton)
+    closeRegistrationModalButton.addEventListener("click", fecharModalRegistro);
+  if (submitPresencaButton)
+    submitPresencaButton.addEventListener("click", submeterPresenca);
+}
+
+// === TEMA CLARO/ESCURO ===
+function inicializarToggleTheme() {
+  const toggleButton = document.querySelector(".theme-toggle");
+  if (!toggleButton) return;
+
+  const body = document.body;
+
+  // Carrega tema salvo ou usa claro como padrão
+  const temaSalvo = localStorage.getItem("theme") || "light";
+  body.setAttribute("data-theme", temaSalvo);
+  atualizarIconeTheme(temaSalvo);
+
+  // Event listener para toggle
+  toggleButton.addEventListener("click", function () {
+    const temaAtual = body.getAttribute("data-theme");
+    const novoTema = temaAtual === "light" ? "dark" : "light";
+
+    body.setAttribute("data-theme", novoTema);
+    localStorage.setItem("theme", novoTema);
+    atualizarIconeTheme(novoTema);
+
+    console.log(`🎨 Tema alterado para: ${novoTema}`);
+  });
+}
+
+function atualizarIconeTheme(tema) {
+  const sunIcon = document.querySelector(".theme-toggle .sun-icon");
+  const moonIcon = document.querySelector(".theme-toggle .moon-icon");
+
+  if (sunIcon && moonIcon) {
+    if (tema === "light") {
+      sunIcon.style.display = "none";
+      moonIcon.style.display = "block";
+    } else {
+      sunIcon.style.display = "block";
+      moonIcon.style.display = "none";
+    }
+  }
+}
+
+// === FUNÇÕES DE API ===
+async function carregarTodosAlunos() {
+  try {
+    mostrarLoading(true);
+    console.log("📡 Carregando todos os alunos...");
+
+    // Teste de conectividade
+    const testeResponse = await fetch(`${API_URL}?teste=1`);
+    if (!testeResponse.ok) {
+      throw new Error(`Erro de conectividade: ${testeResponse.status}`);
+    }
+
+    const testeData = await testeResponse.json();
+    console.log("✅ Conectividade OK:", testeData);
+
+    // Carrega dados
+    const response = await fetch(API_URL);
+
+    if (!response.ok) {
+      throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    allStudentsRawData = data.saida || [];
+    currentFilteredStudents = [...allStudentsRawData];
+
+    console.log(`📊 ${allStudentsRawData.length} alunos carregados`);
+
+    exibirResultados(currentFilteredStudents);
+    preencherFiltros();
+  } catch (error) {
+    console.error("❌ Erro ao carregar dados:", error);
+    mostrarErro(`Erro ao carregar dados: ${error.message}`);
+    mostrarMensagemSemResultados();
+  } finally {
+    mostrarLoading(false);
+  }
+}
+
+async function buscarAlunos() {
+  const searchInput = document.getElementById("searchInput");
+  const periodoFilter = document.getElementById("periodoFilter");
+  const cursoFilter = document.getElementById("cursoFilter");
+
+  const nomeAluno = searchInput ? searchInput.value.trim() : "";
+  const periodo = periodoFilter ? periodoFilter.value : "";
+  const curso = cursoFilter ? cursoFilter.value : "";
+
+  try {
+    mostrarLoading(true);
+    console.log("🔍 Buscando alunos:", { nomeAluno, periodo, curso });
+
+    let url = API_URL;
+    const params = new URLSearchParams();
+
+    if (nomeAluno) params.append("nomeAluno", nomeAluno);
+    if (curso) params.append("curso", curso);
+    if (periodo) params.append("periodo", periodo);
+
+    if (params.toString()) {
+      url += "?" + params.toString();
+    }
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Erro HTTP: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    const resultados = data.saida || [];
+    currentFilteredStudents = resultados;
+
+    console.log(`📊 ${resultados.length} alunos encontrados`);
+
+    exibirResultados(resultados);
+  } catch (error) {
+    console.error("❌ Erro na busca:", error);
+    mostrarErro(`Erro na busca: ${error.message}`);
+    mostrarMensagemSemResultados();
+  } finally {
+    mostrarLoading(false);
+  }
+}
+
+async function registrarPresencaFalta(status) {
+  if (!selectedStudentId) {
+    mostrarErro("Nenhum aluno selecionado");
+    return;
+  }
+
+  try {
+    mostrarLoading(true);
+
+    const dataHoje = new Date().toISOString().split("T")[0];
+
+    console.log("📝 Registrando presença/falta:", {
+      selectedStudentId,
+      status,
+      dataHoje,
+    });
+
+    // Usando GET para evitar problemas de CORS
+    const params = new URLSearchParams({
+      action: "registrarPresenca",
+      alunoId: selectedStudentId,
+      data: dataHoje,
+      status: status, // 'P' para presença, 'A' para ausência
+    });
+
+    const response = await fetch(`${API_URL}?${params.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(`Erro HTTP: ${response.status}`);
+    }
+
+    const resultado = await response.json();
+
+    if (!resultado.success) {
+      throw new Error(resultado.error || "Erro desconhecido");
+    }
+
+    const acao = status === "P" ? "Presença" : "Falta";
+    mostrarSucesso(`✅ ${acao} registrada com sucesso!`);
+
+    // Atualiza os dados
+    await carregarTodosAlunos();
+
+    // Atualiza o painel de detalhes se estiver aberto
+    if (selectedStudentId) {
+      const alunoAtualizado = allStudentsRawData.find(
+        (a) => a.ID_Unico === selectedStudentId
+      );
+      if (alunoAtualizado) {
+        atualizarPainelDetalhes(alunoAtualizado);
+      }
+    }
+  } catch (error) {
+    console.error("❌ Erro ao registrar presença/falta:", error);
+    mostrarErro(`Erro: ${error.message}`);
+  } finally {
+    mostrarLoading(false);
+  }
+}
+
+async function atualizarNotas() {
+  if (!selectedStudentId) {
+    mostrarErro("Nenhum aluno selecionado");
+    return;
+  }
+
+  const nota1Input = document.getElementById("detailNota1");
+  const nota2Input = document.getElementById("detailNota2");
+  const nota3Input = document.getElementById("detailNota3");
+
+  const nota1 = nota1Input ? nota1Input.value : "";
+  const nota2 = nota2Input ? nota2Input.value : "";
+  const nota3 = nota3Input ? nota3Input.value : "";
+
+  try {
+    mostrarLoading(true);
+
+    console.log("📝 Atualizando notas:", {
+      selectedStudentId,
+      nota1,
+      nota2,
+      nota3,
+    });
+
+    // Usando GET para evitar problemas de CORS
+    const params = new URLSearchParams({
+      action: "atualizarNotas",
+      alunoId: selectedStudentId,
+      nota1: nota1 || "",
+      nota2: nota2 || "",
+      nota3: nota3 || "",
+    });
+
+    const response = await fetch(`${API_URL}?${params.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(`Erro HTTP: ${response.status}`);
+    }
+
+    const resultado = await response.json();
+
+    if (!resultado.success) {
+      throw new Error(resultado.error || "Erro desconhecido");
+    }
+
+    mostrarSucesso("✅ Notas atualizadas com sucesso!");
+
+    // Atualiza os dados
+    await carregarTodosAlunos();
+  } catch (error) {
+    console.error("❌ Erro ao atualizar notas:", error);
+    mostrarErro(`Erro: ${error.message}`);
+  } finally {
+    mostrarLoading(false);
+  }
+}
+
+// === FUNÇÕES DE INTERFACE ===
+function exibirResultados(alunos) {
+  const resultTableBody = document.getElementById("resultTableBody");
+  const noResultsMessage = document.getElementById("noResults");
+
+  if (!resultTableBody) return;
+
+  resultTableBody.innerHTML = "";
+
+  if (alunos.length === 0) {
+    mostrarMensagemSemResultados();
+    return;
+  }
+
+  if (noResultsMessage) {
+    noResultsMessage.style.display = "none";
+  }
+
+  alunos.forEach((aluno) => {
+    // Calcula média e situação localmente para garantir consistência
+    const calculado = calcularMediaESituacao(aluno);
+    const mediaExibir =
+      calculado.media > 0 ? calculado.media : aluno.Media || "-";
+    const situacaoExibir = calculado.situacao;
+
+    const linha = document.createElement("tr");
+    linha.innerHTML = `
+            <td>${aluno.ID_Unico}</td>
+            <td class="nome-aluno">${aluno.Nome}</td>
+            <td>${aluno.Faltas || 0}</td>
+            <td>${aluno.Nota1 || "-"}</td>
+            <td>${aluno.Nota2 || "-"}</td>
+            <td>${aluno.Nota3 || "-"}</td>
+            <td>${mediaExibir}</td>
+            <td>
+                <span class="badge ${obterClasseSituacao(situacaoExibir)}">
+                    ${situacaoExibir}
+                </span>
+            </td>
+            <td>
+                <button onclick="abrirPainelDetalhes('${
+                  aluno.ID_Unico
+                }')" class="btn-detalhes">
+                    👁️ Ver
+                </button>
+            </td>
+        `;
+    resultTableBody.appendChild(linha);
+  });
+
+  console.log(`📋 ${alunos.length} alunos exibidos na tabela`);
+}
+
+function abrirPainelDetalhes(alunoId) {
+  const aluno = allStudentsRawData.find((a) => a.ID_Unico === alunoId);
+  if (!aluno) {
+    mostrarErro("Aluno não encontrado");
+    return;
+  }
+
+  selectedStudentId = alunoId;
+  atualizarPainelDetalhes(aluno);
+
+  const studentDetail = document.getElementById("studentDetail");
+  if (studentDetail) {
+    studentDetail.style.display = "block";
+  }
+}
+
+function atualizarPainelDetalhes(aluno) {
+  const detailName = document.getElementById("detailName");
+  const detailFaltas = document.getElementById("detailFaltas");
+  const detailNota1 = document.getElementById("detailNota1");
+  const detailNota2 = document.getElementById("detailNota2");
+  const detailNota3 = document.getElementById("detailNota3");
+
+  if (detailName) detailName.textContent = aluno.Nome;
+  if (detailFaltas) detailFaltas.textContent = aluno.Faltas || 0;
+  if (detailNota1) detailNota1.value = aluno.Nota1 || "";
+  if (detailNota2) detailNota2.value = aluno.Nota2 || "";
+  if (detailNota3) detailNota3.value = aluno.Nota3 || "";
+}
+
+function fecharPainelDetalhes() {
+  const studentDetail = document.getElementById("studentDetail");
+  if (studentDetail) {
+    studentDetail.style.display = "none";
+  }
+  selectedStudentId = null;
+}
+
+function aplicarFiltros() {
+  // Esta função aplica filtros localmente nos dados já carregados
+  const searchInput = document.getElementById("searchInput");
+  const periodoFilter = document.getElementById("periodoFilter");
+  const cursoFilter = document.getElementById("cursoFilter");
+
+  const nomeAluno = searchInput ? searchInput.value.toLowerCase().trim() : "";
+  const periodo = periodoFilter ? periodoFilter.value : "";
+  const curso = cursoFilter ? cursoFilter.value : "";
+
+  let alunosFiltrados = allStudentsRawData;
+
+  if (nomeAluno) {
+    alunosFiltrados = alunosFiltrados.filter((aluno) =>
+      aluno.Nome.toLowerCase().includes(nomeAluno)
+    );
+  }
+
+  if (periodo) {
+    alunosFiltrados = alunosFiltrados.filter(
+      (aluno) => aluno.Periodo === periodo
+    );
+  }
+
+  if (curso) {
+    alunosFiltrados = alunosFiltrados.filter((aluno) => aluno.Origem === curso);
+  }
+
+  currentFilteredStudents = alunosFiltrados;
+  exibirResultados(currentFilteredStudents);
+}
+
+function limparFiltros() {
+  const searchInput = document.getElementById("searchInput");
+  const periodoFilter = document.getElementById("periodoFilter");
+  const cursoFilter = document.getElementById("cursoFilter");
+
+  if (searchInput) searchInput.value = "";
+  if (periodoFilter) periodoFilter.value = "";
+  if (cursoFilter) cursoFilter.value = "";
+
+  currentFilteredStudents = [...allStudentsRawData];
+  exibirResultados(currentFilteredStudents);
+}
+
+function preencherFiltros() {
+  const periodoFilter = document.getElementById("periodoFilter");
+  const cursoFilter = document.getElementById("cursoFilter");
+
+  if (periodoFilter) {
+    const periodos = [
+      ...new Set(allStudentsRawData.map((a) => a.Periodo).filter((p) => p)),
+    ];
+    periodoFilter.innerHTML = '<option value="">Todos os períodos</option>';
+    periodos.forEach((periodo) => {
+      const option = document.createElement("option");
+      option.value = periodo;
+      option.textContent = periodo;
+      periodoFilter.appendChild(option);
+    });
+  }
+
+  if (cursoFilter) {
+    const cursos = [
+      ...new Set(allStudentsRawData.map((a) => a.Origem).filter((o) => o)),
+    ];
+    cursoFilter.innerHTML = '<option value="">Todos os cursos</option>';
+    cursos.forEach((curso) => {
+      const option = document.createElement("option");
+      option.value = curso;
+      option.textContent = curso;
+      cursoFilter.appendChild(option);
+    });
+  }
+}
+
+function mostrarMensagemSemResultados() {
+  const noResultsMessage = document.getElementById("noResults");
+  if (noResultsMessage) {
+    noResultsMessage.style.display = "block";
+  }
+}
+
+// === MODAL DE REGISTRO ===
+function abrirModalRegistro() {
+  const registrationModal = document.getElementById("registrationModal");
+  if (registrationModal) {
+    registrationModal.style.display = "block";
+    preencherModalRegistro();
+  }
+}
+
+function fecharModalRegistro() {
+  const registrationModal = document.getElementById("registrationModal");
+  if (registrationModal) {
+    registrationModal.style.display = "none";
+  }
+}
+
+function preencherModalRegistro() {
+  const alunoSelecionadoSelect = document.getElementById("alunoSelecionado");
+  const dataPresencaInput = document.getElementById("dataPresenca");
+
+  if (alunoSelecionadoSelect) {
+    alunoSelecionadoSelect.innerHTML =
+      '<option value="">Selecione um aluno</option>';
+    allStudentsRawData.forEach((aluno) => {
+      const option = document.createElement("option");
+      option.value = aluno.ID_Unico;
+      option.textContent = `${aluno.Nome} (${aluno.ID_Unico})`;
+      alunoSelecionadoSelect.appendChild(option);
+    });
+  }
+
+  if (dataPresencaInput) {
+    const hoje = new Date().toISOString().split("T")[0];
+    dataPresencaInput.value = hoje;
+  }
+}
+
+async function submeterPresenca() {
+  const alunoSelecionadoSelect = document.getElementById("alunoSelecionado");
+  const dataPresencaInput = document.getElementById("dataPresenca");
+  const presenteRadio = document.getElementById("presente");
+  const ausenteRadio = document.getElementById("ausente");
+
+  const alunoId = alunoSelecionadoSelect ? alunoSelecionadoSelect.value : "";
+  const data = dataPresencaInput ? dataPresencaInput.value : "";
+  const status =
+    presenteRadio && presenteRadio.checked
+      ? "P"
+      : ausenteRadio && ausenteRadio.checked
+      ? "A"
+      : "";
+
+  if (!alunoId || !data || !status) {
+    mostrarErro("Preencha todos os campos");
+    return;
+  }
+
+  try {
+    mostrarLoading(true);
+
+    console.log("📝 Submetendo presença via modal:", { alunoId, data, status });
+
+    // Usando GET para evitar problemas de CORS
+    const params = new URLSearchParams({
+      action: "registrarPresenca",
+      alunoId: alunoId,
+      data: data,
+      status: status,
+    });
+
+    const response = await fetch(`${API_URL}?${params.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(`Erro HTTP: ${response.status}`);
+    }
+
+    const resultado = await response.json();
+
+    if (!resultado.success) {
+      throw new Error(resultado.error || "Erro desconhecido");
+    }
+
+    const acao = status === "P" ? "Presença" : "Falta";
+    mostrarSucesso(`✅ ${acao} registrada com sucesso!`);
+
+    fecharModalRegistro();
+    await carregarTodosAlunos();
+  } catch (error) {
+    console.error("❌ Erro ao submeter presença:", error);
+    mostrarErro(`Erro: ${error.message}`);
+  } finally {
+    mostrarLoading(false);
+  }
+}
+
+// === FUNÇÕES AUXILIARES ===
+function calcularMediaESituacao(aluno) {
+  const nota1 = parseFloat(String(aluno.Nota1 || 0).replace(",", ".")) || 0;
+  const nota2 = parseFloat(String(aluno.Nota2 || 0).replace(",", ".")) || 0;
+  const nota3 = parseFloat(String(aluno.Nota3 || 0).replace(",", ".")) || 0;
+
+  const notas = [nota1, nota2, nota3].filter((n) => n > 0);
+
+  if (notas.length === 0) {
+    return {
+      media: 0,
+      situacao: "Em Curso",
     };
+  }
 
-    // Event listeners para os filtros do modal de seleção de aluno
-    filtroPeriodoModal.addEventListener('change', populateAlunoSelect);
-    filtroOrigemModal.addEventListener('change', populateAlunoSelect);
+  const media = notas.reduce((a, b) => a + b) / notas.length;
+  const situacao = media >= 6.0 ? "Aprovado" : "Reprovado";
 
-    // Event listener para o botão de registrar presença no modal
-    submitPresencaButton.addEventListener('click', () => {
-        const alunoIdParaRegistro = alunoSelecionadoSelect.value;
-        const statusSelecionado = document.querySelector('input[name="statusPresenca"]:checked').value;
-        // Aqui: passa explicitamente a data do input do modal
-        registrarPresencaOuFalta(alunoIdParaRegistro, statusSelecionado, dataPresencaInput.value);
-    });
+  return {
+    media: media.toFixed(2),
+    situacao: situacao,
+  };
+}
 
-    // Event listener para o botão de atualizar notas no modal
-    submitNotasButton.addEventListener('click', () => {
-        const alunoIdParaNotas = alunoSelecionadoSelect.value;
-        updateNotes(alunoIdParaNotas, nota1Input.value, nota2Input.value, nota3Input.value);
-    });
+function obterClasseSituacao(situacao) {
+  if (!situacao) return "situacao-em-curso";
 
-    // --- Event Listeners para os botões de busca principais ---
-    searchButton.addEventListener('click', () => {
-        const filters = {
-            nomeAluno: searchInput.value,
-            periodo: periodoFilter.value,
-            curso: cursoFilter.value
-        };
-        fetchAndDisplayStudents(filters);
-    });
+  const situacaoLower = situacao.toLowerCase();
 
-    clearSearchButton.addEventListener('click', () => {
-        searchInput.value = '';
-        periodoFilter.value = '';
-        cursoFilter.value = '';
-        fetchAndDisplayStudents(); // Carrega todos os alunos sem filtros
-    });
+  if (situacaoLower.includes("aprovado")) return "situacao-aprovado";
+  if (situacaoLower.includes("reprovado")) return "situacao-reprovado";
+  if (
+    situacaoLower.includes("recuperacao") ||
+    situacaoLower.includes("recuperação")
+  )
+    return "situacao-recuperacao";
 
-    showAllButton.addEventListener('click', () => {
-        searchInput.value = '';
-        periodoFilter.value = '';
-        cursoFilter.value = '';
-        fetchAndDisplayStudents(); // Carrega todos os alunos sem filtros
-    });
+  return "situacao-em-curso";
+}
 
-    // Carrega todos os alunos ao iniciar a página e popula o select do modal
-    fetchAndDisplayStudents().then(() => {
-        populateAlunoSelect();
-    });
-});
+function mostrarLoading(show) {
+  const loading = document.getElementById("loading");
+  if (loading) {
+    loading.style.display = show ? "flex" : "none";
+  }
+}
+
+function mostrarSucesso(mensagem) {
+  mostrarNotificacao(mensagem, "success");
+}
+
+function mostrarErro(mensagem) {
+  mostrarNotificacao(mensagem, "error");
+}
+
+function mostrarAviso(mensagem) {
+  mostrarNotificacao(mensagem, "warning");
+}
+
+function mostrarNotificacao(mensagem, tipo = "info") {
+  // Remove notificações anteriores
+  const notificacaoExistente = document.querySelector(".notification");
+  if (notificacaoExistente) {
+    notificacaoExistente.remove();
+  }
+
+  const notificacao = document.createElement("div");
+  notificacao.className = `notification notification-${tipo}`;
+  notificacao.innerHTML = `
+        <span>${mensagem}</span>
+        <button onclick="this.parentElement.remove()">&times;</button>
+    `;
+
+  document.body.appendChild(notificacao);
+
+  // Remove automaticamente após 5 segundos
+  setTimeout(() => {
+    if (notificacao.parentElement) {
+      notificacao.remove();
+    }
+  }, 5000);
+}
