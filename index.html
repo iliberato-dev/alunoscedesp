@@ -333,5 +333,43 @@
         <button id="markAbsentButton">Marcar Falta</button>
       </div>
     </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Carregando...</div>
+      <div class="loading-subtext">Aguarde um momento</div>
+    </div>
+
+    <!-- Progress Indicator -->
+    <div id="progressIndicator" class="progress-indicator">
+      <div id="progressBar" class="progress-bar"></div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Notification Modal -->
+    <div id="notificationModal" class="notification-modal">
+      <div class="notification-content">
+        <div id="notificationIcon" class="notification-icon">
+          <span id="notificationIconSymbol">✓</span>
+        </div>
+        <h3 id="notificationTitle" class="notification-title">Título</h3>
+        <p id="notificationMessage" class="notification-message">Mensagem</p>
+        <div class="notification-actions">
+          <button id="notificationOkBtn" class="notification-btn primary">
+            OK
+          </button>
+          <button
+            id="notificationCancelBtn"
+            class="notification-btn secondary"
+            style="display: none"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
