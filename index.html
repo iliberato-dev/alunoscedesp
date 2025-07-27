@@ -1,192 +1,282 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Consulta de Alunos</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css" />
 
     <script src="script.js" defer></script>
-</head>
+  </head>
 
-<body>
+  <body>
     <div class="container">
-        <h1>Consulta de Alunos</h1>
+      <header>
+        <div class="header-content">
+          <h1>Sistema de Gestão Acadêmica</h1>
+          <p class="subtitle">Consulta e acompanhamento de alunos</p>
+        </div>
+        <button id="themeToggle" class="theme-toggle" title="Alternar tema">
+          <svg
+            class="sun-icon"
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            fill="currentColor"
+            viewBox="0 0 16 16"
+          >
+            <path
+              d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.414a.5.5 0 1 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z"
+            />
+          </svg>
+          <svg
+            class="moon-icon"
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            fill="currentColor"
+            viewBox="0 0 16 16"
+          >
+            <path
+              d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"
+            />
+          </svg>
+        </button>
+      </header>
 
-        <div class="search-section">
-            <div class="filter-group">
-                <label for="searchInput">Buscar por Nome:</label>
-                <input type="text" id="searchInput" placeholder="Digite o nome do aluno">
-            </div>
-
-            <div class="filter-group">
-                <label for="periodoFilter">Filtrar por Período:</label>
-                <select id="periodoFilter">
-                    <option value="">Todos</option>
-                    <option value="Tarde">Tarde</option>
-                    <option value="Noite">Noite</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="cursoFilter">Filtrar por Curso:</label>
-                <select id="cursoFilter">
-                    <option value="">Todos</option>
-                    <option value="PWT">PROGRAMAÇÃO TARDE</option>
-                    <option value="PWN">PROGRAMAÇÃO NOITE</option>
-                    <option value="DGT">DESIGNER TARDE</option>
-                    <option value="DGN">DESIGNER NOITE</option>
-                    <option value="MNT">MANICURE TARDE</option>
-                    <option value="MNN">MANICURE NOITE</option>
-                </select>
-            </div>
-
-            <div id="buttons">
-                <button id="searchButton">Buscar</button>
-                <button id="clearSearchButton">Limpar Busca</button>
-                <button id="showAllButton">Mostrar Todos</button>
-            </div>
+      <section class="search-section">
+        <div class="filter-group">
+          <label for="searchInput">Buscar por Nome</label>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Digite o nome do aluno"
+          />
         </div>
 
-        <div class="results-container">
-            <table id="alunosTable">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Faltas</th>
-                        <th>Nota 1º Bimestre</th>
-                        <th>Nota 2º Bimestre</th>
-                        <th>Nota 3º Bimestre</th>
-                        <th>Média</th>
-                        <th>Situação</th>
-                        <th>Origem</th>
-                    </tr>
-                </thead>
-                <tbody id="resultTableBody">
-                    </tbody>
-            </table>
-            <p id="noResults" class="hidden">Nenhum aluno encontrado.</p>
+        <div class="filter-group">
+          <label for="periodoFilter">Período</label>
+          <select id="periodoFilter">
+            <option value="">Todos os períodos</option>
+            <option value="Tarde">Tarde</option>
+            <option value="Noite">Noite</option>
+          </select>
         </div>
+
+        <div class="filter-group">
+          <label for="cursoFilter">Curso</label>
+          <select id="cursoFilter">
+            <option value="">Todos os cursos</option>
+            <option value="PWT">Programação Web - Tarde</option>
+            <option value="PWN">Programação Web - Noite</option>
+            <option value="DGT">Design Gráfico - Tarde</option>
+            <option value="DGN">Design Gráfico - Noite</option>
+            <option value="MNT">Manicure - Tarde</option>
+            <option value="MNN">Manicure - Noite</option>
+          </select>
+        </div>
+
+        <div id="buttons">
+          <button id="searchButton">
+            <span>Buscar</span>
+          </button>
+          <button id="clearSearchButton">
+            <span>Limpar</span>
+          </button>
+          <button id="showAllButton">
+            <span>Mostrar Todos</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="results-container">
+        <div class="table-wrapper">
+          <table id="alunosTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Faltas</th>
+                <th>1º Bimestre</th>
+                <th>2º Bimestre</th>
+                <th>3º Bimestre</th>
+                <th>Média</th>
+                <th>Situação</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="resultTableBody"></tbody>
+          </table>
+        </div>
+        <div id="noResults" class="hidden">
+          <p>Nenhum aluno encontrado com os critérios especificados.</p>
+        </div>
+      </section>
     </div>
 
     <button id="registerButton" title="Registrar">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-check" viewBox="0 0 16 16">
-            <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m1.679-4.493-1.335 2.214a.5.5 0 0 1-.753.116l-.882-.882a.5.5 0 1 1 .707-.707l.646.647 1.179-1.875a.5.5 0 1 1 .858.534ZM11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
-            <path d="M8.256 14.995c.57-.16.96-.544 1.144-.99.5-.99.47-2.31.252-3.282A3.5 3.5 0 0 0 8 10.5a3.5 3.5 0 0 0-4.752-3.377c-.218.972-.248 2.292.251 3.282.184.445.574.83 1.144.99M3 13.5a.5.5 0 0 1-.5-.5.5.5 0 0 0-.5-.5.5.5 0 0 1-.5-.5.5.5 0 0 0-.5-.5.5.5 0 0 1-.5-.5.5.5 0 0 0-.5-.5.5.5 0 0 1-.5-.5.5.5 0 0 0-.5-.5c.08-.094.125-.1.147-.1h3.364c.254 0 .524.024.795.06M2.5 14a.5.5 0 0 0-.5.5V15h-.5a.5.5 0 0 0 0 1H13a.5.5 0 0 0 0-1h-.5v-.5a.5.5 0 0 0-.5-.5H2.5Z"/>
-        </svg>
-        <span>Registrar</span>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        fill="currentColor"
+        class="bi bi-person-check"
+        viewBox="0 0 16 16"
+      >
+        <path
+          d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m1.679-4.493-1.335 2.214a.5.5 0 0 1-.753.116l-.882-.882a.5.5 0 1 1 .707-.707l.646.647 1.179-1.875a.5.5 0 1 1 .858.534ZM11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"
+        />
+        <path
+          d="M8.256 14.995c.57-.16.96-.544 1.144-.99.5-.99.47-2.31.252-3.282A3.5 3.5 0 0 0 8 10.5a3.5 3.5 0 0 0-4.752-3.377c-.218.972-.248 2.292.251 3.282.184.445.574.83 1.144.99M3 13.5a.5.5 0 0 1-.5-.5.5.5 0 0 0-.5-.5.5.5 0 0 1-.5-.5.5.5 0 0 0-.5-.5.5.5 0 0 1-.5-.5.5.5 0 0 0-.5-.5.5.5 0 0 1-.5-.5.5.5 0 0 0-.5-.5c.08-.094.125-.1.147-.1h3.364c.254 0 .524.024.795.06M2.5 14a.5.5 0 0 0-.5.5V15h-.5a.5.5 0 0 0 0 1H13a.5.5 0 0 0 0-1h-.5v-.5a.5.5 0 0 0-.5-.5H2.5Z"
+        />
+      </svg>
+      <span>Registrar</span>
     </button>
 
-
     <div id="registrationModal" class="modal hidden">
-        <div class="modal-content">
-            <span id="closeRegistrationModalButton" class="close-button">&times;</span>
-            <h2>Registrar Presença e Notas</h2>
+      <div class="modal-content">
+        <span id="closeRegistrationModalButton" class="close-button"
+          >&times;</span
+        >
+        <h2>Registrar Presença e Notas</h2>
 
-            <div class="form-section">
-                <h3>Selecionar Aluno</h3>
-                <div class="filter-group">
-                    <label for="filtroPeriodoModal">Filtrar por Período:</label>
-                    <select id="filtroPeriodoModal" class="full-width-input">
-                        <option value="">Todos</option>
-                        <option value="Tarde">Tarde</option>
-                        <option value="Noite">Noite</option>
-                    </select>
-                </div>
+        <div class="form-section">
+          <h3>Selecionar Aluno</h3>
+          <div class="filter-group">
+            <label for="filtroPeriodoModal">Filtrar por Período:</label>
+            <select id="filtroPeriodoModal" class="full-width-input">
+              <option value="">Todos</option>
+              <option value="Tarde">Tarde</option>
+              <option value="Noite">Noite</option>
+            </select>
+          </div>
 
-                <div class="filter-group">
-                    <label for="filtroOrigemModal">Filtrar por Curso:</label>
-                    <select id="filtroOrigemModal" class="full-width-input">
-                        <option value="">Todos</option>
-                        <option value="PWT">PROGRAMAÇÃO TARDE</option>
-                        <option value="PWN">PROGRAMAÇÃO NOITE</option>
-                        <option value="DGT">DESIGNER TARDE</option>
-                        <option value="DGN">DESIGNER NOITE</option>
-                        <option value="MNT">MANICURE TARDE</option>
-                        <option value="MNN">MANICURE NOITE</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="alunoSelecionado">Aluno:</label>
-                    <select id="alunoSelecionado" class="full-width-input">
-                        <option value="">Selecione um aluno</option>
-                    </select>
-                </div>
-            </div>
-
-            <hr class="form-separator">
-
-            <div class="form-section">
-                <h3>Registrar Presença</h3>
-                <div class="form-group">
-                    <label for="dataPresenca">Data:</label>
-                    <input type="date" id="dataPresenca" class="full-width-input">
-                </div>
-                <div class="form-group status-radio-group">
-                    <label>Status:</label>
-                    <div>
-                        <input type="radio" id="presente" name="statusPresenca" value="P" checked>
-                        <label for="presente">Presente</label>
-                    </div>
-                    <div>
-                        <input type="radio" id="ausente" name="statusPresenca" value="A">
-                        <label for="ausente">Ausente</label>
-                    </div>
-                </div>
-                <button id="submitPresenca" class="form-button">Registrar Presença</button>
-            </div>
-
-            <hr class="form-separator">
-
-            <div class="form-section">
-                <h3>Atualizar Notas</h3>
-                <div class="form-group">
-                    <label for="nota1">1º Bimestre:</label>
-                    <input type="number" id="nota1" step="0.1" min="0" max="10" class="full-width-input">
-                </div>
-                <div class="form-group">
-                    <label for="nota2">2º Bimestre:</label>
-                    <input type="number" id="nota2" step="0.1" min="0" max="10" class="full-width-input">
-                </div>
-                <div class="form-group">
-                    <label for="nota3">3º Bimestre:</label>
-                    <input type="number" id="nota3" step="0.1" min="0" max="10" class="full-width-input">
-                </div>
-                <button id="submitNotas" class="form-button">Atualizar Notas</button>
-            </div>
-
-            <p id="feedbackMessage" class="hidden feedback-message"></p>
+          <div class="filter-group">
+            <label for="filtroOrigemModal">Filtrar por Curso:</label>
+            <select id="filtroOrigemModal" class="full-width-input">
+              <option value="">Todos</option>
+              <option value="PWT">PROGRAMAÇÃO TARDE</option>
+              <option value="PWN">PROGRAMAÇÃO NOITE</option>
+              <option value="DGT">DESIGNER TARDE</option>
+              <option value="DGN">DESIGNER NOITE</option>
+              <option value="MNT">MANICURE TARDE</option>
+              <option value="MNN">MANICURE NOITE</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="alunoSelecionado">Aluno:</label>
+            <select id="alunoSelecionado" class="full-width-input">
+              <option value="">Selecione um aluno</option>
+            </select>
+          </div>
         </div>
+
+        <hr class="form-separator" />
+
+        <div class="form-section">
+          <h3>Registrar Presença</h3>
+          <div class="form-group">
+            <label for="dataPresenca">Data:</label>
+            <input type="date" id="dataPresenca" class="full-width-input" />
+          </div>
+          <div class="form-group status-radio-group">
+            <label>Status:</label>
+            <div>
+              <input
+                type="radio"
+                id="presente"
+                name="statusPresenca"
+                value="P"
+                checked
+              />
+              <label for="presente">Presente</label>
+            </div>
+            <div>
+              <input
+                type="radio"
+                id="ausente"
+                name="statusPresenca"
+                value="A"
+              />
+              <label for="ausente">Ausente</label>
+            </div>
+          </div>
+          <button id="submitPresenca" class="form-button">
+            Registrar Presença
+          </button>
+        </div>
+
+        <hr class="form-separator" />
+
+        <div class="form-section">
+          <h3>Atualizar Notas</h3>
+          <div class="form-group">
+            <label for="nota1">1º Bimestre:</label>
+            <input
+              type="number"
+              id="nota1"
+              step="0.1"
+              min="0"
+              max="10"
+              class="full-width-input"
+            />
+          </div>
+          <div class="form-group">
+            <label for="nota2">2º Bimestre:</label>
+            <input
+              type="number"
+              id="nota2"
+              step="0.1"
+              min="0"
+              max="10"
+              class="full-width-input"
+            />
+          </div>
+          <div class="form-group">
+            <label for="nota3">3º Bimestre:</label>
+            <input
+              type="number"
+              id="nota3"
+              step="0.1"
+              min="0"
+              max="10"
+              class="full-width-input"
+            />
+          </div>
+          <button id="submitNotas" class="form-button">Atualizar Notas</button>
+        </div>
+
+        <p id="feedbackMessage" class="hidden feedback-message"></p>
+      </div>
     </div>
 
     <div id="studentDetail" class="student-detail-panel">
-        <div class="detail-header">
-            <h2 id="detailName"></h2>
-            <button id="closeDetailPanel" class="close-button">&times;</button>
+      <div class="detail-header">
+        <h2 id="detailName"></h2>
+        <button id="closeDetailPanel" class="close-button">&times;</button>
+      </div>
+      <p><strong>Faltas:</strong> <span id="detailFaltas"></span></p>
+      <div class="form-section">
+        <h3>Notas</h3>
+        <div class="form-group">
+          <label for="detailNota1">1º Bimestre:</label>
+          <input type="number" id="detailNota1" step="0.1" min="0" max="10" />
         </div>
-        <p><strong>Faltas:</strong> <span id="detailFaltas"></span></p>
-        <div class="form-section">
-            <h3>Notas</h3>
-            <div class="form-group">
-                <label for="detailNota1">1º Bimestre:</label>
-                <input type="number" id="detailNota1" step="0.1" min="0" max="10">
-            </div>
-            <div class="form-group">
-                <label for="detailNota2">2º Bimestre:</label>
-                <input type="number" id="detailNota2" step="0.1" min="0" max="10">
-            </div>
-            <div class="form-group">
-                <label for="detailNota3">3º Bimestre:</label>
-                <input type="number" id="detailNota3" step="0.1" min="0" max="10">
-            </div>
-            <button id="updateNotesButton">Atualizar Notas</button>
+        <div class="form-group">
+          <label for="detailNota2">2º Bimestre:</label>
+          <input type="number" id="detailNota2" step="0.1" min="0" max="10" />
         </div>
-        <div class="form-section">
-            <h3>Registro de Presença</h3>
-            <button id="markPresentButton">Marcar Presença</button>
-            <button id="markAbsentButton">Marcar Falta</button>
+        <div class="form-group">
+          <label for="detailNota3">3º Bimestre:</label>
+          <input type="number" id="detailNota3" step="0.1" min="0" max="10" />
         </div>
+        <button id="updateNotesButton">Atualizar Notas</button>
+      </div>
+      <div class="form-section">
+        <h3>Registro de Presença</h3>
+        <button id="markPresentButton">Marcar Presença</button>
+        <button id="markAbsentButton">Marcar Falta</button>
+      </div>
     </div>
-</body>
+  </body>
 </html>
