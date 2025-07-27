@@ -179,6 +179,9 @@ function switchView(view) {
 async function carregarTodosAlunos() {
   try {
     mostrarLoading(true);
+    atualizarTextoLoading("Carregando alunos...", "Conectando com o servidor");
+    mostrarProgressIndicator(true, 20);
+
     console.log("📡 Carregando todos os alunos...");
 
     // Teste de conectividade
@@ -190,6 +193,9 @@ async function carregarTodosAlunos() {
     const testeData = await testeResponse.json();
     console.log("✅ Conectividade OK:", testeData);
 
+    mostrarProgressIndicator(true, 50);
+    atualizarTextoLoading("Carregando alunos...", "Processando dados");
+
     // Carrega dados
     const response = await fetch(API_URL);
 
@@ -198,6 +204,7 @@ async function carregarTodosAlunos() {
     }
 
     const data = await response.json();
+    mostrarProgressIndicator(true, 80);
 
     if (data.error) {
       throw new Error(data.error);
@@ -208,14 +215,25 @@ async function carregarTodosAlunos() {
 
     console.log(`📊 ${allStudentsRawData.length} alunos carregados`);
 
+    mostrarProgressIndicator(true, 100);
+    atualizarTextoLoading("Finalizando...", "Exibindo resultados");
+
     exibirResultados(currentFilteredStudents);
     preencherFiltros();
+
+    // Mostra toast de sucesso
+    mostrarToast(
+      `${allStudentsRawData.length} alunos carregados com sucesso`,
+      "success",
+      "Dados carregados"
+    );
   } catch (error) {
     console.error("❌ Erro ao carregar dados:", error);
-    mostrarErro(`Erro ao carregar dados: ${error.message}`);
+    mostrarErro(`Erro ao carregar dados: ${error.message}`, "Falha na Conexão");
     mostrarMensagemSemResultados();
   } finally {
     mostrarLoading(false);
+    mostrarProgressIndicator(false);
   }
 }
 
@@ -223,13 +241,16 @@ async function buscarAlunos() {
   const searchInput = document.getElementById("searchInput");
   const periodoFilter = document.getElementById("periodoFilter");
   const cursoFilter = document.getElementById("cursoFilter");
+  const searchButton = document.getElementById("searchButton");
 
   const nomeAluno = searchInput ? searchInput.value.trim() : "";
   const periodo = periodoFilter ? periodoFilter.value : "";
   const curso = cursoFilter ? cursoFilter.value : "";
 
   try {
-    mostrarLoading(true);
+    mostrarLoadingButton(searchButton, true);
+    atualizarTextoLoading("Buscando alunos...", "Aplicando filtros");
+
     console.log("🔍 Buscando alunos:", { nomeAluno, periodo, curso });
 
     let url = API_URL;
@@ -261,23 +282,44 @@ async function buscarAlunos() {
     console.log(`📊 ${resultados.length} alunos encontrados`);
 
     exibirResultados(resultados);
+
+    // Mostra toast com resultado da busca
+    if (resultados.length === 0) {
+      mostrarToast(
+        "Nenhum aluno encontrado com os filtros aplicados",
+        "warning",
+        "Busca vazia"
+      );
+    } else {
+      mostrarToast(
+        `${resultados.length} aluno(s) encontrado(s)`,
+        "success",
+        "Busca concluída"
+      );
+    }
   } catch (error) {
     console.error("❌ Erro na busca:", error);
-    mostrarErro(`Erro na busca: ${error.message}`);
+    mostrarErro(`Erro na busca: ${error.message}`, "Falha na Busca");
     mostrarMensagemSemResultados();
   } finally {
-    mostrarLoading(false);
+    mostrarLoadingButton(searchButton, false);
   }
 }
 
 async function registrarPresencaFalta(status) {
   if (!selectedStudentId) {
-    mostrarErro("Nenhum aluno selecionado");
+    mostrarErro("Nenhum aluno selecionado", "Seleção Obrigatória");
     return;
   }
 
+  const button =
+    status === "P"
+      ? document.getElementById("markPresentButton")
+      : document.getElementById("markAbsentButton");
+
   try {
-    mostrarLoading(true);
+    mostrarLoadingButton(button, true);
+    atualizarTextoLoading("Registrando presença...", "Salvando dados");
 
     const dataHoje = new Date().toISOString().split("T")[0];
 
@@ -308,7 +350,7 @@ async function registrarPresencaFalta(status) {
     }
 
     const acao = status === "P" ? "Presença" : "Falta";
-    mostrarSucesso(`✅ ${acao} registrada com sucesso!`);
+    mostrarSucesso(`${acao} registrada com sucesso!`, "Registro Salvo");
 
     // Atualiza os dados
     await carregarTodosAlunos();
@@ -324,28 +366,33 @@ async function registrarPresencaFalta(status) {
     }
   } catch (error) {
     console.error("❌ Erro ao registrar presença/falta:", error);
-    mostrarErro(`Erro: ${error.message}`);
+    mostrarErro(`Erro ao registrar: ${error.message}`, "Falha no Registro");
   } finally {
-    mostrarLoading(false);
+    mostrarLoadingButton(button, false);
   }
 }
 
 async function atualizarNotas() {
   if (!selectedStudentId) {
-    mostrarErro("Nenhum aluno selecionado");
+    mostrarErro("Nenhum aluno selecionado", "Seleção Obrigatória");
     return;
   }
 
   const nota1Input = document.getElementById("detailNota1");
   const nota2Input = document.getElementById("detailNota2");
   const nota3Input = document.getElementById("detailNota3");
+  const updateButton = document.getElementById("updateNotesButton");
 
   const nota1 = nota1Input ? nota1Input.value : "";
   const nota2 = nota2Input ? nota2Input.value : "";
   const nota3 = nota3Input ? nota3Input.value : "";
 
   try {
-    mostrarLoading(true);
+    mostrarLoadingButton(updateButton, true);
+    atualizarTextoLoading(
+      "Atualizando notas...",
+      "Calculando média e situação"
+    );
 
     console.log("📝 Atualizando notas:", {
       selectedStudentId,
@@ -375,15 +422,15 @@ async function atualizarNotas() {
       throw new Error(resultado.error || "Erro desconhecido");
     }
 
-    mostrarSucesso("✅ Notas atualizadas com sucesso!");
+    mostrarSucesso("Notas atualizadas com sucesso!", "Notas Salvas");
 
     // Atualiza os dados
     await carregarTodosAlunos();
   } catch (error) {
     console.error("❌ Erro ao atualizar notas:", error);
-    mostrarErro(`Erro: ${error.message}`);
+    mostrarErro(`Erro ao atualizar: ${error.message}`, "Falha na Atualização");
   } finally {
-    mostrarLoading(false);
+    mostrarLoadingButton(updateButton, false);
   }
 }
 
@@ -758,6 +805,7 @@ async function submeterPresenca() {
   const dataPresencaInput = document.getElementById("dataPresenca");
   const presenteRadio = document.getElementById("presente");
   const ausenteRadio = document.getElementById("ausente");
+  const submitButton = document.getElementById("submitPresenca");
 
   const alunoId = alunoSelecionadoSelect ? alunoSelecionadoSelect.value : "";
   const data = dataPresencaInput ? dataPresencaInput.value : "";
@@ -769,12 +817,13 @@ async function submeterPresenca() {
       : "";
 
   if (!alunoId || !data || !status) {
-    mostrarErro("Preencha todos os campos");
+    mostrarErro("Preencha todos os campos", "Campos Obrigatórios");
     return;
   }
 
   try {
-    mostrarLoading(true);
+    mostrarLoadingButton(submitButton, true);
+    atualizarTextoLoading("Registrando presença...", "Salvando informações");
 
     console.log("📝 Submetendo presença via modal:", { alunoId, data, status });
 
@@ -799,15 +848,15 @@ async function submeterPresenca() {
     }
 
     const acao = status === "P" ? "Presença" : "Falta";
-    mostrarSucesso(`✅ ${acao} registrada com sucesso!`);
+    mostrarSucesso(`${acao} registrada com sucesso!`, "Registro Concluído");
 
     fecharModalRegistro();
     await carregarTodosAlunos();
   } catch (error) {
     console.error("❌ Erro ao submeter presença:", error);
-    mostrarErro(`Erro: ${error.message}`);
+    mostrarErro(`Erro ao registrar: ${error.message}`, "Falha no Registro");
   } finally {
-    mostrarLoading(false);
+    mostrarLoadingButton(submitButton, false);
   }
 }
 
@@ -852,44 +901,218 @@ function obterClasseSituacao(situacao) {
 }
 
 function mostrarLoading(show) {
-  const loading = document.getElementById("loading");
+  const loading = document.getElementById("loadingOverlay");
   if (loading) {
-    loading.style.display = show ? "flex" : "none";
-  }
-}
-
-function mostrarSucesso(mensagem) {
-  mostrarNotificacao(mensagem, "success");
-}
-
-function mostrarErro(mensagem) {
-  mostrarNotificacao(mensagem, "error");
-}
-
-function mostrarAviso(mensagem) {
-  mostrarNotificacao(mensagem, "warning");
-}
-
-function mostrarNotificacao(mensagem, tipo = "info") {
-  // Remove notificações anteriores
-  const notificacaoExistente = document.querySelector(".notification");
-  if (notificacaoExistente) {
-    notificacaoExistente.remove();
-  }
-
-  const notificacao = document.createElement("div");
-  notificacao.className = `notification notification-${tipo}`;
-  notificacao.innerHTML = `
-        <span>${mensagem}</span>
-        <button onclick="this.parentElement.remove()">&times;</button>
-    `;
-
-  document.body.appendChild(notificacao);
-
-  // Remove automaticamente após 5 segundos
-  setTimeout(() => {
-    if (notificacao.parentElement) {
-      notificacao.remove();
+    if (show) {
+      loading.classList.add("active");
+    } else {
+      loading.classList.remove("active");
     }
-  }, 5000);
+  }
+}
+
+function mostrarProgressIndicator(show, progress = 0) {
+  const indicator = document.getElementById("progressIndicator");
+  const bar = document.getElementById("progressBar");
+
+  if (indicator && bar) {
+    if (show) {
+      indicator.classList.add("active");
+      bar.style.width = `${progress}%`;
+    } else {
+      indicator.classList.remove("active");
+      bar.style.width = "0%";
+    }
+  }
+}
+
+function atualizarTextoLoading(
+  texto = "Carregando...",
+  subtexto = "Aguarde um momento"
+) {
+  const loadingText = document.querySelector(".loading-text");
+  const loadingSubtext = document.querySelector(".loading-subtext");
+
+  if (loadingText) loadingText.textContent = texto;
+  if (loadingSubtext) loadingSubtext.textContent = subtexto;
+}
+
+function mostrarLoadingButton(buttonElement, show) {
+  if (!buttonElement) return;
+
+  if (show) {
+    buttonElement.classList.add("btn-loading");
+    buttonElement.disabled = true;
+    // Salva o texto original
+    const originalText = buttonElement.innerHTML;
+    buttonElement.dataset.originalText = originalText;
+  } else {
+    buttonElement.classList.remove("btn-loading");
+    buttonElement.disabled = false;
+    // Restaura o texto original
+    if (buttonElement.dataset.originalText) {
+      buttonElement.innerHTML = buttonElement.dataset.originalText;
+      delete buttonElement.dataset.originalText;
+    }
+  }
+}
+
+function mostrarSucesso(mensagem, titulo = "Sucesso!") {
+  mostrarNotificacaoModal(mensagem, "success", titulo);
+}
+
+function mostrarErro(mensagem, titulo = "Erro") {
+  mostrarNotificacaoModal(mensagem, "error", titulo);
+}
+
+function mostrarAviso(mensagem, titulo = "Atenção") {
+  mostrarNotificacaoModal(mensagem, "warning", titulo);
+}
+
+function mostrarInfo(mensagem, titulo = "Informação") {
+  mostrarNotificacaoModal(mensagem, "info", titulo);
+}
+
+function mostrarNotificacaoModal(
+  mensagem,
+  tipo = "info",
+  titulo = "Notificação",
+  showCancel = false
+) {
+  const modal = document.getElementById("notificationModal");
+  const icon = document.getElementById("notificationIcon");
+  const iconSymbol = document.getElementById("notificationIconSymbol");
+  const titleElement = document.getElementById("notificationTitle");
+  const messageElement = document.getElementById("notificationMessage");
+  const okBtn = document.getElementById("notificationOkBtn");
+  const cancelBtn = document.getElementById("notificationCancelBtn");
+
+  if (!modal) return;
+
+  // Remove classes anteriores
+  icon.className = `notification-icon ${tipo}`;
+
+  // Define ícone baseado no tipo
+  const icons = {
+    success: "✓",
+    error: "✗",
+    warning: "⚠",
+    info: "ℹ",
+  };
+
+  iconSymbol.textContent = icons[tipo] || "ℹ";
+  titleElement.textContent = titulo;
+  messageElement.textContent = mensagem;
+
+  // Configura botões
+  okBtn.style.display = "block";
+  cancelBtn.style.display = showCancel ? "block" : "none";
+
+  // Mostra modal
+  modal.classList.add("active");
+
+  // Event listeners
+  const closeModal = () => {
+    modal.classList.remove("active");
+    okBtn.onclick = null;
+    cancelBtn.onclick = null;
+  };
+
+  okBtn.onclick = closeModal;
+  cancelBtn.onclick = closeModal;
+
+  // Auto-close para sucessos
+  if (tipo === "success") {
+    setTimeout(closeModal, 3000);
+  }
+}
+
+function mostrarConfirmacao(mensagem, titulo = "Confirmação", callback) {
+  const modal = document.getElementById("notificationModal");
+  const icon = document.getElementById("notificationIcon");
+  const iconSymbol = document.getElementById("notificationIconSymbol");
+  const titleElement = document.getElementById("notificationTitle");
+  const messageElement = document.getElementById("notificationMessage");
+  const okBtn = document.getElementById("notificationOkBtn");
+  const cancelBtn = document.getElementById("notificationCancelBtn");
+
+  if (!modal) return;
+
+  icon.className = "notification-icon warning";
+  iconSymbol.textContent = "?";
+  titleElement.textContent = titulo;
+  messageElement.textContent = mensagem;
+
+  okBtn.textContent = "Confirmar";
+  cancelBtn.textContent = "Cancelar";
+  okBtn.style.display = "block";
+  cancelBtn.style.display = "block";
+
+  modal.classList.add("active");
+
+  const closeModal = () => {
+    modal.classList.remove("active");
+    okBtn.onclick = null;
+    cancelBtn.onclick = null;
+    okBtn.textContent = "OK";
+  };
+
+  okBtn.onclick = () => {
+    closeModal();
+    if (callback) callback(true);
+  };
+
+  cancelBtn.onclick = () => {
+    closeModal();
+    if (callback) callback(false);
+  };
+}
+
+function mostrarToast(mensagem, tipo = "info", titulo = "", duracao = 4000) {
+  const container = document.getElementById("toastContainer");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast ${tipo}`;
+
+  const icons = {
+    success: "✓",
+    error: "✗",
+    warning: "⚠",
+    info: "ℹ",
+  };
+
+  toast.innerHTML = `
+    <div class="toast-icon ${tipo}">${icons[tipo] || "ℹ"}</div>
+    <div class="toast-content">
+      ${titulo ? `<div class="toast-title">${titulo}</div>` : ""}
+      <div class="toast-message">${mensagem}</div>
+    </div>
+    <button class="toast-close">&times;</button>
+  `;
+
+  container.appendChild(toast);
+
+  // Anima entrada
+  requestAnimationFrame(() => {
+    toast.classList.add("active");
+  });
+
+  // Event listener para fechar
+  const closeBtn = toast.querySelector(".toast-close");
+  const closeToast = () => {
+    toast.classList.remove("active");
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 300);
+  };
+
+  closeBtn.onclick = closeToast;
+
+  // Auto close
+  if (duracao > 0) {
+    setTimeout(closeToast, duracao);
+  }
 }
