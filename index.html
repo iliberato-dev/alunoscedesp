@@ -48,11 +48,15 @@
       <section class="search-section">
         <div class="filter-group">
           <label for="searchInput">Buscar por Nome</label>
-          <input
-            type="text"
-            id="searchInput"
-            placeholder="Digite o nome do aluno"
-          />
+          <div class="autocomplete-container">
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Digite o nome do aluno"
+              autocomplete="off"
+            />
+            <div id="autocompleteDropdown" class="autocomplete-dropdown"></div>
+          </div>
         </div>
 
         <div class="filter-group">
@@ -68,12 +72,7 @@
           <label for="cursoFilter">Curso</label>
           <select id="cursoFilter">
             <option value="">Todos os cursos</option>
-            <option value="PWT">Programação Web - Tarde</option>
-            <option value="PWN">Programação Web - Noite</option>
-            <option value="DGT">Design Gráfico - Tarde</option>
-            <option value="DGN">Design Gráfico - Noite</option>
-            <option value="MNT">Manicure - Tarde</option>
-            <option value="MNN">Manicure - Noite</option>
+            <!-- Opções serão preenchidas dinamicamente baseadas nas permissões do usuário -->
           </select>
         </div>
 
@@ -130,22 +129,44 @@
 
         <!-- Visualização em Tabela -->
         <div id="tableContainer" class="table-wrapper hidden">
-          <table id="alunosTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nome</th>
-                <th>Faltas</th>
-                <th>1º Bimestre</th>
-                <th>2º Bimestre</th>
-                <th>3º Bimestre</th>
-                <th>Média</th>
-                <th>Situação</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="resultTableBody"></tbody>
-          </table>
+          <!-- Controles de Presença em Lote -->
+          <div id="batchAttendanceControls" class="batch-controls hidden">
+            <div class="batch-header">
+              <h3>📋 Registro de Presença em Lote</h3>
+              <div class="batch-date">
+                <label for="batchDate">Data:</label>
+                <input type="date" id="batchDate" />
+              </div>
+            </div>
+            <div class="batch-actions">
+              <button id="confirmBatchBtn" class="batch-btn confirm">
+                ✅ Confirmar Presenças (<span id="selectedCount">0</span>)
+              </button>
+              <button id="cancelBatchBtn" class="batch-btn cancel">
+                ❌ Cancelar
+              </button>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table id="alunosTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nome</th>
+                  <th>Faltas</th>
+                  <th>1º Bimestre</th>
+                  <th>2º Bimestre</th>
+                  <th>3º Bimestre</th>
+                  <th>Média</th>
+                  <th>Situação</th>
+                  <th class="attendance-col">✅ Presente</th>
+                  <th class="attendance-col">❌ Ausente</th>
+                </tr>
+              </thead>
+              <tbody id="resultTableBody"></tbody>
+            </table>
+          </div>
         </div>
 
         <div id="noResults" class="hidden">
@@ -194,7 +215,18 @@
         <span id="closeRegistrationModalButton" class="close-button"
           >&times;</span
         >
-        <h2>Registrar Presença e Notas</h2>
+        <h2>Registrar Presença</h2>
+
+        <!-- Overlay de Status -->
+        <div id="registrationStatus" class="registration-status">
+          <div class="status-content">
+            <div class="status-spinner"></div>
+            <div class="status-message">Processando...</div>
+            <div class="status-detail">
+              Aguarde enquanto salvamos as informações
+            </div>
+          </div>
+        </div>
 
         <div class="form-section">
           <h3>Selecionar Aluno</h3>
@@ -211,12 +243,7 @@
             <label for="filtroOrigemModal">Filtrar por Curso:</label>
             <select id="filtroOrigemModal" class="full-width-input">
               <option value="">Todos</option>
-              <option value="PWT">PROGRAMAÇÃO TARDE</option>
-              <option value="PWN">PROGRAMAÇÃO NOITE</option>
-              <option value="DGT">DESIGNER TARDE</option>
-              <option value="DGN">DESIGNER NOITE</option>
-              <option value="MNT">MANICURE TARDE</option>
-              <option value="MNN">MANICURE NOITE</option>
+              <!-- Opções serão preenchidas dinamicamente baseadas nas permissões do usuário -->
             </select>
           </div>
           <div class="form-group">
@@ -258,80 +285,11 @@
             </div>
           </div>
           <button id="submitPresenca" class="form-button">
-            Registrar Presença
+            <span class="btn-text">Registrar Presença</span>
           </button>
         </div>
 
-        <hr class="form-separator" />
-
-        <div class="form-section">
-          <h3>Atualizar Notas</h3>
-          <div class="form-group">
-            <label for="nota1">1º Bimestre:</label>
-            <input
-              type="number"
-              id="nota1"
-              step="0.1"
-              min="0"
-              max="10"
-              class="full-width-input"
-            />
-          </div>
-          <div class="form-group">
-            <label for="nota2">2º Bimestre:</label>
-            <input
-              type="number"
-              id="nota2"
-              step="0.1"
-              min="0"
-              max="10"
-              class="full-width-input"
-            />
-          </div>
-          <div class="form-group">
-            <label for="nota3">3º Bimestre:</label>
-            <input
-              type="number"
-              id="nota3"
-              step="0.1"
-              min="0"
-              max="10"
-              class="full-width-input"
-            />
-          </div>
-          <button id="submitNotas" class="form-button">Atualizar Notas</button>
-        </div>
-
         <p id="feedbackMessage" class="hidden feedback-message"></p>
-      </div>
-    </div>
-
-    <div id="studentDetail" class="student-detail-panel">
-      <div class="detail-header">
-        <h2 id="detailName"></h2>
-        <button id="closeDetailPanel" class="close-button">&times;</button>
-      </div>
-      <p><strong>Faltas:</strong> <span id="detailFaltas"></span></p>
-      <div class="form-section">
-        <h3>Notas</h3>
-        <div class="form-group">
-          <label for="detailNota1">1º Bimestre:</label>
-          <input type="number" id="detailNota1" step="0.1" min="0" max="10" />
-        </div>
-        <div class="form-group">
-          <label for="detailNota2">2º Bimestre:</label>
-          <input type="number" id="detailNota2" step="0.1" min="0" max="10" />
-        </div>
-        <div class="form-group">
-          <label for="detailNota3">3º Bimestre:</label>
-          <input type="number" id="detailNota3" step="0.1" min="0" max="10" />
-        </div>
-        <button id="updateNotesButton">Atualizar Notas</button>
-      </div>
-      <div class="form-section">
-        <h3>Registro de Presença</h3>
-        <button id="markPresentButton">Marcar Presença</button>
-        <button id="markAbsentButton">Marcar Falta</button>
       </div>
     </div>
 
