@@ -164,9 +164,7 @@ function addAdminFeatures() {
       </svg>
       <span>📊 Dashboard Administrativo</span>
     `;
-    statsButton.addEventListener("click", () => {
-      window.open("stats.html", "_blank");
-    });
+    statsButton.addEventListener("click", abrirDashboardAdministrativo);
     buttonsContainer.appendChild(statsButton);
 
     // Adicionar controle de presenças por data para admin
@@ -207,6 +205,426 @@ function hideIndividualEditingForAdmin() {
   `;
   document.head.appendChild(style);
   document.body.classList.add("admin-view");
+}
+
+// === DASHBOARD ADMINISTRATIVO (MODAL) ===
+async function abrirDashboardAdministrativo() {
+  if (currentUser.role !== "admin") {
+    mostrarErro(
+      "Acesso negado. Apenas administradores podem acessar esta funcionalidade.",
+      "Acesso Restrito"
+    );
+    return;
+  }
+
+  // Criar modal
+  const modal = document.createElement("div");
+  modal.id = "dashboardModal";
+  modal.className = "modal dashboard-modal";
+  modal.innerHTML = `
+    <div class="modal-content dashboard-content">
+      <div class="modal-header">
+        <h2>📊 Dashboard Administrativo - CEDESP</h2>
+        <button class="close-btn" onclick="fecharDashboard()" title="Fechar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="dashboard-loading" id="dashboardLoading">
+        <div class="loading-spinner"></div>
+        <p>Carregando dados da planilha...</p>
+      </div>
+      
+      <div class="dashboard-content-area" id="dashboardContent" style="display: none;">
+        <!-- Cards de Estatísticas Gerais -->
+        <div class="stats-overview">
+          <h3>📈 Visão Geral</h3>
+          <div class="stats-cards">
+            <div class="stat-card">
+              <div class="stat-icon">👥</div>
+              <div class="stat-info">
+                <div class="stat-number" id="totalAlunosCount">0</div>
+                <div class="stat-label">Total de Alunos</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">🎓</div>
+              <div class="stat-info">
+                <div class="stat-number" id="totalCursosCount">0</div>
+                <div class="stat-label">Cursos Ativos</div>
+              </div>
+            </div>
+            <div class="stat-card success">
+              <div class="stat-icon">✅</div>
+              <div class="stat-info">
+                <div class="stat-number" id="aprovadosCount">0</div>
+                <div class="stat-label">Aprovados</div>
+              </div>
+            </div>
+            <div class="stat-card warning">
+              <div class="stat-icon">⚠️</div>
+              <div class="stat-info">
+                <div class="stat-number" id="reprovadosCount">0</div>
+                <div class="stat-label">Reprovados</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estatísticas por Curso -->
+        <div class="course-stats">
+          <h3>📚 Estatísticas por Curso</h3>
+          <div class="course-cards" id="courseCards">
+            <!-- Será preenchido dinamicamente -->
+          </div>
+        </div>
+
+        <!-- Gráficos e Análises -->
+        <div class="charts-section">
+          <h3>📊 Análises Visuais</h3>
+          <div class="charts-grid">
+            <div class="chart-container">
+              <h4>Distribuição por Período</h4>
+              <canvas id="periodoChart" width="400" height="200"></canvas>
+            </div>
+            <div class="chart-container">
+              <h4>Taxa de Aprovação por Curso</h4>
+              <canvas id="aprovacaoChart" width="400" height="200"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabela de Alunos com Problemas -->
+        <div class="alerts-section">
+          <h3>🚨 Alunos que Precisam de Atenção</h3>
+          <div class="alerts-table" id="alertsTable">
+            <!-- Será preenchido dinamicamente -->
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  modal.style.display = "block";
+
+  // Carregar dados do dashboard
+  await carregarDadosDashboard();
+}
+
+function fecharDashboard() {
+  const modal = document.getElementById("dashboardModal");
+  if (modal) {
+    modal.remove();
+  }
+}
+
+async function carregarDadosDashboard() {
+  try {
+    console.log("📊 Carregando dados do dashboard...");
+
+    // Usar os dados já carregados ou buscar novos
+    let dadosAlunos = allStudentsRawData;
+
+    if (!dadosAlunos || dadosAlunos.length === 0) {
+      console.log("🔄 Buscando dados atualizados...");
+      await carregarTodosAlunos();
+      dadosAlunos = allStudentsRawData;
+    }
+
+    if (!dadosAlunos || dadosAlunos.length === 0) {
+      throw new Error("Nenhum dado de aluno encontrado");
+    }
+
+    // Processar dados para o dashboard
+    const stats = processarEstatisticas(dadosAlunos);
+
+    // Exibir dados no dashboard
+    exibirDadosDashboard(stats, dadosAlunos);
+
+    // Ocultar loading e mostrar conteúdo
+    document.getElementById("dashboardLoading").style.display = "none";
+    document.getElementById("dashboardContent").style.display = "block";
+
+    console.log("✅ Dashboard carregado com sucesso");
+  } catch (error) {
+    console.error("❌ Erro ao carregar dashboard:", error);
+    document.getElementById("dashboardLoading").innerHTML = `
+      <div class="error-message">
+        <span class="error-icon">❌</span>
+        <p>Erro ao carregar dados: ${error.message}</p>
+        <button onclick="carregarDadosDashboard()" class="btn-primary">Tentar Novamente</button>
+      </div>
+    `;
+  }
+}
+
+function processarEstatisticas(dadosAlunos) {
+  const stats = {
+    totalAlunos: dadosAlunos.length,
+    cursos: {},
+    periodos: {},
+    aprovados: 0,
+    reprovados: 0,
+    emCurso: 0,
+    alertas: [],
+  };
+
+  // Processar cada aluno
+  dadosAlunos.forEach((aluno) => {
+    // Contagem por curso
+    if (!stats.cursos[aluno.Origem]) {
+      stats.cursos[aluno.Origem] = {
+        nome: aluno.Origem,
+        periodo: aluno.Periodo,
+        total: 0,
+        aprovados: 0,
+        reprovados: 0,
+        emCurso: 0,
+        mediaGeral: 0,
+        somaMedias: 0,
+        alunosComMedia: 0,
+      };
+    }
+    stats.cursos[aluno.Origem].total++;
+
+    // Contagem por período
+    if (!stats.periodos[aluno.Periodo]) {
+      stats.periodos[aluno.Periodo] = 0;
+    }
+    stats.periodos[aluno.Periodo]++;
+
+    // Análise de situação
+    const media = parseFloat(aluno.Media) || 0;
+    const faltas = parseInt(aluno.Faltas) || 0;
+
+    if (media > 0) {
+      stats.cursos[aluno.Origem].somaMedias += media;
+      stats.cursos[aluno.Origem].alunosComMedia++;
+
+      if (media >= 6.0) {
+        stats.aprovados++;
+        stats.cursos[aluno.Origem].aprovados++;
+      } else {
+        stats.reprovados++;
+        stats.cursos[aluno.Origem].reprovados++;
+      }
+    } else {
+      stats.emCurso++;
+      stats.cursos[aluno.Origem].emCurso++;
+    }
+
+    // Alertas (alunos com problemas)
+    if (faltas >= 10 || (media > 0 && media < 6.0)) {
+      const motivo = [];
+      if (faltas >= 10) motivo.push(`${faltas} faltas`);
+      if (media > 0 && media < 6.0) motivo.push(`Média ${media}`);
+
+      stats.alertas.push({
+        id: aluno.ID_Unico,
+        nome: aluno.Nome,
+        curso: aluno.Origem,
+        periodo: aluno.Periodo,
+        media: media,
+        faltas: faltas,
+        motivo: motivo.join(", "),
+        prioridade: faltas >= 15 || media < 4.0 ? "alta" : "media",
+      });
+    }
+  });
+
+  // Calcular médias gerais por curso
+  Object.values(stats.cursos).forEach((curso) => {
+    if (curso.alunosComMedia > 0) {
+      curso.mediaGeral = (curso.somaMedias / curso.alunosComMedia).toFixed(1);
+    }
+  });
+
+  // Ordenar alertas por prioridade
+  stats.alertas.sort((a, b) => {
+    if (a.prioridade === "alta" && b.prioridade !== "alta") return -1;
+    if (a.prioridade !== "alta" && b.prioridade === "alta") return 1;
+    return b.faltas - a.faltas;
+  });
+
+  return stats;
+}
+
+function exibirDadosDashboard(stats, dadosAlunos) {
+  // Atualizar cards principais
+  document.getElementById("totalAlunosCount").textContent = stats.totalAlunos;
+  document.getElementById("totalCursosCount").textContent = Object.keys(
+    stats.cursos
+  ).length;
+  document.getElementById("aprovadosCount").textContent = stats.aprovados;
+  document.getElementById("reprovadosCount").textContent = stats.reprovados;
+
+  // Criar cards por curso
+  const courseCardsContainer = document.getElementById("courseCards");
+  courseCardsContainer.innerHTML = "";
+
+  Object.values(stats.cursos).forEach((curso) => {
+    const cursoCard = document.createElement("div");
+    cursoCard.className = "course-card";
+    cursoCard.innerHTML = `
+      <div class="course-header">
+        <h4>${curso.nome}</h4>
+        <span class="course-period">${curso.periodo}</span>
+      </div>
+      <div class="course-stats-grid">
+        <div class="course-stat">
+          <span class="stat-value">${curso.total}</span>
+          <span class="stat-label">Total</span>
+        </div>
+        <div class="course-stat success">
+          <span class="stat-value">${curso.aprovados}</span>
+          <span class="stat-label">Aprovados</span>
+        </div>
+        <div class="course-stat warning">
+          <span class="stat-value">${curso.reprovados}</span>
+          <span class="stat-label">Reprovados</span>
+        </div>
+        <div class="course-stat info">
+          <span class="stat-value">${curso.mediaGeral || "N/A"}</span>
+          <span class="stat-label">Média Geral</span>
+        </div>
+      </div>
+    `;
+    courseCardsContainer.appendChild(cursoCard);
+  });
+
+  // Criar tabela de alertas
+  const alertsContainer = document.getElementById("alertsTable");
+  if (stats.alertas.length > 0) {
+    alertsContainer.innerHTML = `
+      <table class="alerts-table-grid">
+        <thead>
+          <tr>
+            <th>Prioridade</th>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Curso</th>
+            <th>Motivo</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${stats.alertas
+            .map(
+              (alerta) => `
+            <tr class="alert-row ${alerta.prioridade}">
+              <td>
+                <span class="priority-badge ${alerta.prioridade}">
+                  ${alerta.prioridade === "alta" ? "🔴 Alta" : "🟡 Média"}
+                </span>
+              </td>
+              <td>${alerta.id}</td>
+              <td>${alerta.nome}</td>
+              <td>${alerta.curso}</td>
+              <td>${alerta.motivo}</td>
+              <td>
+                <button class="btn-small btn-primary" onclick="abrirDetalhesAluno('${
+                  alerta.id
+                }')">
+                  Ver Detalhes
+                </button>
+              </td>
+            </tr>
+          `
+            )
+            .join("")}
+        </tbody>
+      </table>
+    `;
+  } else {
+    alertsContainer.innerHTML = `
+      <div class="no-alerts">
+        <span class="success-icon">✅</span>
+        <p>Ótimo! Nenhum aluno precisa de atenção especial no momento.</p>
+      </div>
+    `;
+  }
+
+  // Criar gráficos simples (usando CSS)
+  criarGraficosCSS(stats);
+}
+
+function criarGraficosCSS(stats) {
+  // Gráfico de períodos
+  const periodoChart = document.getElementById("periodoChart");
+  const periodoData = Object.entries(stats.periodos);
+  const maxPeriodo = Math.max(...periodoData.map(([_, count]) => count));
+
+  periodoChart.innerHTML = "";
+  periodoChart.style.cssText =
+    "display: flex; align-items: end; gap: 10px; height: 200px; padding: 20px;";
+
+  periodoData.forEach(([periodo, count]) => {
+    const height = (count / maxPeriodo) * 160;
+    const bar = document.createElement("div");
+    bar.style.cssText = `
+      background: var(--gradient-secondary);
+      width: 60px;
+      height: ${height}px;
+      border-radius: 4px 4px 0 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--color-primary);
+      font-weight: bold;
+      position: relative;
+    `;
+    bar.innerHTML = `
+      <span style="margin-top: 5px; font-size: 12px;">${count}</span>
+      <span style="position: absolute; bottom: -25px; font-size: 10px; color: var(--color-text-muted);">
+        ${periodo}
+      </span>
+    `;
+    periodoChart.appendChild(bar);
+  });
+
+  // Gráfico de aprovação por curso
+  const aprovacaoChart = document.getElementById("aprovacaoChart");
+  aprovacaoChart.innerHTML = "";
+  aprovacaoChart.style.cssText = "padding: 20px;";
+
+  Object.values(stats.cursos).forEach((curso) => {
+    const total = curso.total;
+    const aprovados = curso.aprovados;
+    const taxa = total > 0 ? (aprovados / total) * 100 : 0;
+
+    const row = document.createElement("div");
+    row.style.cssText = "margin-bottom: 15px;";
+    row.innerHTML = `
+      <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+        <span style="color: var(--color-text-primary); font-size: 12px;">${
+          curso.nome
+        }</span>
+        <span style="color: var(--color-text-secondary); font-size: 12px; font-weight: bold;">${taxa.toFixed(
+          1
+        )}%</span>
+      </div>
+      <div style="background: rgba(255,255,255,0.1); border-radius: 10px; height: 8px;">
+        <div style="background: var(--gradient-secondary); height: 8px; width: ${taxa}%; border-radius: 10px; transition: width 0.5s ease;"></div>
+      </div>
+    `;
+    aprovacaoChart.appendChild(row);
+  });
+}
+
+function abrirDetalhesAluno(alunoId) {
+  // Fechar dashboard
+  fecharDashboard();
+
+  // Encontrar e exibir detalhes do aluno
+  const aluno = allStudentsRawData.find((a) => a.ID_Unico === alunoId);
+  if (aluno) {
+    selectedStudentId = alunoId;
+    exibirDetalhesAluno(aluno);
+  }
 }
 
 // === CONTROLE DE PRESENÇAS POR DATA (ADMIN) ===
