@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CEDESP - Estatísticas Administrativas</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="container stats-container">
+      <header>
+        <div class="header-content">
+          <h1>📊 Estatísticas Administrativas</h1>
+          <p class="subtitle">Dashboard completo do sistema CEDESP</p>
+        </div>
+        <button id="backToMain" class="back-btn">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            fill="currentColor"
+            viewBox="0 0 16 16"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"
+            />
+          </svg>
+          Voltar ao Sistema
+        </button>
+      </header>
+
+      <!-- Cards de Resumo -->
+      <section class="stats-summary">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-content">
+              <h3 id="totalStudents">0</h3>
+              <p>Total de Alunos</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-content">
+              <h3 id="approvedStudents">0</h3>
+              <p>Aprovados</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-content">
+              <h3 id="inProgressStudents">0</h3>
+              <p>Em Curso</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon">❌</div>
+            <div class="stat-content">
+              <h3 id="failedStudents">0</h3>
+              <p>Reprovados</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Gráficos -->
+      <section class="charts-section">
+        <div class="charts-grid">
+          <!-- Gráfico de Cursos -->
+          <div class="chart-container">
+            <h3>📚 Distribuição por Curso</h3>
+            <canvas id="coursesChart"></canvas>
+          </div>
+
+          <!-- Gráfico de Situação -->
+          <div class="chart-container">
+            <h3>📈 Status dos Alunos</h3>
+            <canvas id="statusChart"></canvas>
+          </div>
+
+          <!-- Gráfico de Períodos -->
+          <div class="chart-container">
+            <h3>🕐 Distribuição por Período</h3>
+            <canvas id="periodsChart"></canvas>
+          </div>
+
+          <!-- Gráfico de Médias -->
+          <div class="chart-container">
+            <h3>📊 Distribuição de Médias</h3>
+            <canvas id="gradesChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tabelas Detalhadas -->
+      <section class="detailed-stats">
+        <div class="stats-tables">
+          <!-- Estatísticas por Curso -->
+          <div class="table-container">
+            <h3>📋 Estatísticas Detalhadas por Curso</h3>
+            <div class="table-wrapper">
+              <table id="courseStatsTable">
+                <thead>
+                  <tr>
+                    <th>Curso</th>
+                    <th>Total</th>
+                    <th>Aprovados</th>
+                    <th>Em Curso</th>
+                    <th>Reprovados</th>
+                    <th>Taxa Aprovação</th>
+                    <th>Média Geral</th>
+                  </tr>
+                </thead>
+                <tbody id="courseStatsBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Top Alunos -->
+          <div class="table-container">
+            <h3>🏆 Melhores Alunos (Top 10)</h3>
+            <div class="table-wrapper">
+              <table id="topStudentsTable">
+                <thead>
+                  <tr>
+                    <th>Posição</th>
+                    <th>Nome</th>
+                    <th>Curso</th>
+                    <th>Média</th>
+                    <th>Situação</th>
+                  </tr>
+                </thead>
+                <tbody id="topStudentsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Carregando estatísticas...</div>
+      <div class="loading-subtext">Processando dados</div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="stats.js"></script>
+  </body>
+</html>
