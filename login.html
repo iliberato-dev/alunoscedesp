@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CEDESP - Login</title>
+    <link rel="stylesheet" href="login.css" />
+  </head>
+  <body>
+    <div class="login-container">
+      <div class="login-card">
+        <div class="login-header">
+          <div class="logo">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="48"
+              height="48"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"
+              />
+            </svg>
+            <h1>CEDESP</h1>
+          </div>
+          <p class="subtitle">Sistema de Gestão Acadêmica</p>
+        </div>
+
+        <form id="loginForm" class="login-form">
+          <div class="form-group">
+            <label for="username">Usuário</label>
+            <input type="text" id="username" name="username" required />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Senha</label>
+            <input type="password" id="password" name="password" required />
+          </div>
+
+          <button type="submit" id="loginBtn" class="login-btn">
+            <span>Entrar</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"
+              />
+            </svg>
+          </button>
+        </form>
+
+        <div class="login-help">
+          <h3>Usuários de Teste:</h3>
+          <div class="test-users">
+            <div class="user-card">
+              <strong>👨‍💻 Prof. Programação</strong>
+              <p>Usuário: <code>prof.programacao</code></p>
+              <p>Senha: <code>prog123</code></p>
+            </div>
+            <div class="user-card">
+              <strong>🎨 Prof. Design</strong>
+              <p>Usuário: <code>prof.design</code></p>
+              <p>Senha: <code>design123</code></p>
+            </div>
+            <div class="user-card">
+              <strong>💅 Prof. Manicure</strong>
+              <p>Usuário: <code>prof.manicure</code></p>
+              <p>Senha: <code>mani123</code></p>
+            </div>
+            <div class="user-card">
+              <strong>⚙️ Administrador</strong>
+              <p>Usuário: <code>admin</code></p>
+              <p>Senha: <code>admin123</code></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Autenticando...</div>
+    </div>
+
+    <!-- Notification Modal -->
+    <div id="notificationModal" class="notification-modal">
+      <div class="notification-content">
+        <div id="notificationIcon" class="notification-icon">
+          <span id="notificationIconSymbol">✓</span>
+        </div>
+        <h3 id="notificationTitle" class="notification-title">Título</h3>
+        <p id="notificationMessage" class="notification-message">Mensagem</p>
+        <div class="notification-actions">
+          <button id="notificationOkBtn" class="notification-btn primary">
+            OK
+          </button>
+          <button
+            id="notificationCancelBtn"
+            class="notification-btn secondary"
+            style="display: none"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="auth.js"></script>
+  </body>
+</html>
