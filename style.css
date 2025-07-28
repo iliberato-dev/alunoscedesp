@@ -2278,15 +2278,81 @@ select.full-width-input option {
   border: 1px solid rgba(244, 196, 48, 0.3);
 }
 
+/* Cabeçalho do Modal Melhorado */
+.attendance-modal .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  background: var(--gradient-primary);
+  border-bottom: 2px solid var(--color-secondary);
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+}
+
+.attendance-modal .modal-header h2 {
+  color: var(--color-text-primary);
+  margin: 0;
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+/* Botão de Fechar Melhorado */
+.attendance-modal .close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(244, 196, 48, 0.3);
+  color: var(--color-text-primary);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  padding: 0;
+}
+
+.attendance-modal .close-btn:hover {
+  background: var(--color-error);
+  border-color: var(--color-error);
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+}
+
+.attendance-modal .close-btn svg {
+  transition: transform var(--transition-fast);
+}
+
+.attendance-modal .close-btn:hover svg {
+  transform: rotate(90deg);
+}
+
+/* Filtros Melhorados */
 .attendance-filters {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.05);
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.03);
   border-radius: var(--border-radius-lg);
+  margin: 1.5rem;
   border: 1px solid rgba(244, 196, 48, 0.2);
+}
+
+.filters-section h3 {
+  color: var(--color-text-secondary);
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.filter-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.period-row {
+  padding-top: 1rem;
 }
 
 .filter-group {
@@ -2299,14 +2365,116 @@ select.full-width-input option {
   color: var(--color-text-secondary);
   margin-bottom: 0.5rem;
   font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
+/* Inputs Melhorados */
+.date-input,
+.select-input {
+  padding: 0.75rem 1rem;
+  background: var(--color-bg-input);
+  border: 1px solid rgba(244, 196, 48, 0.3);
+  border-radius: var(--border-radius-md);
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+  transition: all var(--transition-normal);
+}
+
+.date-input:focus,
+.select-input:focus {
+  outline: none;
+  border-color: var(--color-secondary);
+  box-shadow: var(--shadow-focus);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.select-input option {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+/* Divisor de Seção */
+.filter-section-divider {
+  text-align: center;
+  margin: 1.5rem 0;
+  position: relative;
+}
+
+.filter-section-divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(244, 196, 48, 0.3);
+}
+
+.filter-section-divider span {
+  background: var(--color-bg-primary);
+  color: var(--color-text-muted);
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+/* Ações dos Filtros */
 .filter-actions {
-  grid-column: 1 / -1;
   display: flex;
   gap: 1rem;
   justify-content: center;
-  margin-top: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(244, 196, 48, 0.2);
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all var(--transition-normal);
+  min-width: 180px;
+  justify-content: center;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.action-btn svg {
+  transition: transform var(--transition-fast);
+}
+
+.action-btn:hover svg {
+  transform: scale(1.1);
+}
+
+.btn-primary.action-btn {
+  background: var(--gradient-secondary);
+  color: var(--color-primary);
+  border: 1px solid var(--color-secondary);
+}
+
+.btn-primary.action-btn:hover {
+  box-shadow: 0 0 20px rgba(244, 196, 48, 0.4);
+}
+
+.btn-secondary.action-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-primary);
+  border: 1px solid rgba(244, 196, 48, 0.3);
+}
+
+.btn-secondary.action-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--color-secondary);
 }
 
 .attendance-summary {
@@ -2564,4 +2732,75 @@ select.full-width-input option {
   background: rgba(220, 53, 69, 0.2);
   color: #dc3545;
   border-color: rgba(220, 53, 69, 0.4);
+}
+
+/* === RESPONSIVIDADE PARA CONTROLE DE PRESENÇAS === */
+@media (max-width: 768px) {
+  .attendance-modal .modal-content {
+    max-width: 95vw;
+    margin: 1rem auto;
+  }
+
+  .attendance-modal .modal-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .attendance-modal .modal-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .attendance-filters {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+
+  .filter-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .filter-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .action-btn {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .attendance-modal .close-btn {
+    width: 35px;
+    height: 35px;
+  }
+}
+
+@media (max-width: 480px) {
+  .attendance-modal .modal-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .attendance-modal .modal-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .attendance-filters {
+    margin: 0.5rem;
+    padding: 1rem;
+  }
+
+  .filter-group label {
+    font-size: 0.8rem;
+  }
+
+  .date-input,
+  .select-input {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .action-btn {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+  }
 }
