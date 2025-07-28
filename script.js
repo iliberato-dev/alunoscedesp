@@ -226,51 +226,67 @@ function abrirControlePresencas() {
     <div class="modal-content attendance-content">
       <div class="modal-header">
         <h2>📅 Controle de Presenças - Administração</h2>
-        <button class="close-btn" onclick="fecharControlePresencas()">×</button>
+        <button class="close-btn" onclick="fecharControlePresencas()" title="Fechar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+          </svg>
+        </button>
       </div>
       
       <div class="attendance-filters">
-        <div class="filter-group">
-          <label for="attendanceDate">Data Específica:</label>
-          <input type="date" id="attendanceDate" class="form-control">
-        </div>
-        
-        <div class="filter-group">
-          <label for="attendanceDateStart">Período - Data Inicial:</label>
-          <input type="date" id="attendanceDateStart" class="form-control">
-        </div>
-        
-        <div class="filter-group">
-          <label for="attendanceDateEnd">Período - Data Final:</label>
-          <input type="date" id="attendanceDateEnd" class="form-control">
-        </div>
-        
-        <div class="filter-group">
-          <label for="attendanceCourse">Curso:</label>
-          <select id="attendanceCourse" class="form-control">
-            <option value="">Todos os Cursos</option>
-            <option value="PWT">Programação Web - Tarde</option>
-            <option value="PWN">Programação Web - Noite</option>
-            <option value="DGT">Design Gráfico - Tarde</option>
-            <option value="DGN">Design Gráfico - Noite</option>
-            <option value="MNT">Manicure - Tarde</option>
-            <option value="MNN">Manicure - Noite</option>
-          </select>
+        <div class="filters-section">
+          <h3>🎯 Filtros de Consulta</h3>
+          
+          <div class="filter-row">
+            <div class="filter-group">
+              <label for="attendanceDate">📅 Data Específica:</label>
+              <input type="date" id="attendanceDate" class="form-control date-input">
+            </div>
+            
+            <div class="filter-group">
+              <label for="attendanceCourse">🎓 Curso:</label>
+              <select id="attendanceCourse" class="form-control select-input">
+                <option value="">Todos os Cursos</option>
+                <option value="PWT">Programação Web - Tarde</option>
+                <option value="PWN">Programação Web - Noite</option>
+                <option value="DGT">Design Gráfico - Tarde</option>
+                <option value="DGN">Design Gráfico - Noite</option>
+                <option value="MNT">Manicure - Tarde</option>
+                <option value="MNN">Manicure - Noite</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="filter-section-divider">
+            <span>ou</span>
+          </div>
+          
+          <div class="filter-row period-row">
+            <div class="filter-group">
+              <label for="attendanceDateStart">📅 Período - Data Inicial:</label>
+              <input type="date" id="attendanceDateStart" class="form-control date-input">
+            </div>
+            
+            <div class="filter-group">
+              <label for="attendanceDateEnd">📅 Período - Data Final:</label>
+              <input type="date" id="attendanceDateEnd" class="form-control date-input">
+            </div>
+          </div>
         </div>
         
         <div class="filter-actions">
-          <button id="consultarPresencas" class="btn-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <button id="consultarPresencas" class="btn-primary action-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
               <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
             </svg>
-            Consultar Presenças
+            <span>Consultar Presenças</span>
           </button>
-          <button id="exportarPresencas" class="btn-secondary">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <button id="exportarPresencas" class="btn-secondary action-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
               <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
               <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
             </svg>
-            Exportar Dados
+            <span>Exportar Dados</span>
           </button>
         </div>
       </div>
@@ -328,9 +344,14 @@ function abrirControlePresencas() {
     .getElementById("exportarPresencas")
     .addEventListener("click", exportarDadosPresenca);
 
-  // Definir data padrão como hoje
-  const hoje = new Date().toISOString().split("T")[0];
-  document.getElementById("attendanceDate").value = hoje;
+  // Definir data padrão como hoje (corrigindo timezone)
+  const hoje = new Date();
+  hoje.setMinutes(hoje.getMinutes() - hoje.getTimezoneOffset());
+  const hojeFormatado = hoje.toISOString().split("T")[0];
+  document.getElementById("attendanceDate").value = hojeFormatado;
+
+  // Melhorar interação entre campos de data
+  setupDateFieldsInteraction();
 }
 
 function fecharControlePresencas() {
@@ -338,6 +359,30 @@ function fecharControlePresencas() {
   if (modal) {
     modal.remove();
   }
+}
+
+// Função para melhorar a interação entre os campos de data
+function setupDateFieldsInteraction() {
+  const dateSpecific = document.getElementById("attendanceDate");
+  const dateStart = document.getElementById("attendanceDateStart");
+  const dateEnd = document.getElementById("attendanceDateEnd");
+
+  // Quando preenche data específica, limpa período
+  dateSpecific.addEventListener("input", () => {
+    if (dateSpecific.value) {
+      dateStart.value = "";
+      dateEnd.value = "";
+    }
+  });
+
+  // Quando preenche período, limpa data específica
+  [dateStart, dateEnd].forEach((input) => {
+    input.addEventListener("input", () => {
+      if (dateStart.value || dateEnd.value) {
+        dateSpecific.value = "";
+      }
+    });
+  });
 }
 
 async function consultarPresencasPorData() {
@@ -645,10 +690,10 @@ function exibirResultadosPresenca(
 
   // Criar tabela de resultados
   const periodText = dateFilter
-    ? `Data: ${new Date(dateFilter).toLocaleDateString("pt-BR")}`
-    : `Período: ${new Date(startDate).toLocaleDateString("pt-BR")} a ${new Date(
-        endDate
-      ).toLocaleDateString("pt-BR")}`;
+    ? `Data: ${new Date(dateFilter + "T12:00:00").toLocaleDateString("pt-BR")}`
+    : `Período: ${new Date(startDate + "T12:00:00").toLocaleDateString(
+        "pt-BR"
+      )} a ${new Date(endDate + "T12:00:00").toLocaleDateString("pt-BR")}`;
 
   const courseText = course ? ` - Curso: ${course}` : " - Todos os Cursos";
 
