@@ -382,23 +382,57 @@ async function consultarPresencasPorData() {
       courseInput,
     });
 
-    // Aqui você integraria com sua API para buscar dados de presença
-    // Por enquanto, vou simular os dados baseados nos alunos existentes
-    let filteredStudents = [...allStudentsRawData];
+    let attendanceData = [];
 
-    if (courseInput) {
-      filteredStudents = filteredStudents.filter(
-        (student) => student.Origem === courseInput
+    if (dateFilter) {
+      // Consulta para data específica - usar API real
+      try {
+        const url = `${API_URL}?action=consultarPresencas&data=${dateFilter}${
+          courseInput ? `&curso=${courseInput}` : ""
+        }`;
+        console.log("🔗 Chamando API:", url);
+
+        const response = await fetch(url);
+        const result = await response.json();
+
+        console.log("📊 Resposta da API:", result);
+
+        if (result.success) {
+          attendanceData = result.data || [];
+        } else {
+          throw new Error(result.error || "Erro ao consultar presenças");
+        }
+      } catch (apiError) {
+        console.warn("⚠️ Erro na API, usando dados locais:", apiError);
+        // Fallback para dados simulados se a API falhar
+        let filteredStudents = [...allStudentsRawData];
+        if (courseInput) {
+          filteredStudents = filteredStudents.filter(
+            (student) => student.Origem === courseInput
+          );
+        }
+        attendanceData = simulateAttendanceData(
+          filteredStudents,
+          dateFilter,
+          null,
+          null
+        );
+      }
+    } else {
+      // Para período (múltiplas datas) - usar simulação por enquanto
+      let filteredStudents = [...allStudentsRawData];
+      if (courseInput) {
+        filteredStudents = filteredStudents.filter(
+          (student) => student.Origem === courseInput
+        );
+      }
+      attendanceData = simulateAttendanceData(
+        filteredStudents,
+        null,
+        startDate,
+        endDate
       );
     }
-
-    // Simular dados de presença (você deve substituir isso pela chamada real da API)
-    const attendanceData = simulateAttendanceData(
-      filteredStudents,
-      dateFilter,
-      startDate,
-      endDate
-    );
 
     exibirResultadosPresenca(
       attendanceData,
