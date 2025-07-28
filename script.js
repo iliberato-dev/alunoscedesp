@@ -1,18 +1,451 @@
 // === CONFIGURAÇÃO DO SISTEMA CEDESP ===
-// IMPORTANTE: Substitua esta URL pela URL do seu Web App do Google Apps Script
 const WEB_APP_URL =
   "https://script.google.com/macros/s/AKfycbzNq3Hz1Pvlx3Ty4YGJvj0UM4jQNe2adOEQWyomzpTnBHooEzgHa1TGMWfcd8mpzTDe/exec";
 
-// Detecta ambiente (local vs produção)
 const IS_LOCAL =
   location.hostname === "localhost" || location.hostname === "127.0.0.1";
 const API_URL = IS_LOCAL ? WEB_APP_URL : "/api/appsscript";
 
-// === VARIÁVEIS GLOBAIS ===
+// === SISTEMA DE CACHE OTIMIZADO ===
+class CacheManager {
+  constructor() {
+    this.cache = new Map();
+    this.cacheExpiry = new Map();
+    this.defaultTTL = 5 * 60 * 1000; // 5 minutos
+    this.attendanceCache = new Map(); // Cache específico para presenças
+    this.requestCache = new Map(); // Cache para requests duplicadas
+  }
+
+  set(key, data, ttl = this.defaultTTL) {
+    this.cache.set(key, data);
+    this.cacheExpiry.set(key, Date.now() + ttl);
+  }
+
+  get(key) {
+    if (!this.cache.has(key)) return null;
+
+    if (Date.now() > this.cacheExpiry.get(key)) {
+      this.cache.delete(key);
+      this.cacheExpiry.delete(key);
+      return null;
+    }
+
+    return this.cache.get(key);
+  }
+
+  // Cache para presenças com TTL mais longo
+  setAttendance(key, data) {
+    this.attendanceCache.set(key, {
+      data,
+      timestamp: Date.now(),
+      ttl: 15 * 60 * 1000, // 15 minutos para presenças
+    });
+  }
+
+  getAttendance(key) {
+    const cached = this.attendanceCache.get(key);
+    if (!cached) return null;
+
+    if (Date.now() - cached.timestamp > cached.ttl) {
+      this.attendanceCache.delete(key);
+      return null;
+    }
+
+    return cached.data;
+  }
+
+  // Cache para requests duplicadas (evita múltiplas chamadas simultâneas)
+  setRequest(key, promise) {
+    this.requestCache.set(key, {
+      promise,
+      timestamp: Date.now(),
+    });
+
+    // Limpar cache de request após 30 segundos
+    setTimeout(() => {
+      this.requestCache.delete(key);
+    }, 30000);
+  }
+
+  getRequest(key) {
+    const cached = this.requestCache.get(key);
+    if (!cached) return null;
+
+    // Se passou mais de 30s, invalidar
+    if (Date.now() - cached.timestamp > 30000) {
+      this.requestCache.delete(key);
+      return null;
+    }
+
+    return cached.promise;
+  }
+
+  clear() {
+    this.cache.clear();
+    this.cacheExpiry.clear();
+    this.attendanceCache.clear();
+    this.requestCache.clear();
+  }
+
+  invalidate(key) {
+    this.cache.delete(key);
+    this.cacheExpiry.delete(key);
+    this.attendanceCache.delete(key);
+  }
+
+  // Limpar apenas cache de presenças
+  clearAttendance() {
+    this.attendanceCache.clear();
+  }
+}
+
+// === SISTEMA DE PROCESSAMENTO INTELIGENTE COM CACHE ===
+class SmartBatchProcessor {
+  constructor() {
+    this.performanceMetrics = {
+      avgResponseTime: 2000,
+      successRate: 100,
+      errorCount: 0,
+      lastOptimalChunkSize: 3,
+    };
+    this.pendingRequests = new Map(); // Evitar requests duplicadas
+  }
+
+  // Calcular chunk size dinâmico baseado na performance
+  getOptimalChunkSize() {
+    const { avgResponseTime, successRate, errorCount } =
+      this.performanceMetrics;
+
+    // Se está com problemas, reduzir chunk
+    if (successRate < 80 || errorCount > 3) {
+      return Math.max(
+        1,
+        Math.floor(this.performanceMetrics.lastOptimalChunkSize / 2)
+      );
+    }
+
+    // Se está indo bem, pode aumentar
+    if (successRate > 95 && avgResponseTime < 3000) {
+      return Math.min(5, this.performanceMetrics.lastOptimalChunkSize + 1);
+    }
+
+    return this.performanceMetrics.lastOptimalChunkSize;
+  }
+
+  // Atualizar métricas de performance
+  updateMetrics(responseTime, success) {
+    // Média móvel simples
+    this.performanceMetrics.avgResponseTime =
+      this.performanceMetrics.avgResponseTime * 0.7 + responseTime * 0.3;
+
+    if (success) {
+      this.performanceMetrics.successRate = Math.min(
+        100,
+        this.performanceMetrics.successRate + 1
+      );
+      this.performanceMetrics.errorCount = Math.max(
+        0,
+        this.performanceMetrics.errorCount - 1
+      );
+    } else {
+      this.performanceMetrics.successRate = Math.max(
+        0,
+        this.performanceMetrics.successRate - 5
+      );
+      this.performanceMetrics.errorCount++;
+    }
+  }
+
+  // Processar com cache inteligente
+  async processWithCache(registro) {
+    const cacheKey = `attendance_${registro.alunoId}_${registro.data}_${registro.status}`;
+
+    // Verificar se já está em cache
+    const cached = cacheManager.getAttendance(cacheKey);
+    if (cached) {
+      console.log(`📋 Cache hit para ${registro.alunoId}`);
+      return { success: true, cached: true, alunoId: registro.alunoId };
+    }
+
+    // Verificar se já há uma requisição pendente
+    const pendingKey = `pending_${registro.alunoId}_${registro.data}`;
+    if (this.pendingRequests.has(pendingKey)) {
+      console.log(`⏳ Aguardando requisição pendente para ${registro.alunoId}`);
+      return await this.pendingRequests.get(pendingKey);
+    }
+
+    // Criar nova requisição
+    const requestPromise = this.executeRequest(registro);
+    this.pendingRequests.set(pendingKey, requestPromise);
+
+    try {
+      const result = await requestPromise;
+
+      // Salvar no cache se sucesso
+      if (result.success) {
+        cacheManager.setAttendance(cacheKey, result);
+      }
+
+      return result;
+    } finally {
+      this.pendingRequests.delete(pendingKey);
+    }
+  }
+
+  async executeRequest(registro) {
+    const startTime = Date.now();
+
+    try {
+      // ✅ USAR FUNÇÃO ROBUSTA PARA CRIAR PARÂMETROS
+      const params = createAttendanceParams(registro, true);
+
+      console.log(
+        `🚀 Executando request para curso ${registro.curso}:`,
+        params.toString()
+      );
+
+      // Timeout dinâmico baseado na performance
+      const timeout = this.performanceMetrics.errorCount > 2 ? 20000 : 10000;
+
+      const response = await withTimeout(
+        fetchWithRetry(`${API_URL}?${params.toString()}`, {}, 1),
+        timeout
+      );
+
+      const resultado = await response.json();
+      const responseTime = Date.now() - startTime;
+
+      this.updateMetrics(responseTime, resultado.success);
+
+      if (resultado.success) {
+        return { success: true, alunoId: registro.alunoId, responseTime };
+      } else {
+        console.error(
+          `Erro ao registrar ${registro.alunoId}:`,
+          resultado.error
+        );
+        return {
+          success: false,
+          error: resultado.error,
+          alunoId: registro.alunoId,
+        };
+      }
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      this.updateMetrics(responseTime, false);
+      console.error(`Erro na requisição para ${registro.alunoId}:`, error);
+      return {
+        success: false,
+        error: error.message,
+        alunoId: registro.alunoId,
+      };
+    }
+  }
+}
+
+const smartProcessor = new SmartBatchProcessor();
+
+// === FUNÇÃO PARA CRIAR PARÂMETROS ROBUSTOS ===
+function createAttendanceParams(registro, forceSpecificCourse = true) {
+  const params = {
+    action: "registrarPresencaAutomatica",
+    alunoId: registro.alunoId,
+    data: registro.data,
+    status: registro.status,
+    professor: registro.professor,
+    marcarTodos: "false",
+  };
+
+  // ✅ CRÍTICO: Sempre especificar curso quando disponível
+  if (registro.curso && forceSpecificCourse) {
+    params.curso = registro.curso;
+    params.apenasEsteCurso = "true"; // Flag crítica para o backend
+    params.naoMarcarOutrosCursos = "true"; // Flag adicional
+
+    console.log(
+      `🎯 Parâmetros ESPECÍFICOS para curso ${registro.curso}:`,
+      params
+    );
+  } else {
+    console.warn(`⚠️ Registro sem curso específico:`, registro);
+  }
+
+  return new URLSearchParams(params);
+}
+
+// === SISTEMA DE PRÉ-CACHE INTELIGENTE ===
+class PreCacheManager {
+  constructor() {
+    this.isPreCaching = false;
+    this.preCache = new Map();
+  }
+
+  // Pré-carregar dados que provavelmente serão usados
+  async preCacheAttendance(studentIds, date) {
+    if (this.isPreCaching) return;
+
+    this.isPreCaching = true;
+    console.log(
+      `🔮 Pré-carregando dados de presença para ${studentIds.length} alunos...`
+    );
+
+    try {
+      // Processar em pequenos chunks para não sobrecarregar
+      const chunkSize = 5;
+      for (let i = 0; i < studentIds.length; i += chunkSize) {
+        const chunk = studentIds.slice(i, i + chunkSize);
+
+        const promises = chunk.map(async (studentId) => {
+          const cacheKey = `attendance_${studentId}_${date}`;
+
+          // Se já está em cache, pular
+          if (cacheManager.getAttendance(cacheKey)) return;
+
+          try {
+            // Simular uma busca rápida de presença
+            const params = new URLSearchParams({
+              action: "verificarPresenca",
+              alunoId: studentId,
+              data: date,
+            });
+
+            const response = await withTimeout(
+              fetch(`${API_URL}?${params.toString()}`),
+              5000 // Timeout curto para pré-cache
+            );
+
+            if (response.ok) {
+              const result = await response.json();
+              cacheManager.setAttendance(cacheKey, result);
+            }
+          } catch (error) {
+            // Ignorar erros no pré-cache
+            console.warn(`Pre-cache failed for ${studentId}:`, error.message);
+          }
+        });
+
+        await Promise.allSettled(promises);
+
+        // Pequena pausa entre chunks
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+
+      console.log(`✅ Pré-cache concluído para ${studentIds.length} alunos`);
+    } finally {
+      this.isPreCaching = false;
+    }
+  }
+
+  // Limpar pré-cache antigo
+  cleanup() {
+    this.preCache.clear();
+  }
+}
+
+const preCacheManager = new PreCacheManager();
+
+// === LIMPEZA AUTOMÁTICA DE CACHE ===
+function setupCacheCleanup() {
+  // Limpar cache antigo a cada 10 minutos
+  setInterval(() => {
+    console.log("🧹 Limpeza automática de cache...");
+
+    // Limpar apenas dados muito antigos (mais de 30 minutos)
+    const now = Date.now();
+    const maxAge = 30 * 60 * 1000; // 30 minutos
+
+    for (const [key, expiry] of cacheManager.cacheExpiry.entries()) {
+      if (now - expiry > maxAge) {
+        cacheManager.invalidate(key);
+      }
+    }
+
+    // Limpar pré-cache
+    preCacheManager.cleanup();
+
+    console.log("✅ Limpeza de cache concluída");
+  }, 10 * 60 * 1000); // A cada 10 minutos
+}
+
+// Inicializar limpeza quando a página carregar
+document.addEventListener("DOMContentLoaded", () => {
+  setupCacheCleanup();
+});
+
+// === VARIÁVEIS GLOBAIS OTIMIZADAS ===
 let allStudentsRawData = [];
 let currentFilteredStudents = [];
 let selectedStudentId = null;
 let currentUser = null;
+const cacheManager = new CacheManager();
+
+// === UTILITÁRIOS DE REDE COM RETRY ===
+async function fetchWithRetry(url, options = {}, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(
+        `Tentativa ${attempt}/${maxRetries} para: ${url.substring(0, 100)}...`
+      );
+      const response = await fetch(url, options);
+
+      // Se a resposta não é ok, mas não é um erro de rede, não fazer retry
+      if (!response.ok && response.status < 500) {
+        console.log(`Resposta não-ok recebida: ${response.status}`);
+        return response;
+      }
+
+      if (response.ok) {
+        console.log(`✅ Sucesso na tentativa ${attempt}`);
+        return response;
+      }
+
+      // Para erros 5xx, fazer retry
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    } catch (error) {
+      console.warn(
+        `❌ Tentativa ${attempt}/${maxRetries} falhou:`,
+        error.message
+      );
+
+      if (attempt === maxRetries) {
+        throw error;
+      }
+
+      // Backoff exponencial: 1s, 2s, 4s
+      const delay = Math.pow(2, attempt - 1) * 1000;
+      console.log(`⏳ Aguardando ${delay}ms antes da próxima tentativa...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+
+// Função utilitária para criar Promise com timeout
+function withTimeout(promise, timeoutMs = 30000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Timeout após ${timeoutMs}ms`)),
+        timeoutMs
+      )
+    ),
+  ]);
+}
+
+// === SISTEMA DE PRESENÇA EM LOTE ===
+let batchAttendanceData = new Map(); // {alunoId: 'P' | 'A'}
+let isBatchMode = false;
+
+// === DOM ELEMENTS CACHE ===
+const domCache = {
+  elements: new Map(),
+  get(id) {
+    if (!this.elements.has(id)) {
+      this.elements.set(id, document.getElementById(id));
+    }
+    return this.elements.get(id);
+  },
+};
 
 // === INICIALIZAÇÃO ===
 document.addEventListener("DOMContentLoaded", () => {
@@ -28,6 +461,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeEventListeners();
   initializeViewToggle();
   setupUserInterface();
+  initializeBatchAttendance();
   carregarTodosAlunos();
 });
 
@@ -515,16 +949,16 @@ function exibirDadosDashboard(stats, dadosAlunos) {
             .map(
               (alerta) => `
             <tr class="alert-row ${alerta.prioridade}">
-              <td>
+              <td data-label="Prioridade">
                 <span class="priority-badge ${alerta.prioridade}">
                   ${alerta.prioridade === "alta" ? "🔴 Alta" : "🟡 Média"}
                 </span>
               </td>
-              <td>${alerta.id}</td>
-              <td>${alerta.nome}</td>
-              <td>${alerta.curso}</td>
-              <td>${alerta.motivo}</td>
-              <td>
+              <td data-label="ID">${alerta.id}</td>
+              <td data-label="Nome">${alerta.nome}</td>
+              <td data-label="Curso">${alerta.curso}</td>
+              <td data-label="Motivo">${alerta.motivo}</td>
+              <td data-label="Ações">
                 <button class="btn-small btn-primary" onclick="abrirDetalhesAluno('${
                   alerta.id
                 }')">
@@ -1139,11 +1573,11 @@ function exibirResultadosPresenca(
             <tr class="attendance-row ${
               record.status === "P" ? "present" : "absent"
             } ${!record.isMarked ? "not-marked" : ""}">
-              <td>${record.studentId}</td>
-              <td>${record.studentName}</td>
-              <td>${record.course}</td>
-              <td>${record.period}</td>
-              <td>
+              <td data-label="ID">${record.studentId}</td>
+              <td data-label="Nome do Aluno">${record.studentName}</td>
+              <td data-label="Curso">${record.course}</td>
+              <td data-label="Período">${record.period}</td>
+              <td data-label="Status">
                 <span class="status-badge ${
                   record.status === "P" ? "present" : "absent"
                 } ${!record.isMarked ? "not-marked" : ""}">
@@ -1197,62 +1631,77 @@ function exportarDadosPresenca() {
   mostrarSucesso("Dados exportados com sucesso!", "Exportação Concluída");
 }
 function initializeEventListeners() {
-  // Busca principal
-  const searchButton = document.getElementById("searchButton");
-  const clearSearchButton = document.getElementById("clearSearchButton");
-  const showAllButton = document.getElementById("showAllButton");
-  const searchInput = document.getElementById("searchInput");
+  // Cache de elementos mais usados
+  const elements = {
+    searchButton: domCache.get("searchButton"),
+    clearSearchButton: domCache.get("clearSearchButton"),
+    showAllButton: domCache.get("showAllButton"),
+    searchInput: domCache.get("searchInput"),
+    autocompleteDropdown: domCache.get("autocompleteDropdown"),
+    periodoFilter: domCache.get("periodoFilter"),
+    cursoFilter: domCache.get("cursoFilter"),
+    registerButton: domCache.get("registerButton"),
+    closeRegistrationModalButton: domCache.get("closeRegistrationModalButton"),
+    submitPresencaButton: domCache.get("submitPresenca"),
+  };
 
-  if (searchButton) searchButton.addEventListener("click", buscarAlunos);
-  if (clearSearchButton)
-    clearSearchButton.addEventListener("click", limparFiltros);
-  if (showAllButton)
-    showAllButton.addEventListener("click", carregarTodosAlunos);
-  if (searchInput) {
-    searchInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") buscarAlunos();
-    });
-  }
+  // Event listeners otimizados
+  elements.searchButton?.addEventListener("click", buscarAlunos);
+  elements.clearSearchButton?.addEventListener("click", limparFiltros);
+  elements.showAllButton?.addEventListener("click", () =>
+    carregarTodosAlunos(true)
+  ); // Force refresh
 
-  // Filtros
-  const periodoFilter = document.getElementById("periodoFilter");
-  const cursoFilter = document.getElementById("cursoFilter");
+  elements.searchInput?.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") buscarAlunos();
+  });
 
-  if (periodoFilter) periodoFilter.addEventListener("change", aplicarFiltros);
-  if (cursoFilter) cursoFilter.addEventListener("change", aplicarFiltros);
+  // Autocomplete functionality
+  elements.searchInput?.addEventListener("input", handleAutocomplete);
+  elements.searchInput?.addEventListener(
+    "keydown",
+    handleAutocompleteNavigation
+  );
+  elements.searchInput?.addEventListener("blur", () => {
+    // Delay hiding to allow item selection
+    setTimeout(() => hideAutocomplete(), 200);
+  });
 
-  // Painel de detalhes
-  const closeDetailPanelButton = document.getElementById("closeDetailPanel");
-  const updateNotesButton = document.getElementById("updateNotesButton");
-  const markPresentButton = document.getElementById("markPresentButton");
-  const markAbsentButton = document.getElementById("markAbsentButton");
+  console.log("🔗 Autocomplete events attached:", {
+    searchInput: !!elements.searchInput,
+    dropdown: !!elements.autocompleteDropdown,
+  });
 
-  if (closeDetailPanelButton)
-    closeDetailPanelButton.addEventListener("click", fecharPainelDetalhes);
-  if (updateNotesButton)
-    updateNotesButton.addEventListener("click", atualizarNotas);
-  if (markPresentButton)
-    markPresentButton.addEventListener("click", () =>
-      registrarPresencaFalta("P")
-    );
-  if (markAbsentButton)
-    markAbsentButton.addEventListener("click", () =>
-      registrarPresencaFalta("A")
-    );
+  // Filtros com debounce
+  elements.periodoFilter?.addEventListener(
+    "change",
+    debounce(aplicarFiltros, 300)
+  );
+  elements.cursoFilter?.addEventListener(
+    "change",
+    debounce(aplicarFiltros, 300)
+  );
 
   // Modal de registro
-  const registerButton = document.getElementById("registerButton");
-  const closeRegistrationModalButton = document.getElementById(
-    "closeRegistrationModalButton"
+  elements.registerButton?.addEventListener("click", abrirModalRegistro);
+  elements.closeRegistrationModalButton?.addEventListener(
+    "click",
+    fecharModalRegistro
   );
-  const submitPresencaButton = document.getElementById("submitPresenca");
+  elements.submitPresencaButton?.addEventListener("click", submeterPresenca);
+}
 
-  if (registerButton)
-    registerButton.addEventListener("click", abrirModalRegistro);
-  if (closeRegistrationModalButton)
-    closeRegistrationModalButton.addEventListener("click", fecharModalRegistro);
-  if (submitPresencaButton)
-    submitPresencaButton.addEventListener("click", submeterPresenca);
+// Função debounce para otimizar filtros
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
 }
 
 // === TEMA CLARO/ESCURO ===
@@ -1332,9 +1781,19 @@ function switchView(view) {
     if (view === "cards") {
       cardsContainer.classList.remove("hidden");
       tableContainer.classList.add("hidden");
+      // Remove classe table-mode
+      tableContainer.querySelectorAll(".table-wrapper").forEach((wrapper) => {
+        wrapper.classList.remove("table-mode");
+      });
+      // Esconder controles de presença em lote no modo cards
+      cancelBatchAttendance();
     } else {
       cardsContainer.classList.add("hidden");
       tableContainer.classList.remove("hidden");
+      // Adiciona classe table-mode para melhor espaçamento mobile
+      tableContainer.querySelectorAll(".table-wrapper").forEach((wrapper) => {
+        wrapper.classList.add("table-mode");
+      });
     }
   }
 
@@ -1347,27 +1806,37 @@ function switchView(view) {
 }
 
 // === FUNÇÕES DE API ===
-async function carregarTodosAlunos() {
+async function carregarTodosAlunos(forceRefresh = false) {
   try {
-    mostrarLoading(true);
-    atualizarTextoLoading("Carregando alunos...", "Conectando com o servidor");
-    mostrarProgressIndicator(true, 20);
+    const cacheKey = "allStudents";
 
-    console.log("📡 Carregando todos os alunos...");
+    // Verificar cache primeiro (exceto se forçar refresh)
+    if (!forceRefresh) {
+      const cachedData = cacheManager.get(cacheKey);
+      if (cachedData) {
+        console.log("� Carregando do cache (super rápido!)");
+        allStudentsRawData = cachedData;
 
-    // Teste de conectividade
-    const testeResponse = await fetch(`${API_URL}?teste=1`);
-    if (!testeResponse.ok) {
-      throw new Error(`Erro de conectividade: ${testeResponse.status}`);
+        const filteredByUser =
+          currentUser.role === "professor"
+            ? allStudentsRawData.filter((aluno) =>
+                currentUser.courses.includes(aluno.Origem)
+              )
+            : allStudentsRawData;
+        currentFilteredStudents = [...filteredByUser];
+
+        exibirResultados(currentFilteredStudents);
+        preencherFiltros();
+        return;
+      }
     }
 
-    const testeData = await testeResponse.json();
-    console.log("✅ Conectividade OK:", testeData);
+    mostrarLoading(true);
+    atualizarTextoLoading("Carregando alunos...", "Buscando dados atualizados");
+    mostrarProgressIndicator(true, 30);
 
-    mostrarProgressIndicator(true, 50);
-    atualizarTextoLoading("Carregando alunos...", "Processando dados");
+    console.log("📡 Carregando alunos da API...");
 
-    // Carrega dados
     const response = await fetch(API_URL);
 
     if (!response.ok) {
@@ -1375,7 +1844,7 @@ async function carregarTodosAlunos() {
     }
 
     const data = await response.json();
-    mostrarProgressIndicator(true, 80);
+    mostrarProgressIndicator(true, 70);
 
     if (data.error) {
       throw new Error(data.error);
@@ -1383,11 +1852,16 @@ async function carregarTodosAlunos() {
 
     allStudentsRawData = data.saida || [];
 
+    // Salvar no cache
+    cacheManager.set(cacheKey, allStudentsRawData);
+
     // Aplicar filtros baseados no usuário logado
-    const filteredByUser = AuthSystem.filterStudentsByUser(
-      allStudentsRawData,
-      currentUser
-    );
+    const filteredByUser =
+      currentUser.role === "professor"
+        ? allStudentsRawData.filter((aluno) =>
+            currentUser.courses.includes(aluno.Origem)
+          )
+        : allStudentsRawData;
     currentFilteredStudents = [...filteredByUser];
 
     console.log(
@@ -1395,10 +1869,21 @@ async function carregarTodosAlunos() {
     );
 
     mostrarProgressIndicator(true, 100);
-    atualizarTextoLoading("Finalizando...", "Exibindo resultados");
 
     exibirResultados(currentFilteredStudents);
     preencherFiltros();
+
+    // 🔥 PRÉ-CACHE INTELIGENTE: Carregar dados de presença em background
+    if (filteredByUser.length > 0 && filteredByUser.length <= 50) {
+      // Apenas para listas pequenas
+      const today = new Date().toISOString().split("T")[0];
+      const studentIds = filteredByUser.map((aluno) => aluno.ID_Unico);
+
+      // Fazer pré-cache em background (não bloquear UI)
+      setTimeout(() => {
+        preCacheManager.preCacheAttendance(studentIds, today);
+      }, 1000);
+    }
 
     // Mostra toast de sucesso
     mostrarToast(
@@ -1456,22 +1941,47 @@ async function buscarAlunos() {
     }
 
     const resultados = data.saida || [];
-    currentFilteredStudents = resultados;
 
-    console.log(`📊 ${resultados.length} alunos encontrados`);
+    // ✅ FILTRAR RESULTADOS POR PERMISSÕES DO USUÁRIO
+    let resultadosFiltrados = resultados;
+    if (currentUser.role === "professor") {
+      resultadosFiltrados = resultados.filter((aluno) =>
+        currentUser.courses.includes(aluno.Origem)
+      );
+      console.log(
+        `🔒 Professor - filtrados ${resultados.length} → ${resultadosFiltrados.length} alunos por permissões`
+      );
+    }
 
-    exibirResultados(resultados);
+    currentFilteredStudents = resultadosFiltrados;
+
+    console.log(
+      `📊 ${resultadosFiltrados.length} alunos encontrados (após filtros de permissão)`
+    );
+
+    exibirResultados(resultadosFiltrados);
 
     // Mostra toast com resultado da busca
-    if (resultados.length === 0) {
-      mostrarToast(
-        "Nenhum aluno encontrado com os filtros aplicados",
-        "warning",
-        "Busca vazia"
-      );
+    if (resultadosFiltrados.length === 0) {
+      if (
+        currentUser.role === "professor" &&
+        resultados.length > resultadosFiltrados.length
+      ) {
+        mostrarToast(
+          "Nenhum aluno encontrado nos seus cursos autorizados",
+          "warning",
+          "Acesso restrito"
+        );
+      } else {
+        mostrarToast(
+          "Nenhum aluno encontrado com os filtros aplicados",
+          "warning",
+          "Busca vazia"
+        );
+      }
     } else {
       mostrarToast(
-        `${resultados.length} aluno(s) encontrado(s)`,
+        `${resultadosFiltrados.length} aluno(s) encontrado(s)`,
         "success",
         "Busca concluída"
       );
@@ -1513,6 +2023,18 @@ async function registrarPresencaFalta(status) {
     }
   }
 
+  // ✅ IDENTIFICAR CURSO DO ALUNO PARA OTIMIZAÇÃO
+  const aluno = allStudentsRawData.find(
+    (a) => a.ID_Unico === selectedStudentId
+  );
+
+  if (!aluno) {
+    mostrarErro("Aluno não encontrado nos dados carregados.", "Erro de Dados");
+    return;
+  }
+
+  const cursoAluno = aluno.Origem;
+
   const button =
     status === "P"
       ? document.getElementById("markPresentButton")
@@ -1529,19 +2051,21 @@ async function registrarPresencaFalta(status) {
       status,
       dataHoje,
       professor: currentUser.name,
+      curso: cursoAluno, // ✅ Log do curso para debug
     });
 
     // Primeiro registrar no AttendanceManager local
     const dataObj = new Date();
     attendanceManager.markAttendance(selectedStudentId, dataObj, status, true);
 
-    // Depois salvar na planilha via API
+    // ✅ OTIMIZAÇÃO: Depois salvar na planilha via API APENAS NO CURSO ESPECÍFICO
     const params = new URLSearchParams({
       action: "registrarPresencaAutomatica",
       alunoId: selectedStudentId,
       data: dataHoje,
       status: status,
       professor: currentUser.username,
+      curso: cursoAluno, // ✅ Especificar curso para processar apenas essa aba/coluna
       marcarTodos: "true", // Indica que deve marcar os outros como falta
     });
 
@@ -1674,13 +2198,21 @@ async function atualizarNotas() {
 
 // === FUNÇÕES DE INTERFACE ===
 function exibirResultados(alunos) {
-  const resultTableBody = document.getElementById("resultTableBody");
-  const studentsGrid = document.getElementById("studentsGrid");
-  const noResultsMessage = document.getElementById("noResults");
+  const resultTableBody = domCache.get("resultTableBody");
+  const studentsGrid = domCache.get("studentsGrid");
+  const noResultsMessage = domCache.get("noResults");
 
-  // Limpa os containers
-  if (resultTableBody) resultTableBody.innerHTML = "";
-  if (studentsGrid) studentsGrid.innerHTML = "";
+  // Limpa os containers (mais eficiente que innerHTML)
+  if (resultTableBody) {
+    while (resultTableBody.firstChild) {
+      resultTableBody.firstChild.remove();
+    }
+  }
+  if (studentsGrid) {
+    while (studentsGrid.firstChild) {
+      studentsGrid.firstChild.remove();
+    }
+  }
 
   if (alunos.length === 0) {
     mostrarMensagemSemResultados();
@@ -1702,8 +2234,11 @@ function exibirResultados(alunos) {
 }
 
 function exibirResultadosComoCards(alunos) {
-  const studentsGrid = document.getElementById("studentsGrid");
+  const studentsGrid = domCache.get("studentsGrid");
   if (!studentsGrid) return;
+
+  // Usar DocumentFragment para melhor performance
+  const fragment = document.createDocumentFragment();
 
   alunos.forEach((aluno) => {
     // Calcula média e situação localmente para garantir consistência
@@ -1729,8 +2264,11 @@ function exibirResultadosComoCards(alunos) {
       faltasExibir
     );
 
-    studentsGrid.appendChild(card);
+    fragment.appendChild(card);
   });
+
+  // Adicionar todos os cards de uma vez (melhor performance)
+  studentsGrid.appendChild(fragment);
 }
 
 function createStudentCardHTML(aluno, media, situacao, faltas = null) {
@@ -1757,22 +2295,6 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
       ATENÇÃO: Aluno excedeu o limite de faltas (${faltasExibir}/15)
     </div>`
       : "";
-
-  // Para admin, não mostrar botão de detalhes
-  const showDetailsButton = currentUser.role !== "admin";
-  const cardActions = showDetailsButton
-    ? `
-    <div class="card-actions">
-      <button class="card-action-btn primary" onclick="abrirPainelDetalhes('${aluno.ID_Unico}')">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-          <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
-        </svg>
-        Ver Detalhes
-      </button>
-    </div>
-  `
-    : "";
 
   return `
     <div class="card-header">
@@ -1857,8 +2379,6 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
         ${situacaoDisplay}
       </div>
     </div>
-
-    ${cardActions}
   `;
 }
 
@@ -1883,8 +2403,11 @@ function getSituationIcon(situacao) {
 }
 
 function exibirResultadosComoTabela(alunos) {
-  const resultTableBody = document.getElementById("resultTableBody");
+  const resultTableBody = domCache.get("resultTableBody");
   if (!resultTableBody) return;
+
+  // Usar DocumentFragment para melhor performance
+  const fragment = document.createDocumentFragment();
 
   alunos.forEach((aluno) => {
     // Calcula média e situação localmente para garantir consistência
@@ -1901,42 +2424,45 @@ function exibirResultadosComoTabela(alunos) {
       ? "Reprovado por Falta"
       : situacaoExibir;
 
-    // Para admin, não mostrar botão de detalhes
-    const showDetailsButton = currentUser.role !== "admin";
-    const actionButton = showDetailsButton
-      ? `
-      <button onclick="abrirPainelDetalhes('${aluno.ID_Unico}')" class="btn-detalhes">
-        👁️ Ver
-      </button>
-    `
-      : `
-      <span class="admin-info">Visualização</span>
-    `;
-
     const linha = document.createElement("tr");
+    linha.setAttribute("data-aluno-id", aluno.ID_Unico);
     linha.innerHTML = `
-            <td>${aluno.ID_Unico}</td>
-            <td class="nome-aluno">${aluno.Nome}</td>
-            <td class="${
+            <td data-label="ID">${aluno.ID_Unico}</td>
+            <td data-label="Nome" class="nome-aluno">${aluno.Nome}</td>
+            <td data-label="Faltas" class="${
               faltasExibir > 15 ? "faltas excesso" : ""
             }">${faltasExibir} ${faltasExibir > 15 ? "⚠️" : ""}</td>
-            <td>${aluno.Nota1 || "-"}</td>
-            <td>${aluno.Nota2 || "-"}</td>
-            <td>${aluno.Nota3 || "-"}</td>
-            <td>${mediaExibir}</td>
-            <td>
+            <td data-label="1º Bimestre">${aluno.Nota1 || "-"}</td>
+            <td data-label="2º Bimestre">${aluno.Nota2 || "-"}</td>
+            <td data-label="3º Bimestre">${aluno.Nota3 || "-"}</td>
+            <td data-label="Média">${mediaExibir}</td>
+            <td data-label="Situação">
                 <span class="badge ${obterClasseSituacao(situacaoExibir)} ${
       reprovadoPorFalta ? "reprovado-por-falta" : ""
     }">
                     ${situacaoDisplay}
                 </span>
             </td>
-            <td>
-                ${actionButton}
+            <td data-label="✅ Presente" class="attendance-col">
+                <input type="checkbox" 
+                       class="attendance-checkbox present" 
+                       data-aluno-id="${aluno.ID_Unico}"
+                       data-type="present"
+                       onchange="handleAttendanceChange(this)">
+            </td>
+            <td data-label="❌ Ausente" class="attendance-col">
+                <input type="checkbox" 
+                       class="attendance-checkbox absent" 
+                       data-aluno-id="${aluno.ID_Unico}"
+                       data-type="absent"
+                       onchange="handleAttendanceChange(this)">
             </td>
         `;
-    resultTableBody.appendChild(linha);
+    fragment.appendChild(linha);
   });
+
+  // Adicionar todas as linhas de uma vez
+  resultTableBody.appendChild(fragment);
 }
 
 function abrirPainelDetalhes(alunoId) {
@@ -1989,25 +2515,170 @@ function atualizarPainelDetalhes(aluno) {
   if (detailNota3) detailNota3.value = aluno.Nota3 || "";
 }
 
-function fecharPainelDetalhes() {
-  const studentDetail = document.getElementById("studentDetail");
-  if (studentDetail) {
-    studentDetail.style.display = "none";
+// ===== AUTOCOMPLETE FUNCTIONALITY =====
+let autocompleteIndex = -1;
+let autocompleteItems = [];
+
+function handleAutocomplete(e) {
+  const searchTerm = e.target.value.toLowerCase().trim();
+  const dropdown = domCache.get("autocompleteDropdown");
+
+  console.log("🔍 Autocomplete:", searchTerm, "dropdown:", !!dropdown);
+
+  if (!dropdown) return;
+
+  if (searchTerm.length < 2) {
+    hideAutocomplete();
+    return;
   }
-  selectedStudentId = null;
+
+  // Filtrar alunos baseado nas permissões do usuário
+  let availableStudents = allStudentsRawData;
+
+  if (currentUser.role === "professor") {
+    availableStudents = availableStudents.filter((aluno) =>
+      currentUser.courses.includes(aluno.Origem)
+    );
+  }
+
+  console.log("👥 Estudantes disponíveis:", availableStudents.length);
+
+  // Buscar correspondências
+  const matches = availableStudents
+    .filter((aluno) => aluno.Nome.toLowerCase().includes(searchTerm))
+    .slice(0, 8); // Limitar a 8 resultados
+
+  console.log("🎯 Correspondências:", matches.length);
+
+  if (matches.length === 0) {
+    hideAutocomplete();
+    return;
+  }
+
+  showAutocomplete(matches);
+}
+
+function showAutocomplete(matches) {
+  const dropdown = domCache.get("autocompleteDropdown");
+  if (!dropdown) return;
+
+  autocompleteItems = matches;
+  autocompleteIndex = -1;
+
+  const courseNames = {
+    PWT: "Programação Web - Tarde",
+    PWN: "Programação Web - Noite",
+    DGT: "Design Gráfico - Tarde",
+    DGN: "Design Gráfico - Noite",
+    MNT: "Manicure - Tarde",
+    MNN: "Manicure - Noite",
+  };
+
+  dropdown.innerHTML = matches
+    .map(
+      (aluno, index) => `
+      <div class="autocomplete-item" data-index="${index}" onclick="selectAutocompleteItem(${index})">
+        <span>${aluno.Nome}</span>
+        <span class="autocomplete-course">${
+          courseNames[aluno.Origem] || aluno.Origem
+        }</span>
+      </div>
+    `
+    )
+    .join("");
+
+  dropdown.classList.add("show");
+}
+
+function hideAutocomplete() {
+  const dropdown = domCache.get("autocompleteDropdown");
+  if (dropdown) {
+    dropdown.classList.remove("show");
+    autocompleteIndex = -1;
+    autocompleteItems = [];
+  }
+}
+
+function selectAutocompleteItem(index) {
+  const searchInput = domCache.get("searchInput");
+  if (!searchInput || !autocompleteItems[index]) return;
+
+  searchInput.value = autocompleteItems[index].Nome;
+  hideAutocomplete();
+  buscarAlunos(); // Executar busca automaticamente
+}
+
+// Tornar a função global para onClick
+window.selectAutocompleteItem = selectAutocompleteItem;
+
+function handleAutocompleteNavigation(e) {
+  const dropdown = domCache.get("autocompleteDropdown");
+  if (!dropdown || !dropdown.classList.contains("show")) return;
+
+  const items = dropdown.querySelectorAll(".autocomplete-item");
+
+  switch (e.key) {
+    case "ArrowDown":
+      e.preventDefault();
+      autocompleteIndex = Math.min(autocompleteIndex + 1, items.length - 1);
+      updateAutocompleteHighlight(items);
+      break;
+
+    case "ArrowUp":
+      e.preventDefault();
+      autocompleteIndex = Math.max(autocompleteIndex - 1, -1);
+      updateAutocompleteHighlight(items);
+      break;
+
+    case "Enter":
+      e.preventDefault();
+      if (autocompleteIndex >= 0 && autocompleteItems[autocompleteIndex]) {
+        selectAutocompleteItem(autocompleteIndex);
+      } else {
+        hideAutocomplete();
+        buscarAlunos();
+      }
+      break;
+
+    case "Escape":
+      hideAutocomplete();
+      break;
+  }
+}
+
+function updateAutocompleteHighlight(items) {
+  items.forEach((item, index) => {
+    if (index === autocompleteIndex) {
+      item.classList.add("highlighted");
+    } else {
+      item.classList.remove("highlighted");
+    }
+  });
 }
 
 function aplicarFiltros() {
   // Esta função aplica filtros localmente nos dados já carregados
-  const searchInput = document.getElementById("searchInput");
-  const periodoFilter = document.getElementById("periodoFilter");
-  const cursoFilter = document.getElementById("cursoFilter");
+  const searchInput = domCache.get("searchInput");
+  const periodoFilter = domCache.get("periodoFilter");
+  const cursoFilter = domCache.get("cursoFilter");
 
   const nomeAluno = searchInput ? searchInput.value.toLowerCase().trim() : "";
   const periodo = periodoFilter ? periodoFilter.value : "";
   const curso = cursoFilter ? cursoFilter.value : "";
 
   let alunosFiltrados = allStudentsRawData;
+
+  // ✅ FILTRO POR PERMISSÕES DO USUÁRIO
+  if (currentUser.role === "professor") {
+    alunosFiltrados = alunosFiltrados.filter((aluno) =>
+      currentUser.courses.includes(aluno.Origem)
+    );
+    console.log(
+      `🔒 Professor - mostrando apenas cursos: ${currentUser.courses.join(
+        ", "
+      )}`
+    );
+  }
 
   if (nomeAluno) {
     alunosFiltrados = alunosFiltrados.filter((aluno) =>
@@ -2046,9 +2717,22 @@ function preencherFiltros() {
   const periodoFilter = document.getElementById("periodoFilter");
   const cursoFilter = document.getElementById("cursoFilter");
 
+  // ✅ FILTRAR DADOS BASEADO NAS PERMISSÕES DO USUÁRIO
+  let dadosPermitidos = allStudentsRawData;
+  if (currentUser.role === "professor") {
+    dadosPermitidos = allStudentsRawData.filter((aluno) =>
+      currentUser.courses.includes(aluno.Origem)
+    );
+    console.log(
+      `🔒 Preenchendo filtros apenas com cursos do professor: ${currentUser.courses.join(
+        ", "
+      )}`
+    );
+  }
+
   if (periodoFilter) {
     const periodos = [
-      ...new Set(allStudentsRawData.map((a) => a.Periodo).filter((p) => p)),
+      ...new Set(dadosPermitidos.map((a) => a.Periodo).filter((p) => p)),
     ];
     periodoFilter.innerHTML = '<option value="">Todos os períodos</option>';
     periodos.forEach((periodo) => {
@@ -2060,14 +2744,40 @@ function preencherFiltros() {
   }
 
   if (cursoFilter) {
-    const cursos = [
-      ...new Set(allStudentsRawData.map((a) => a.Origem).filter((o) => o)),
-    ];
+    // ✅ USAR APENAS CURSOS PERMITIDOS PARA O USUÁRIO
+    let cursosPermitidos;
+
+    if (currentUser.role === "professor") {
+      // Professor: apenas seus cursos autorizados
+      cursosPermitidos = currentUser.courses;
+      console.log(
+        `👨‍🏫 Professor - cursos no filtro: ${cursosPermitidos.join(", ")}`
+      );
+    } else {
+      // Admin: todos os cursos disponíveis nos dados
+      cursosPermitidos = [
+        ...new Set(allStudentsRawData.map((a) => a.Origem).filter((o) => o)),
+      ];
+      console.log(
+        `👑 Admin - todos os cursos disponíveis: ${cursosPermitidos.join(", ")}`
+      );
+    }
+
+    // Mapeamento de nomes dos cursos
+    const courseNames = {
+      PWT: "Programação Web - Tarde",
+      PWN: "Programação Web - Noite",
+      DGT: "Design Gráfico - Tarde",
+      DGN: "Design Gráfico - Noite",
+      MNT: "Manicure - Tarde",
+      MNN: "Manicure - Noite",
+    };
+
     cursoFilter.innerHTML = '<option value="">Todos os cursos</option>';
-    cursos.forEach((curso) => {
+    cursosPermitidos.forEach((curso) => {
       const option = document.createElement("option");
       option.value = curso;
-      option.textContent = curso;
+      option.textContent = courseNames[curso] || curso;
       cursoFilter.appendChild(option);
     });
   }
@@ -2083,8 +2793,11 @@ function mostrarMensagemSemResultados() {
 // === MODAL DE REGISTRO ===
 function abrirModalRegistro() {
   const registrationModal = document.getElementById("registrationModal");
+
   if (registrationModal) {
+    registrationModal.classList.remove("hidden");
     registrationModal.style.display = "block";
+    esconderStatusRegistro(); // Garantir que status está escondido
     preencherModalRegistro();
   }
 }
@@ -2093,17 +2806,91 @@ function fecharModalRegistro() {
   const registrationModal = document.getElementById("registrationModal");
   if (registrationModal) {
     registrationModal.style.display = "none";
+    registrationModal.classList.add("hidden");
+    esconderStatusRegistro();
   }
 }
 
 function preencherModalRegistro() {
   const alunoSelecionadoSelect = document.getElementById("alunoSelecionado");
   const dataPresencaInput = document.getElementById("dataPresenca");
+  const filtroOrigemModal = document.getElementById("filtroOrigemModal");
+  const filtroPeriodoModal = document.getElementById("filtroPeriodoModal");
+
+  // ✅ PREENCHER FILTRO DE CURSO BASEADO NAS PERMISSÕES
+  if (filtroOrigemModal) {
+    let cursosPermitidos;
+
+    if (currentUser.role === "professor") {
+      cursosPermitidos = currentUser.courses;
+      console.log(
+        `🔒 Modal - filtro de curso apenas para: ${cursosPermitidos.join(", ")}`
+      );
+    } else {
+      cursosPermitidos = [
+        ...new Set(allStudentsRawData.map((a) => a.Origem).filter((o) => o)),
+      ];
+    }
+
+    const courseNames = {
+      PWT: "PROGRAMAÇÃO TARDE",
+      PWN: "PROGRAMAÇÃO NOITE",
+      DGT: "DESIGNER TARDE",
+      DGN: "DESIGNER NOITE",
+      MNT: "MANICURE TARDE",
+      MNN: "MANICURE NOITE",
+    };
+
+    filtroOrigemModal.innerHTML = '<option value="">Todos</option>';
+    cursosPermitidos.forEach((curso) => {
+      const option = document.createElement("option");
+      option.value = curso;
+      option.textContent = courseNames[curso] || curso;
+      filtroOrigemModal.appendChild(option);
+    });
+  }
+
+  // ✅ PREENCHER FILTRO DE PERÍODO BASEADO NOS DADOS PERMITIDOS
+  if (filtroPeriodoModal) {
+    let dadosPermitidos = allStudentsRawData;
+
+    if (currentUser.role === "professor") {
+      dadosPermitidos = allStudentsRawData.filter((aluno) =>
+        currentUser.courses.includes(aluno.Origem)
+      );
+    }
+
+    const periodos = [
+      ...new Set(dadosPermitidos.map((a) => a.Periodo).filter((p) => p)),
+    ];
+
+    filtroPeriodoModal.innerHTML = '<option value="">Todos</option>';
+    periodos.forEach((periodo) => {
+      const option = document.createElement("option");
+      option.value = periodo;
+      option.textContent = periodo;
+      filtroPeriodoModal.appendChild(option);
+    });
+  }
 
   if (alunoSelecionadoSelect) {
+    // ✅ FILTRAR ALUNOS BASEADO NAS PERMISSÕES DO USUÁRIO
+    let alunosPermitidos = allStudentsRawData;
+
+    if (currentUser.role === "professor") {
+      alunosPermitidos = allStudentsRawData.filter((aluno) =>
+        currentUser.courses.includes(aluno.Origem)
+      );
+      console.log(
+        `🔒 Modal de registro - apenas alunos dos cursos do professor: ${currentUser.courses.join(
+          ", "
+        )}`
+      );
+    }
+
     alunoSelecionadoSelect.innerHTML =
       '<option value="">Selecione um aluno</option>';
-    allStudentsRawData.forEach((aluno) => {
+    alunosPermitidos.forEach((aluno) => {
       const option = document.createElement("option");
       option.value = aluno.ID_Unico;
       option.textContent = `${aluno.Nome} (${aluno.ID_Unico})`;
@@ -2123,6 +2910,7 @@ async function submeterPresenca() {
   const presenteRadio = document.getElementById("presente");
   const ausenteRadio = document.getElementById("ausente");
   const submitButton = document.getElementById("submitPresenca");
+  const statusOverlay = document.getElementById("registrationStatus");
 
   const alunoId = alunoSelecionadoSelect ? alunoSelecionadoSelect.value : "";
   const data = dataPresencaInput ? dataPresencaInput.value : "";
@@ -2134,27 +2922,56 @@ async function submeterPresenca() {
       : "";
 
   if (!alunoId || !data || !status) {
-    mostrarErro("Preencha todos os campos", "Campos Obrigatórios");
+    mostrarStatusRegistro(
+      "error",
+      "Erro de Validação",
+      "Preencha todos os campos obrigatórios"
+    );
     return;
   }
 
   try {
-    mostrarLoadingButton(submitButton, true);
-    atualizarTextoLoading("Registrando presença...", "Salvando informações");
+    // ✅ IDENTIFICAR CURSO DO ALUNO PARA OTIMIZAÇÃO
+    const aluno = allStudentsRawData.find((a) => a.ID_Unico === alunoId);
 
-    console.log("📝 Submetendo presença via modal:", { alunoId, data, status });
+    if (!aluno) {
+      mostrarStatusRegistro(
+        "error",
+        "Erro de Dados",
+        "Aluno não encontrado nos dados carregados"
+      );
+      return;
+    }
+
+    const cursoAluno = aluno.Origem;
+
+    // Mostrar loading
+    mostrarStatusRegistro(
+      "loading",
+      "Registrando Presença",
+      `Salvando informações na planilha do curso ${cursoAluno}...`
+    );
+    submitButton.classList.add("submit-loading");
+
+    console.log("📝 Submetendo presença via modal:", {
+      alunoId,
+      data,
+      status,
+      curso: cursoAluno, // ✅ Log do curso para debug
+    });
 
     // Registrar localmente primeiro
     const dataObj = new Date(data + "T00:00:00");
     attendanceManager.markAttendance(alunoId, dataObj, status, true);
 
-    // Salvar na planilha via API
+    // ✅ OTIMIZAÇÃO: Salvar na planilha via API APENAS NO CURSO ESPECÍFICO
     const params = new URLSearchParams({
       action: "registrarPresencaAutomatica",
       alunoId: alunoId,
       data: data,
       status: status,
       professor: currentUser?.username || "system",
+      curso: cursoAluno, // ✅ Especificar curso para processar apenas essa aba/coluna
       marcarTodos: "true",
     });
 
@@ -2171,21 +2988,38 @@ async function submeterPresenca() {
     }
 
     const acao = status === "P" ? "Presença" : "Falta";
-    mostrarSucesso(
-      `${acao} registrada com sucesso! Outros alunos marcados automaticamente como falta.`,
-      "Registro Concluído"
+
+    // Mostrar sucesso
+    mostrarStatusRegistro(
+      "success",
+      "Registro Concluído",
+      `${acao} registrada com sucesso! Outros alunos marcados automaticamente como falta.`
     );
 
-    fecharModalRegistro();
-    await carregarTodosAlunos();
+    // Fechar modal após delay
+    setTimeout(() => {
+      fecharModalRegistro();
+      carregarTodosAlunos();
+    }, 2000);
   } catch (error) {
     console.error("❌ Erro ao submeter presença:", error);
-    mostrarErro(`Erro ao registrar: ${error.message}`, "Falha no Registro");
+
+    // Mostrar erro
+    mostrarStatusRegistro(
+      "error",
+      "Falha no Registro",
+      `Erro ao registrar: ${error.message}`
+    );
 
     // Reverter registro local se der erro na API
     attendanceManager.clearAllRecords();
+
+    // Esconder overlay após delay
+    setTimeout(() => {
+      esconderStatusRegistro();
+    }, 3000);
   } finally {
-    mostrarLoadingButton(submitButton, false);
+    submitButton.classList.remove("submit-loading");
   }
 }
 
@@ -2497,5 +3331,823 @@ function mostrarToast(mensagem, tipo = "info", titulo = "", duracao = 4000) {
   // Auto close
   if (duracao > 0) {
     setTimeout(closeToast, duracao);
+  }
+}
+
+// === FUNÇÕES DE FEEDBACK VISUAL DO MODAL ===
+function mostrarStatusRegistro(tipo, titulo, mensagem) {
+  const statusOverlay = document.getElementById("registrationStatus");
+  const statusContent = statusOverlay.querySelector(".status-content");
+
+  if (!statusOverlay || !statusContent) return;
+
+  // Limpar classes anteriores
+  statusOverlay.className = "registration-status";
+
+  if (tipo === "loading") {
+    statusContent.innerHTML = `
+      <div class="status-spinner"></div>
+      <div class="status-message">${titulo}</div>
+      <div class="status-detail">${mensagem}</div>
+    `;
+  } else if (tipo === "success") {
+    statusOverlay.classList.add("status-success");
+    statusContent.innerHTML = `
+      <span class="status-icon success">✅</span>
+      <div class="status-message">${titulo}</div>
+      <div class="status-detail">${mensagem}</div>
+    `;
+  } else if (tipo === "error") {
+    statusOverlay.classList.add("status-error");
+    statusContent.innerHTML = `
+      <span class="status-icon error">❌</span>
+      <div class="status-message">${titulo}</div>
+      <div class="status-detail">${mensagem}</div>
+    `;
+  }
+
+  statusOverlay.style.display = "flex";
+}
+
+function esconderStatusRegistro() {
+  const statusOverlay = document.getElementById("registrationStatus");
+  if (statusOverlay) {
+    statusOverlay.style.display = "none";
+  }
+}
+
+// === SISTEMA DE PRESENÇA EM LOTE ===
+function handleAttendanceChange(checkbox) {
+  const alunoId = checkbox.getAttribute("data-aluno-id");
+  const type = checkbox.getAttribute("data-type");
+  const row = checkbox.closest("tr");
+
+  if (checkbox.checked) {
+    // Desmarcar o checkbox oposto
+    const oppositeType = type === "present" ? "absent" : "present";
+    const oppositeCheckbox = row.querySelector(
+      `input[data-type="${oppositeType}"]`
+    );
+    if (oppositeCheckbox.checked) {
+      oppositeCheckbox.checked = false;
+    }
+
+    // Adicionar ao lote
+    batchAttendanceData.set(alunoId, type === "present" ? "P" : "A");
+    row.classList.add("selected-row");
+  } else {
+    // Remover do lote
+    batchAttendanceData.delete(alunoId);
+    row.classList.remove("selected-row");
+  }
+
+  updateBatchControls();
+}
+
+function updateBatchControls() {
+  const batchControls = domCache.get("batchAttendanceControls");
+  const selectedCount = domCache.get("selectedCount");
+  const confirmBtn = domCache.get("confirmBatchBtn");
+
+  const count = batchAttendanceData.size;
+
+  if (count > 0) {
+    batchControls.classList.remove("hidden");
+    selectedCount.textContent = count;
+    confirmBtn.disabled = false;
+
+    // Definir data padrão como hoje
+    const batchDate = domCache.get("batchDate");
+    if (!batchDate.value) {
+      batchDate.value = new Date().toISOString().split("T")[0];
+    }
+  } else {
+    batchControls.classList.add("hidden");
+    confirmBtn.disabled = true;
+  }
+}
+
+async function confirmBatchAttendance() {
+  const batchDate = domCache.get("batchDate").value;
+
+  if (!batchDate) {
+    mostrarErro("Selecione uma data para o registro", "Data Obrigatória");
+    return;
+  }
+
+  if (batchAttendanceData.size === 0) {
+    mostrarErro("Selecione pelo menos um aluno", "Seleção Vazia");
+    return;
+  }
+
+  try {
+    const confirmBtn = domCache.get("confirmBatchBtn");
+    confirmBtn.disabled = true;
+
+    // Função para atualizar progresso
+    const updateProgress = (processed, total) => {
+      const percent = Math.round((processed / total) * 100);
+      const status = processed === total ? "✅" : "⏳";
+      confirmBtn.innerHTML = `${status} Processando... ${processed}/${total} (${percent}%)`;
+    };
+
+    // Teste de conectividade antes de começar
+    console.log("🔍 Testando conectividade com o servidor...");
+    updateProgress(0, 1);
+    confirmBtn.innerHTML = "🔄 Testando conexão...";
+
+    try {
+      const testResponse = await withTimeout(
+        fetch(`${API_URL}?teste=1`),
+        15000 // 15s para teste
+      );
+      if (!testResponse.ok) {
+        throw new Error(`Servidor respondeu com status ${testResponse.status}`);
+      }
+      console.log("✅ Conectividade confirmada - Servidor respondendo");
+    } catch (connError) {
+      console.error("❌ Problema de conectividade:", connError);
+
+      // Oferecer opção de continuar mesmo com problemas
+      const continuarMesmoAssim = confirm(
+        `Problema de conectividade detectado: ${connError.message}\n\n` +
+          `Deseja continuar mesmo assim? O processamento pode ser muito lento.`
+      );
+
+      if (!continuarMesmoAssim) {
+        mostrarErro(
+          `Teste de conectividade falhou: ${connError.message}. Operação cancelada pelo usuário.`,
+          "Erro de Conexão"
+        );
+        return;
+      }
+
+      console.log(
+        "⚠️ Usuário escolheu continuar apesar dos problemas de conectividade"
+      );
+    }
+
+    // ✅ OTIMIZAÇÃO: Criar array de registros AGRUPADOS POR CURSO para processamento eficiente
+    const registrosPorCurso = new Map();
+
+    Array.from(batchAttendanceData.entries()).forEach(([alunoId, status]) => {
+      // Encontrar o curso do aluno
+      const aluno = allStudentsRawData.find((a) => a.ID_Unico === alunoId);
+      if (!aluno) {
+        console.warn(`⚠️ Aluno ${alunoId} não encontrado nos dados`);
+        return;
+      }
+
+      const curso = aluno.Origem;
+
+      if (!registrosPorCurso.has(curso)) {
+        registrosPorCurso.set(curso, []);
+      }
+
+      registrosPorCurso.get(curso).push({
+        alunoId: alunoId,
+        data: batchDate,
+        status: status,
+        professor: currentUser?.username || "system",
+        curso: curso, // ✅ Adicionar curso para otimização backend
+      });
+    });
+
+    // Log da otimização
+    console.log("🚀 Otimização por curso:", {
+      cursosAfetados: Array.from(registrosPorCurso.keys()),
+      totalAlunos: batchAttendanceData.size,
+      registrosPorCurso: Object.fromEntries(
+        Array.from(registrosPorCurso.entries()).map(([curso, regs]) => [
+          curso,
+          regs.length,
+        ])
+      ),
+    });
+
+    const totalRegistros = batchAttendanceData.size;
+    let processedCount = 0;
+    let isCancelled = false;
+
+    // Declarar variáveis de controle de cancelamento no escopo correto
+    const cancelBtn = domCache.get("cancelBatchBtn");
+    let originalCancelText = "";
+    let cancelHandler = null;
+
+    // Configurar botão de cancelamento
+    if (cancelBtn) {
+      originalCancelText = cancelBtn.innerHTML;
+      cancelBtn.innerHTML = "❌ Cancelar Processamento";
+      cancelBtn.style.display = "inline-block";
+
+      cancelHandler = () => {
+        isCancelled = true;
+        console.log("🛑 Operação cancelada pelo usuário");
+        mostrarInfo(
+          "Operação cancelada pelo usuário",
+          "Processamento Interrompido"
+        );
+      };
+
+      cancelBtn.addEventListener("click", cancelHandler);
+    }
+
+    updateProgress(0, totalRegistros);
+
+    // ✅ ESTRATÉGIA: Tentar primeiro APIs existentes, depois fallbacks
+    try {
+      let totalProcessados = 0;
+
+      // ✅ PRIMEIRA TENTATIVA: API de lote existente (registrarPresencaLote)
+      console.log("� Tentando processamento em lote existente...");
+      confirmBtn.innerHTML = `⚡ Processando lote... (0/${totalRegistros})`;
+
+      // ✅ ESTRATÉGIA SIMPLIFICADA: Processamento direto por curso (mais confiável)
+      console.log(
+        "🚀 Processamento direto por curso para máxima confiabilidade..."
+      );
+
+      // ✅ Processamento direto por curso COM LOGS DETALHADOS
+      for (const [curso, registrosDoCurso] of registrosPorCurso.entries()) {
+        if (isCancelled) break;
+
+        console.log(
+          `🎯 PROCESSAMENTO ISOLADO - Curso: ${curso} | ${registrosDoCurso.length} alunos`
+        );
+        console.log(
+          `� Dados do curso ${curso}:`,
+          registrosDoCurso.map((r) => `${r.alunoId}:${r.status}`)
+        );
+
+        confirmBtn.innerHTML = `⚡ Processando APENAS curso ${curso}... (${totalProcessados}/${totalRegistros})`;
+
+        // ✅ CRÍTICO: Verificar se todos os registros têm o curso correto
+        registrosDoCurso.forEach((registro) => {
+          if (!registro.curso || registro.curso !== curso) {
+            console.error(
+              `🚨 ERRO: Registro sem curso ou curso incorreto:`,
+              registro
+            );
+            registro.curso = curso; // Corrigir
+          }
+
+          console.log(`🔍 Registro validado:`, {
+            alunoId: registro.alunoId,
+            curso: registro.curso,
+            data: registro.data,
+            status: registro.status,
+            professor: registro.professor,
+          });
+        });
+
+        // Processar este curso de forma isolada
+        const resultado = await processBatchAttendanceParallel(
+          registrosDoCurso,
+          (processed) =>
+            updateProgress(totalProcessados + processed, totalRegistros),
+          () => isCancelled
+        );
+
+        totalProcessados += registrosDoCurso.length;
+
+        console.log(
+          `✅ Curso ${curso} processado. Sucessos: ${
+            resultado?.successCount || "N/A"
+          }, Erros: ${resultado?.errorCount || "N/A"}`
+        );
+      }
+
+      if (totalProcessados > 0 && !isCancelled) {
+        mostrarSucesso(
+          `${totalProcessados} presenças registradas com sucesso! Processamento por curso.`,
+          "Registro Concluído"
+        );
+      }
+    } catch (error) {
+      console.error("Erro no processamento por curso:", error);
+
+      if (!isCancelled) {
+        // ✅ Último recurso: processamento sequencial
+        console.log("Tentando processamento sequencial como último recurso...");
+        let totalProcessados = 0;
+
+        for (const [curso, registrosDoCurso] of registrosPorCurso.entries()) {
+          if (isCancelled) break;
+
+          console.log(`📚 Processamento sequencial - curso ${curso}`);
+          await processBatchAttendanceSequential(
+            registrosDoCurso,
+            (processed) =>
+              updateProgress(totalProcessados + processed, totalRegistros),
+            () => isCancelled
+          );
+          totalProcessados += registrosDoCurso.length;
+        }
+
+        if (totalProcessados > 0) {
+          mostrarSucesso(
+            `${totalProcessados} presenças registradas com sucesso! Processamento sequencial.`,
+            "Registro Concluído"
+          );
+        }
+      }
+    }
+
+    // Limpar seleções
+    cancelBatchAttendance();
+
+    // 🔥 ATUALIZAÇÃO INTELIGENTE COM CACHE
+    console.log("🔄 Atualizando interface de forma inteligente...");
+
+    // Limpar apenas cache relacionado a presenças (manter cache de alunos)
+    cacheManager.clearAttendance();
+
+    // Atualização otimizada baseada no view atual
+    if (currentView === "table") {
+      const tableBody = domCache.get("resultTableBody");
+      if (tableBody && tableBody.children.length > 0) {
+        console.log("📊 Atualizando view de tabela...");
+        await carregarTodosAlunos(true); // Força reload
+      }
+    } else {
+      const resultsContainer = document.querySelector(".results-container");
+      if (resultsContainer && !resultsContainer.classList.contains("hidden")) {
+        console.log("📱 Atualizando view de cards...");
+        await carregarTodosAlunos(true); // Força reload
+      }
+    }
+
+    console.log("✅ Interface atualizada com sucesso!");
+  } catch (error) {
+    mostrarErro(
+      `Erro no registro em lote: ${error.message}`,
+      "Falha no Sistema"
+    );
+  } finally {
+    const confirmBtn = domCache.get("confirmBatchBtn");
+
+    // Restaurar botões
+    confirmBtn.disabled = false;
+    confirmBtn.innerHTML =
+      '✅ Confirmar Presenças (<span id="selectedCount">0</span>)';
+
+    // Restaurar botão de cancelamento (usar a referência já declarada)
+    const cancelBtn = domCache.get("cancelBatchBtn");
+    if (cancelBtn) {
+      // Verificar se originalCancelText foi definido, senão usar valor padrão
+      const defaultCancelText = "❌ Cancelar";
+      try {
+        cancelBtn.innerHTML =
+          typeof originalCancelText !== "undefined"
+            ? originalCancelText
+            : defaultCancelText;
+        if (typeof cancelHandler !== "undefined" && cancelHandler) {
+          cancelBtn.removeEventListener("click", cancelHandler);
+        }
+      } catch (error) {
+        console.warn("Erro ao restaurar botão de cancelamento:", error);
+        cancelBtn.innerHTML = defaultCancelText;
+      }
+    }
+
+    // Recriar referência do span
+    domCache.elements.delete("selectedCount");
+  }
+}
+
+// ✅ NOVA FUNÇÃO: Processamento otimizado em lote POR CURSO
+async function processBatchAttendanceOptimizedByCourse(
+  registrosDoCurso,
+  curso,
+  updateProgress
+) {
+  console.log(
+    `🎯 Processamento otimizado para curso ${curso} - ${registrosDoCurso.length} registros`
+  );
+
+  // ✅ PRIMEIRA TENTATIVA: API de lote específica para curso
+  try {
+    const params = new URLSearchParams({
+      action: "registrarPresencaLoteCursoOtimizada", // ✅ Nova action super otimizada
+      curso: curso, // ✅ Especificar curso para processar apenas essa aba/coluna
+      apenasEsteCurso: "true", // ✅ Flag crítica para não percorrer outros cursos
+      registros: JSON.stringify(registrosDoCurso),
+    });
+
+    const response = await withTimeout(
+      fetchWithRetry(
+        API_URL,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: params.toString(),
+        },
+        1 // ✅ Apenas 1 tentativa para API de lote
+      ),
+      45000 // ✅ Reduzir para 45s - deveria ser muito mais rápido
+    );
+
+    const resultado = await response.json();
+    updateProgress(registrosDoCurso.length);
+
+    return resultado;
+  } catch (error) {
+    console.warn(`⚠️ API de lote otimizada falhou para curso ${curso}:`, error);
+
+    // ✅ FALLBACK: Usar processamento micro-lote (chunks de 3-5 alunos)
+    return await processBatchAttendanceMicroLote(
+      registrosDoCurso,
+      curso,
+      updateProgress
+    );
+  }
+}
+
+// ✅ NOVA FUNÇÃO: Processamento em micro-lotes para máxima eficiência
+async function processBatchAttendanceMicroLote(
+  registrosDoCurso,
+  curso,
+  updateProgress
+) {
+  console.log(`⚡ Processamento micro-lote para curso ${curso}`);
+
+  const MICRO_CHUNK_SIZE = 3; // ✅ Processar 3 alunos por vez
+  let processedCount = 0;
+
+  for (let i = 0; i < registrosDoCurso.length; i += MICRO_CHUNK_SIZE) {
+    const chunk = registrosDoCurso.slice(i, i + MICRO_CHUNK_SIZE);
+
+    try {
+      const params = new URLSearchParams({
+        action: "registrarPresencaMicroLote", // ✅ Nova action para micro-lotes
+        curso: curso,
+        apenasEsteCurso: "true",
+        registros: JSON.stringify(chunk),
+      });
+
+      await withTimeout(
+        fetchWithRetry(
+          API_URL,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: params.toString(),
+          },
+          1
+        ),
+        20000 // ✅ 20s para micro-lotes
+      );
+
+      processedCount += chunk.length;
+      updateProgress(processedCount);
+
+      console.log(
+        `✅ Micro-lote ${Math.floor(i / MICRO_CHUNK_SIZE) + 1} processado (${
+          chunk.length
+        } alunos)`
+      );
+    } catch (error) {
+      console.error(
+        `❌ Erro no micro-lote ${Math.floor(i / MICRO_CHUNK_SIZE) + 1}:`,
+        error
+      );
+      // Continue com próximo micro-lote em caso de erro
+    }
+
+    // ✅ Pausa mínima entre micro-lotes
+    if (i + MICRO_CHUNK_SIZE < registrosDoCurso.length) {
+      await new Promise((resolve) => setTimeout(resolve, 500)); // 0.5s
+    }
+  }
+
+  return { success: true, successCount: processedCount };
+}
+
+// Função de processamento otimizado geral (fallback para múltiplos cursos)
+async function processBatchAttendanceOptimized(registros, updateProgress) {
+  console.log(`🔄 Tentando API de lote com ${registros.length} registros`);
+
+  const params = new URLSearchParams({
+    action: "registrarPresencaLote",
+    registros: JSON.stringify(registros),
+  });
+
+  try {
+    const response = await withTimeout(
+      fetchWithRetry(
+        API_URL,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: params.toString(),
+        },
+        2
+      ), // Apenas 2 tentativas para API de lote
+      90000 // Aumentado para 90s para lotes
+    );
+
+    const resultado = await response.json();
+    console.log("📋 Resposta da API de lote:", resultado);
+
+    updateProgress(registros.length, registros.length);
+
+    // Verificar se a resposta indica sucesso
+    if (
+      resultado &&
+      (resultado.success === true || resultado.status === "success")
+    ) {
+      console.log("✅ API de lote retornou sucesso");
+      return { success: true, ...resultado };
+    } else {
+      console.warn("⚠️ API de lote não retornou sucesso:", resultado);
+      return {
+        success: false,
+        error: "API de lote não confirmou sucesso",
+        response: resultado,
+      };
+    }
+  } catch (error) {
+    console.error("❌ Erro na API de lote:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Função de fallback com processamento paralelo em chunks adaptativos
+// === FUNÇÃO DE PROCESSAMENTO PARALELO ULTRA-OTIMIZADA ===
+async function processBatchAttendanceParallel(
+  registros,
+  updateProgress,
+  isCancelledCallback
+) {
+  let successCount = 0;
+  let errorCount = 0;
+  let processedCount = 0;
+  let cacheHits = 0;
+
+  console.log(
+    `🚀 Iniciando processamento inteligente de ${registros.length} registros`
+  );
+
+  // Usar chunks dinâmicos baseados na performance
+  let currentChunkSize = smartProcessor.getOptimalChunkSize();
+
+  for (let i = 0; i < registros.length; i += currentChunkSize) {
+    // Verificar cancelamento
+    if (isCancelledCallback && isCancelledCallback()) {
+      console.log("🛑 Processamento paralelo cancelado");
+      return { successCount, errorCount };
+    }
+
+    const startTime = Date.now();
+    const chunk = registros.slice(i, i + currentChunkSize);
+
+    console.log(
+      `📦 Chunk ${Math.floor(i / currentChunkSize) + 1}/${Math.ceil(
+        registros.length / currentChunkSize
+      )} | ${chunk.length} registros | Size: ${currentChunkSize}`
+    );
+
+    // Processar chunk com cache inteligente
+    const promises = chunk.map((registro) =>
+      smartProcessor.processWithCache(registro)
+    );
+
+    try {
+      const results = await Promise.allSettled(promises);
+      const chunkTime = Date.now() - startTime;
+
+      let chunkSuccesses = 0;
+      let chunkErrors = 0;
+      let chunkCacheHits = 0;
+
+      results.forEach((result, index) => {
+        processedCount++;
+
+        if (result.status === "fulfilled" && result.value.success) {
+          successCount++;
+          chunkSuccesses++;
+          if (result.value.cached) {
+            cacheHits++;
+            chunkCacheHits++;
+          }
+        } else {
+          errorCount++;
+          chunkErrors++;
+          const error =
+            result.status === "rejected" ? result.reason : result.value.error;
+          console.error(`❌ Erro ${chunk[index].alunoId}:`, error);
+        }
+      });
+
+      console.log(
+        `✅ Chunk: ${chunkTime}ms | ✓${chunkSuccesses} ❌${chunkErrors} 📋${chunkCacheHits}`
+      );
+
+      // Atualizar progresso
+      updateProgress(processedCount, registros.length);
+
+      // 🔥 OTIMIZAÇÃO DINÂMICA AGRESSIVA
+      const chunkSuccessRate = (chunkSuccesses / chunk.length) * 100;
+      const avgResponseTime = smartProcessor.performanceMetrics.avgResponseTime;
+
+      if (chunkSuccessRate < 70) {
+        // Muitos erros - reduzir drasticamente
+        currentChunkSize = 1;
+        console.log(`⚠️ Chunk size → 1 (muitos erros)`);
+      } else if (chunkSuccessRate === 100) {
+        if (chunkTime < 3000 && currentChunkSize < 8) {
+          // Performance excelente - aumentar agressivamente
+          currentChunkSize = Math.min(8, currentChunkSize + 2);
+          console.log(
+            `🚀 Chunk size → ${currentChunkSize} (ótima performance)`
+          );
+        } else if (chunkTime < 5000 && currentChunkSize < 5) {
+          currentChunkSize++;
+          console.log(`📈 Chunk size → ${currentChunkSize}`);
+        }
+      }
+
+      // 🔥 PAUSA SUPER OTIMIZADA
+      if (i + currentChunkSize < registros.length) {
+        let pauseTime;
+        if (chunkErrors > 0) {
+          pauseTime = 800; // Problemas
+        } else if (chunkCacheHits === chunk.length) {
+          pauseTime = 50; // Tudo em cache - mínimo
+        } else if (chunkTime < 2000) {
+          pauseTime = 100; // Rápido
+        } else {
+          pauseTime = 300; // Normal
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, pauseTime));
+      }
+    } catch (error) {
+      console.error("💥 Erro crítico no chunk:", error);
+      errorCount += chunk.length;
+      processedCount += chunk.length;
+      updateProgress(processedCount, registros.length);
+      currentChunkSize = 1; // Modo de segurança
+    }
+  }
+
+  const successRate = (successCount / registros.length) * 100;
+  const cacheRate = (cacheHits / registros.length) * 100;
+
+  console.log(
+    `🎯 CONCLUÍDO | ✓${successCount}/${registros.length} (${successRate.toFixed(
+      1
+    )}%) | 📋Cache: ${cacheRate.toFixed(1)}%`
+  );
+  console.log(`📊 Métricas:`, smartProcessor.performanceMetrics);
+
+  // Exibir resultado otimizado
+  if (errorCount === 0) {
+    mostrarSucesso(
+      `${successCount} presenças registradas! Cache acelerou ${cacheHits} registros.`,
+      "✅ Sucesso Total"
+    );
+  } else {
+    mostrarInfo(
+      `${successCount} sucessos, ${errorCount} erros. Cache: ${cacheHits} hits.`,
+      "⚠️ Resultado Parcial"
+    );
+  }
+
+  return { successCount, errorCount, cacheHits };
+}
+
+// Função de último recurso: processamento completamente sequencial
+async function processBatchAttendanceSequential(
+  registros,
+  updateProgress,
+  isCancelledCallback
+) {
+  console.log("🐌 Iniciando processamento sequencial (um por vez)");
+
+  let successCount = 0;
+  let errorCount = 0;
+
+  for (let i = 0; i < registros.length; i++) {
+    // Verificar cancelamento
+    if (isCancelledCallback && isCancelledCallback()) {
+      console.log("🛑 Processamento sequencial cancelado");
+      return;
+    }
+
+    const registro = registros[i];
+    try {
+      console.log(
+        `Processando ${i + 1}/${registros.length}: Aluno ${
+          registro.alunoId
+        } (Curso: ${registro.curso})`
+      );
+
+      // ✅ USAR FUNÇÃO ROBUSTA PARA CRIAR PARÂMETROS ESPECÍFICOS DO CURSO
+      const params = createAttendanceParams(registro, true);
+
+      console.log(
+        `🎯 Request sequencial para curso ${registro.curso}:`,
+        params.toString()
+      );
+
+      const response = await withTimeout(
+        fetchWithRetry(`${API_URL}?${params.toString()}`, {}, 1), // ✅ Apenas 1 tentativa
+        20000 // ✅ Reduzir para 20s para modo sequencial
+      );
+
+      const resultado = await response.json();
+
+      if (resultado.success) {
+        successCount++;
+        console.log(`✅ Sucesso para aluno ${registro.alunoId}`);
+      } else {
+        errorCount++;
+        console.error(
+          `❌ Erro para aluno ${registro.alunoId}:`,
+          resultado.error
+        );
+      }
+    } catch (error) {
+      errorCount++;
+      console.error(`❌ Erro ao processar aluno ${registro.alunoId}:`, error);
+    }
+
+    // Atualizar progresso
+    updateProgress(i + 1, registros.length);
+
+    // ✅ Pausa MÍNIMA entre registros para máxima velocidade
+    if (i < registros.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 500)); // ✅ Reduzir para 0.5s
+    }
+  }
+
+  // Mostrar resultado final
+  if (errorCount === 0) {
+    mostrarSucesso(
+      `${successCount} presenças registradas com sucesso!`,
+      "Registro Concluído (Modo Sequencial)"
+    );
+  } else {
+    mostrarInfo(
+      `${successCount} sucessos, ${errorCount} erros. Verifique o console para detalhes.`,
+      "Registro Parcial (Modo Sequencial)"
+    );
+  }
+}
+
+function cancelBatchAttendance() {
+  // Limpar dados
+  batchAttendanceData.clear();
+
+  // Desmarcar todos os checkboxes
+  const checkboxes = document.querySelectorAll(".attendance-checkbox");
+  checkboxes.forEach((cb) => (cb.checked = false));
+
+  // Remover highlight das linhas
+  const rows = document.querySelectorAll(".selected-row");
+  rows.forEach((row) => row.classList.remove("selected-row"));
+
+  // Esconder controles
+  const batchControls = domCache.get("batchAttendanceControls");
+  batchControls.classList.add("hidden");
+}
+
+// Inicializar event listeners para presença em lote
+function initializeBatchAttendance() {
+  const confirmBtn = domCache.get("confirmBatchBtn");
+  const cancelBtn = domCache.get("cancelBatchBtn");
+
+  if (confirmBtn) {
+    // Adicionar debouncing e proteção contra múltiplos cliques
+    let isProcessing = false;
+    confirmBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+
+      if (isProcessing) {
+        console.log("Processamento já em andamento, ignorando clique...");
+        return;
+      }
+
+      isProcessing = true;
+      try {
+        await confirmBatchAttendance();
+      } finally {
+        // Delay para evitar cliques duplos acidentais
+        setTimeout(() => {
+          isProcessing = false;
+        }, 1000);
+      }
+    });
+  }
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", cancelBatchAttendance);
   }
 }
