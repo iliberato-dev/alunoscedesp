@@ -26,6 +26,22 @@ class AuthSystem {
         courses: ["MNT", "MNN"], // Manicure Tarde e Noite
         avatar: "💅",
       },
+      "prof.mundotrabalho": {
+        password: "mundo123",
+        role: "professor",
+        course: "mundotrabalho",
+        name: "Prof. Mundo do Trabalho",
+        courses: ["PWT", "PWN", "DGT", "DGN", "MNT", "MNN"], // Acesso a todas as turmas
+        avatar: "🌍",
+      },
+      "prof.convivio": {
+        password: "convivio123",
+        role: "professor",
+        course: "convivio",
+        name: "Prof. Convívio",
+        courses: ["PWT", "PWN", "DGT", "DGN", "MNT", "MNN"], // Acesso a todas as turmas
+        avatar: "🤝",
+      },
       admin: {
         password: "admin123",
         role: "admin",
