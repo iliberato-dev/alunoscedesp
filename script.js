@@ -6,6 +6,37 @@ const IS_LOCAL =
   location.hostname === "localhost" || location.hostname === "127.0.0.1";
 const API_URL = IS_LOCAL ? WEB_APP_URL : "/api/appsscript";
 
+// === SISTEMA DE INDICADORES VISUAIS DE CARREGAMENTO ===
+function mostrarLoadingOverlay(mensagem = "Carregando dados...") {
+  // Remove overlay existente se houver
+  removerLoadingOverlay();
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'loading-overlay';
+  overlay.innerHTML = `
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">${mensagem}</div>
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+}
+
+function removerLoadingOverlay() {
+  const existingOverlay = document.getElementById('loading-overlay');
+  if (existingOverlay) {
+    existingOverlay.remove();
+  }
+}
+
+function atualizarMensagemLoading(novaMensagem) {
+  const loadingText = document.querySelector('.loading-text');
+  if (loadingText) {
+    loadingText.textContent = novaMensagem;
+  }
+}
+
 // === SISTEMA DE RASTREAMENTO DE ÚLTIMOS REGISTROS ===
 class LastAttendanceTracker {
   constructor() {
@@ -1384,6 +1415,13 @@ async function consultarPresencasPorData() {
 
   try {
     mostrarLoadingButton(button, true);
+    
+    // Mostrar overlay de carregamento com mensagem específica
+    if (dateFilter) {
+      mostrarLoadingOverlay("Consultando presenças da data específica...");
+    } else {
+      mostrarLoadingOverlay("Consultando presenças do período selecionado...");
+    }
 
     console.log("📅 Consultando presenças:", {
       dateFilter,
@@ -1397,12 +1435,17 @@ async function consultarPresencasPorData() {
     if (dateFilter) {
       // Consulta para data específica - usar API real
       try {
+        atualizarMensagemLoading("Conectando com a planilha Google...");
+        
         const url = `${API_URL}?action=consultarPresencas&data=${dateFilter}${
           courseInput ? `&curso=${courseInput}` : ""
         }`;
         console.log("🔗 Chamando API:", url);
 
         const response = await fetch(url);
+        
+        atualizarMensagemLoading("Processando dados recebidos...");
+        
         const result = await response.json();
 
         console.log("📊 Resposta da API:", result);
@@ -1414,6 +1457,8 @@ async function consultarPresencasPorData() {
         }
       } catch (apiError) {
         console.warn("⚠️ Erro na API, usando dados locais:", apiError);
+        atualizarMensagemLoading("Carregando dados locais...");
+        
         // Fallback para dados simulados se a API falhar
         let filteredStudents = [...allStudentsRawData];
         if (courseInput) {
@@ -1433,12 +1478,17 @@ async function consultarPresencasPorData() {
       console.log("📊 Processando consulta por período:", { startDate, endDate, courseInput });
       
       try {
+        atualizarMensagemLoading("Conectando com a planilha Google...");
+        
         const url = `${API_URL}?action=consultarPresencasPorPeriodo&dataInicial=${startDate}&dataFinal=${endDate}${
           courseInput ? `&curso=${courseInput}` : ""
         }`;
         console.log("🔗 Chamando API para período:", url);
 
         const response = await fetch(url);
+        
+        atualizarMensagemLoading("Processando dados do período...");
+        
         const result = await response.json();
 
         console.log("📊 Resposta da API para período:", result);
@@ -1450,6 +1500,8 @@ async function consultarPresencasPorData() {
         }
       } catch (apiError) {
         console.warn("⚠️ Erro na API de período, usando dados locais:", apiError);
+        atualizarMensagemLoading("Carregando dados locais...");
+        
         // Fallback para dados simulados se a API falhar
         let filteredStudents = [...allStudentsRawData];
         if (courseInput) {
@@ -1471,6 +1523,8 @@ async function consultarPresencasPorData() {
       }
     }
 
+    atualizarMensagemLoading("Preparando resultados...");
+
     exibirResultadosPresenca(
       attendanceData,
       dateFilter,
@@ -1486,6 +1540,7 @@ async function consultarPresencasPorData() {
     );
   } finally {
     mostrarLoadingButton(button, false);
+    removerLoadingOverlay();
   }
 }
 
@@ -4677,6 +4732,9 @@ async function registrarPresencaCard(studentId) {
     // Mostrar loading no botão
     registerBtn.innerHTML = '<div class="loading-spinner-small"></div> Registrando...';
     registerBtn.disabled = true;
+    
+    // Mostrar overlay de carregamento
+    mostrarLoadingOverlay(`Registrando presença de ${studentName}...`);
 
     const currentUser = AuthSystem.getCurrentUser();
     if (!currentUser) {
@@ -4692,6 +4750,8 @@ async function registrarPresencaCard(studentId) {
     };
 
     console.log("📝 Registrando presença via card:", registro);
+
+    atualizarMensagemLoading("Enviando dados para a planilha...");
 
     // Usar o mesmo sistema de processamento do sistema principal
     let success = false;
@@ -4808,6 +4868,7 @@ async function registrarPresencaCard(studentId) {
     // Restaurar botão sempre, mesmo em caso de erro
     registerBtn.innerHTML = originalText;
     registerBtn.disabled = false;
+    removerLoadingOverlay();
   }
 }
 
