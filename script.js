@@ -6,6 +6,66 @@ const IS_LOCAL =
   location.hostname === "localhost" || location.hostname === "127.0.0.1";
 const API_URL = IS_LOCAL ? WEB_APP_URL : "/api/appsscript";
 
+// === SISTEMA DE RASTREAMENTO DE ÚLTIMOS REGISTROS ===
+class LastAttendanceTracker {
+  constructor() {
+    this.storageKey = 'cedesp_last_attendance';
+  }
+
+  // Registrar último acesso de um aluno
+  recordAttendance(alunoId, data, status, professor) {
+    const records = this.getRecords();
+    const timestamp = new Date().toISOString();
+    
+    records[alunoId] = {
+      data: data,
+      status: status,
+      professor: professor,
+      timestamp: timestamp,
+      displayTime: this.formatDateTime(timestamp)
+    };
+    
+    localStorage.setItem(this.storageKey, JSON.stringify(records));
+    console.log(`📝 Registro salvo para aluno ${alunoId}:`, records[alunoId]);
+  }
+
+  // Obter último registro de um aluno
+  getLastAttendance(alunoId) {
+    const records = this.getRecords();
+    return records[alunoId] || null;
+  }
+
+  // Obter todos os registros
+  getRecords() {
+    try {
+      const saved = localStorage.getItem(this.storageKey);
+      return saved ? JSON.parse(saved) : {};
+    } catch (error) {
+      console.error('Erro ao ler registros de presença:', error);
+      return {};
+    }
+  }
+
+  // Formatar data e hora para exibição
+  formatDateTime(isoString) {
+    const date = new Date(isoString);
+    const dateStr = date.toLocaleDateString('pt-BR');
+    const timeStr = date.toLocaleTimeString('pt-BR', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    return `${dateStr} às ${timeStr}`;
+  }
+
+  // Limpar todos os registros
+  clearAll() {
+    localStorage.removeItem(this.storageKey);
+  }
+}
+
+// Instância global do rastreador
+const lastAttendanceTracker = new LastAttendanceTracker();
+
 // === SISTEMA DE CACHE OTIMIZADO ===
 class CacheManager {
   constructor() {
@@ -204,8 +264,8 @@ class SmartBatchProcessor {
         params.toString()
       );
 
-      // Timeout dinâmico baseado na performance
-      const timeout = this.performanceMetrics.errorCount > 2 ? 20000 : 10000;
+      // Timeout dinâmico baseado na performance (aumentado para reduzir timeouts)
+      const timeout = this.performanceMetrics.errorCount > 2 ? 30000 : 15000;
 
       const response = await withTimeout(
         fetchWithRetry(`${API_URL}?${params.toString()}`, {}, 1),
@@ -462,6 +522,12 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeViewToggle();
   setupUserInterface();
   initializeBatchAttendance();
+  
+  // Garantir que a visibilidade da tabela esteja correta na inicialização
+  setTimeout(() => {
+    updateTableButtonVisibility();
+  }, 100);
+  
   carregarTodosAlunos();
 });
 
@@ -1747,21 +1813,120 @@ function atualizarIconeTheme(tema) {
 // === TOGGLE VISUALIZAÇÃO CARDS/TABELA ===
 let currentView = "cards"; // cards ou table
 
+// Função para detectar se é dispositivo móvel
+function isMobileDevice() {
+  return window.innerWidth <= 768;
+}
+
+// Função para detectar orientação landscape
+function isLandscape() {
+  return window.innerWidth > window.innerHeight;
+}
+
+// Função para verificar se tabela deve estar disponível
+function shouldShowTableOption() {
+  if (!isMobileDevice()) {
+    return true; // Desktop sempre pode usar tabela
+  }
+  
+  // Mobile: só permite tabela em landscape
+  return isLandscape();
+}
+
+// Função para atualizar visibilidade do botão tabela
+function updateTableButtonVisibility() {
+  const tableViewBtn = document.getElementById("tableViewBtn");
+  const viewToggle = document.querySelector(".view-toggle");
+  const isMobile = isMobileDevice();
+  const isPortrait = !isLandscape();
+  const shouldShow = shouldShowTableOption();
+  
+  console.log(`📱 Dispositivo: ${isMobile ? 'Mobile' : 'Desktop'}, Orientação: ${isPortrait ? 'Retrato' : 'Paisagem'}, Mostrar Tabela: ${shouldShow}`);
+  
+  if (tableViewBtn && viewToggle) {
+    if (shouldShow) {
+      tableViewBtn.style.display = "flex";
+      viewToggle.classList.remove("mobile-portrait-mode");
+      console.log("✅ Botão tabela habilitado");
+    } else {
+      tableViewBtn.style.display = "none";
+      viewToggle.classList.add("mobile-portrait-mode");
+      console.log("❌ Botão tabela desabilitado - Mobile Portrait");
+      
+      // Se estava em modo tabela e não pode mais usar, volta para cards
+      if (currentView === "table") {
+        console.log("🔄 Forçando volta para modo cards");
+        switchView("cards");
+      }
+    }
+  }
+}
+
 function initializeViewToggle() {
   const cardViewBtn = document.getElementById("cardViewBtn");
   const tableViewBtn = document.getElementById("tableViewBtn");
 
   if (cardViewBtn && tableViewBtn) {
     cardViewBtn.addEventListener("click", () => switchView("cards"));
-    tableViewBtn.addEventListener("click", () => switchView("table"));
+    tableViewBtn.addEventListener("click", () => {
+      // Verificar se tabela está permitida antes de trocar
+      if (shouldShowTableOption()) {
+        switchView("table");
+      } else {
+        console.log("Tabela não disponível em modo retrato mobile");
+      }
+    });
+  }
+
+  // Listener para mudanças de orientação e redimensionamento
+  window.addEventListener("resize", () => {
+    updateTableButtonVisibility();
+  });
+
+  window.addEventListener("orientationchange", () => {
+    // Delay para aguardar a mudança de orientação completa
+    setTimeout(() => {
+      updateTableButtonVisibility();
+    }, 500);
+  });
+
+  // Listener adicional para mudanças de orientação via media query
+  const mediaQuery = window.matchMedia("(orientation: portrait)");
+  if (mediaQuery.addListener) {
+    mediaQuery.addListener((e) => {
+      setTimeout(() => {
+        updateTableButtonVisibility();
+      }, 300);
+    });
+  } else if (mediaQuery.addEventListener) {
+    mediaQuery.addEventListener("change", (e) => {
+      setTimeout(() => {
+        updateTableButtonVisibility();
+      }, 300);
+    });
   }
 
   // Carrega visualização salva ou usa cards como padrão
   const savedView = localStorage.getItem("viewMode") || "cards";
-  switchView(savedView);
+  
+  // Inicializar visibilidade do botão
+  updateTableButtonVisibility();
+  
+  // Aplicar view apenas se permitida
+  if (savedView === "table" && shouldShowTableOption()) {
+    switchView("table");
+  } else {
+    switchView("cards");
+  }
 }
 
 function switchView(view) {
+  // Validar se a view solicitada é permitida
+  if (view === "table" && !shouldShowTableOption()) {
+    console.log("Forçando modo cards - tabela não disponível");
+    view = "cards";
+  }
+  
   currentView = view;
   localStorage.setItem("viewMode", view);
 
@@ -1790,19 +1955,21 @@ function switchView(view) {
     } else {
       cardsContainer.classList.add("hidden");
       tableContainer.classList.remove("hidden");
-      // Adiciona classe table-mode para melhor espaçamento mobile
+      // Adiciona classe table-mode
       tableContainer.querySelectorAll(".table-wrapper").forEach((wrapper) => {
         wrapper.classList.add("table-mode");
       });
+      // Mostrar controles de presença em lote no modo tabela se houver alunos
+      if (currentFilteredStudents.length > 0) {
+        updateBatchControls();
+      }
     }
   }
 
-  // Re-exibe os resultados na nova visualização
+  // Re-renderizar dados no novo formato
   if (currentFilteredStudents.length > 0) {
     exibirResultados(currentFilteredStudents);
   }
-
-  console.log(`👁️ Visualização alterada para: ${view}`);
 }
 
 // === FUNÇÕES DE API ===
@@ -2287,6 +2454,32 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
   const reprovadoPorFalta = situacao === "Reprovado" && faltasExibir > 15;
   const situacaoDisplay = reprovadoPorFalta ? "Reprovado por Falta" : situacao;
 
+  // Obter último registro de presença
+  const lastAttendance = lastAttendanceTracker.getLastAttendance(aluno.ID_Unico);
+  const lastAttendanceDisplay = lastAttendance 
+    ? `<div class="last-attendance">
+         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="attendance-icon">
+           <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+           <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+         </svg>
+         <div class="attendance-info">
+           <span class="attendance-label">Último registro:</span>
+           <span class="attendance-date">${lastAttendance.displayTime}</span>
+           <span class="attendance-status ${lastAttendance.status === 'P' ? 'presente' : 'ausente'}">
+             ${lastAttendance.status === 'P' ? '✅ Presente' : '❌ Ausente'}
+           </span>
+         </div>
+       </div>`
+    : `<div class="last-attendance no-record">
+         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="attendance-icon">
+           <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+           <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
+         </svg>
+         <div class="attendance-info">
+           <span class="attendance-label">Nenhum registro encontrado</span>
+         </div>
+       </div>`;
+
   // Alerta para excesso de faltas
   const alertaFalta =
     faltasExibir > 15
@@ -2319,6 +2512,8 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
     </div>
 
     ${alertaFalta}
+    
+    ${lastAttendanceDisplay}
 
     <div class="card-grades">
       <div class="grades-grid">
@@ -2377,6 +2572,63 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
   }">
         ${getSituationIcon(situacao)}
         ${situacaoDisplay}
+      </div>
+    </div>
+
+    <!-- Seção de Presença no Card -->
+    <div class="card-attendance-section" id="attendanceSection-${aluno.ID_Unico}">
+      <div class="attendance-toggle">
+        <label class="attendance-checkbox-label">
+          <input 
+            type="checkbox" 
+            class="attendance-checkbox" 
+            id="attendanceCheck-${aluno.ID_Unico}"
+            data-student-id="${aluno.ID_Unico}"
+            data-student-name="${aluno.Nome}"
+            data-student-course="${aluno.Origem}"
+          />
+          <span class="checkmark"></span>
+          <span class="checkbox-text">Registrar Presença</span>
+        </label>
+      </div>
+      
+      <div class="attendance-controls hidden" id="attendanceControls-${aluno.ID_Unico}">
+        <div class="attendance-date-group">
+          <label for="attendanceDate-${aluno.ID_Unico}">Data:</label>
+          <input 
+            type="date" 
+            id="attendanceDate-${aluno.ID_Unico}" 
+            class="attendance-date-input"
+            value="${new Date().toISOString().split('T')[0]}"
+          />
+        </div>
+        
+        <div class="attendance-status-group">
+          <label class="status-radio">
+            <input 
+              type="radio" 
+              name="status-${aluno.ID_Unico}" 
+              value="P" 
+              checked
+            />
+            <span class="radio-text">✅ Presente</span>
+          </label>
+          <label class="status-radio">
+            <input 
+              type="radio" 
+              name="status-${aluno.ID_Unico}" 
+              value="A"
+            />
+            <span class="radio-text">❌ Ausente</span>
+          </label>
+        </div>
+        
+        <button 
+          class="register-attendance-btn" 
+          onclick="registrarPresencaCard('${aluno.ID_Unico}')"
+        >
+          📝 Registrar
+        </button>
       </div>
     </div>
   `;
@@ -4150,4 +4402,190 @@ function initializeBatchAttendance() {
   if (cancelBtn) {
     cancelBtn.addEventListener("click", cancelBatchAttendance);
   }
+
+  // Event listeners para checkboxes de presença nos cards
+  document.addEventListener("change", (e) => {
+    if (e.target.classList.contains("attendance-checkbox")) {
+      handleCardAttendanceToggle(e.target);
+    }
+  });
 }
+
+// === FUNÇÕES DE PRESENÇA NOS CARDS ===
+function handleCardAttendanceToggle(checkbox) {
+  const studentId = checkbox.dataset.studentId;
+  const controlsDiv = document.getElementById(`attendanceControls-${studentId}`);
+  
+  if (checkbox.checked) {
+    controlsDiv.classList.remove("hidden");
+    // Animar a entrada dos controles
+    controlsDiv.style.animation = "slideDown 0.3s ease-out";
+  } else {
+    controlsDiv.classList.add("hidden");
+  }
+}
+
+async function registrarPresencaCard(studentId) {
+  const checkbox = document.getElementById(`attendanceCheck-${studentId}`);
+  const dateInput = document.getElementById(`attendanceDate-${studentId}`);
+  const statusRadios = document.querySelectorAll(`input[name="status-${studentId}"]:checked`);
+  const registerBtn = document.querySelector(`button[onclick="registrarPresencaCard('${studentId}')"]`);
+  
+  if (!checkbox || !dateInput || statusRadios.length === 0) {
+    mostrarErro("Erro ao obter dados da presença", "Erro");
+    return;
+  }
+
+  const studentName = checkbox.dataset.studentName;
+  const studentCourse = checkbox.dataset.studentCourse;
+  const selectedDate = dateInput.value;
+  const selectedStatus = statusRadios[0].value;
+  
+  if (!selectedDate) {
+    mostrarAviso("Por favor, selecione uma data", "Data Obrigatória");
+    return;
+  }
+
+  // Salvar o texto original do botão antes do try
+  const originalText = registerBtn.innerHTML;
+
+  try {
+    // Mostrar loading no botão
+    registerBtn.innerHTML = '<div class="loading-spinner-small"></div> Registrando...';
+    registerBtn.disabled = true;
+
+    const currentUser = AuthSystem.getCurrentUser();
+    if (!currentUser) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const registro = {
+      alunoId: studentId,
+      data: selectedDate,
+      status: selectedStatus,
+      professor: currentUser.name,
+      curso: studentCourse
+    };
+
+    console.log("📝 Registrando presença via card:", registro);
+
+    // Usar o mesmo sistema de processamento do sistema principal
+    let success = false;
+    let timeoutOccurred = false;
+    
+    try {
+      success = await smartProcessor.processWithCache(registro);
+    } catch (timeoutError) {
+      if (timeoutError.message && timeoutError.message.includes("Timeout")) {
+        timeoutOccurred = true;
+        console.log("⚠️ Timeout detectado, mas presença pode ter sido registrada");
+        
+        // Registrar o último acesso mesmo com timeout (provável sucesso)
+        lastAttendanceTracker.recordAttendance(
+          studentId,
+          selectedDate,
+          selectedStatus,
+          currentUser.name
+        );
+        
+        // Mesmo com timeout, mostrar mensagem informativa
+        mostrarAviso(
+          `A requisição demorou mais que o esperado, mas a presença pode ter sido registrada com sucesso.\n\nAluno: ${studentName}\nData: ${new Date(selectedDate).toLocaleDateString('pt-BR')}\nStatus: ${selectedStatus === "P" ? "Presente" : "Ausente"}\n\nVerifique o sistema para confirmar.`,
+          "Timeout - Verifique o Registro"
+        );
+        
+        // Resetar o formulário mesmo com timeout
+        checkbox.checked = false;
+        document.getElementById(`attendanceControls-${studentId}`).classList.add("hidden");
+        
+        // Atualizar a exibição do card
+        setTimeout(() => {
+          const cardElement = document.querySelector(`input[data-student-id="${studentId}"]`);
+          if (cardElement) {
+            const studentCard = cardElement.closest('.student-card');
+            if (studentCard) {
+              const alunoData = allStudentsRawData.find(a => a.ID_Unico === studentId);
+              if (alunoData) {
+                const calculado = calcularMediaESituacao(alunoData);
+                studentCard.innerHTML = createStudentCardHTML(
+                  alunoData, 
+                  calculado.media, 
+                  calculado.situacao, 
+                  calculado.faltas
+                );
+              }
+            }
+          }
+        }, 100);
+        
+        return; // Sair da função sem lançar erro
+      } else {
+        throw timeoutError; // Re-lançar se não for timeout
+      }
+    }
+
+    if (success) {
+      const statusText = selectedStatus === "P" ? "Presente" : "Ausente";
+      
+      // Registrar o último acesso do aluno
+      lastAttendanceTracker.recordAttendance(
+        studentId,
+        selectedDate,
+        selectedStatus,
+        currentUser.name
+      );
+      
+      mostrarSucesso(
+        `Presença registrada com sucesso!\n\nAluno: ${studentName}\nData: ${new Date(selectedDate).toLocaleDateString('pt-BR')}\nStatus: ${statusText}`,
+        "Presença Registrada"
+      );
+
+      // Resetar o formulário
+      checkbox.checked = false;
+      document.getElementById(`attendanceControls-${studentId}`).classList.add("hidden");
+      
+      // Atualizar cache se necessário
+      cacheManager.clearAttendance();
+      
+      // Atualizar a exibição do card para mostrar o novo último registro
+      setTimeout(() => {
+        // Re-renderizar apenas este card específico
+        const cardElement = document.querySelector(`input[data-student-id="${studentId}"]`);
+        if (cardElement) {
+          const studentCard = cardElement.closest('.student-card');
+          if (studentCard) {
+            // Encontrar o aluno nos dados
+            const alunoData = allStudentsRawData.find(a => a.ID_Unico === studentId);
+            if (alunoData) {
+              const calculado = calcularMediaESituacao(alunoData);
+              studentCard.innerHTML = createStudentCardHTML(
+                alunoData, 
+                calculado.media, 
+                calculado.situacao, 
+                calculado.faltas
+              );
+            }
+          }
+        }
+      }, 100);
+      
+    } else {
+      throw new Error("Falha ao registrar presença");
+    }
+
+  } catch (error) {
+    console.error("❌ Erro ao registrar presença via card:", error);
+    
+    mostrarErro(
+      `Erro ao registrar presença: ${error.message || "Erro desconhecido"}`,
+      "Erro no Registro"
+    );
+  } finally {
+    // Restaurar botão sempre, mesmo em caso de erro
+    registerBtn.innerHTML = originalText;
+    registerBtn.disabled = false;
+  }
+}
+
+// Tornar a função global para uso no onclick
+window.registrarPresencaCard = registrarPresencaCard;
