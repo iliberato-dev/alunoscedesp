@@ -14,41 +14,37 @@
   --color-overlay: rgba(26, 41, 81, 0.8);
 
   /* Cores CEDESP - Identidade Visual */
-  --color-primary: #1a2951; /* Azul CEDESP principal */
+  --color-primary: #1a2951;
+  /* Azul CEDESP principal */
   --color-primary-light: #2d4785;
-  --color-secondary: #f4c430; /* Dourado CEDESP */
-  --color-accent: #ffd700; /* Dourado claro */
+  --color-secondary: #f4c430;
+  /* Dourado CEDESP */
+  --color-accent: #ffd700;
+  /* Dourado claro */
   --color-success: #28a745;
   --color-warning: #ffc107;
   --color-error: #dc3545;
 
   /* Cores de Texto */
   --color-text-primary: #ffffff;
-  --color-text-secondary: #f4c430; /* Dourado para destaques */
+  --color-text-secondary: #f4c430;
+  /* Dourado para destaques */
   --color-text-muted: #b8c5d6;
   --color-text-disabled: #8a9ab0;
 
   /* Gradientes CEDESP */
-  --gradient-primary: linear-gradient(
-    135deg,
-    var(--color-primary),
-    var(--color-primary-light)
-  );
-  --gradient-secondary: linear-gradient(
-    135deg,
-    var(--color-secondary),
-    var(--color-accent)
-  );
-  --gradient-surface: linear-gradient(
-    135deg,
-    var(--color-bg-primary),
-    var(--color-bg-secondary)
-  );
-  --gradient-accent: linear-gradient(
-    90deg,
-    var(--color-accent),
-    var(--color-secondary)
-  );
+  --gradient-primary: linear-gradient(135deg,
+      var(--color-primary),
+      var(--color-primary-light));
+  --gradient-secondary: linear-gradient(135deg,
+      var(--color-secondary),
+      var(--color-accent));
+  --gradient-surface: linear-gradient(135deg,
+      var(--color-bg-primary),
+      var(--color-bg-secondary));
+  --gradient-accent: linear-gradient(90deg,
+      var(--color-accent),
+      var(--color-secondary));
 
   /* Bordas e Sombras - Design CEDESP */
   --border-radius-sm: 6px;
@@ -91,31 +87,24 @@
 
   /* Cores de Texto - Tema Claro */
   --color-text-primary: #1a2951;
-  --color-text-secondary: #1a2951; /* Azul para destaques */
+  --color-text-secondary: #1a2951;
+  /* Azul para destaques */
   --color-text-muted: #6b7280;
   --color-text-disabled: #9ca3af;
 
   /* Gradientes - Tema Claro */
-  --gradient-primary: linear-gradient(
-    135deg,
-    var(--color-primary),
-    var(--color-primary-light)
-  );
-  --gradient-secondary: linear-gradient(
-    135deg,
-    var(--color-secondary),
-    var(--color-accent)
-  );
-  --gradient-surface: linear-gradient(
-    135deg,
-    var(--color-bg-primary),
-    var(--color-bg-secondary)
-  );
-  --gradient-accent: linear-gradient(
-    90deg,
-    var(--color-accent),
-    var(--color-secondary)
-  );
+  --gradient-primary: linear-gradient(135deg,
+      var(--color-primary),
+      var(--color-primary-light));
+  --gradient-secondary: linear-gradient(135deg,
+      var(--color-secondary),
+      var(--color-accent));
+  --gradient-surface: linear-gradient(135deg,
+      var(--color-bg-primary),
+      var(--color-bg-secondary));
+  --gradient-accent: linear-gradient(90deg,
+      var(--color-accent),
+      var(--color-secondary));
 
   /* Bordas e Sombras - Tema Claro */
   --border-subtle: 1px solid rgba(26, 41, 81, 0.15);
@@ -192,6 +181,7 @@ body {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -213,8 +203,8 @@ header {
 /* Informações do Usuário */
 .user-info {
   position: absolute;
-  top: -20px;
-  right: -300px;
+  top: 75%;
+  right: -19%;
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -301,8 +291,8 @@ header {
 /* Botão de Toggle do Tema */
 .theme-toggle {
   position: absolute;
-  top: -34px;
-  right: -35px;
+  top: 0px;
+  right: 0px;
   width: 48px;
   height: 48px;
   border: none;
@@ -316,6 +306,17 @@ header {
   transition: all var(--transition-normal);
   border: var(--border-subtle);
   backdrop-filter: blur(10px);
+}
+
+@media (max-width: 768px) {
+  .theme-toggle {
+    position: fixed;
+    top: 3.5rem;
+    right: 1rem;
+    width: 36px;
+    height: 36px;
+  }
+
 }
 
 .theme-toggle:hover {
@@ -698,7 +699,8 @@ select.full-width-input option:focus {
   max-width: 100%;
   overflow-x: auto;
   border-radius: var(--border-radius-md);
-  -webkit-overflow-scrolling: touch; /* Smooth scrolling no iOS */
+  -webkit-overflow-scrolling: touch;
+  /* Smooth scrolling no iOS */
   /* Força o scroll horizontal apenas quando necessário */
   scrollbar-width: thin;
   scrollbar-color: var(--color-secondary) transparent;
@@ -725,13 +727,15 @@ select.full-width-input option:focus {
 /* Tabela - Design Clean e Responsivo */
 table {
   width: 100%;
-  min-width: 600px; /* Largura mínima reduzida para mobile */
+  min-width: 600px;
+  /* Largura mínima reduzida para mobile */
   border-collapse: separate;
   border-spacing: 0;
   background: var(--color-bg-card);
   border-radius: var(--border-radius-md);
   overflow: hidden;
-  table-layout: fixed; /* Força controle de larguras */
+  table-layout: fixed;
+  /* Força controle de larguras */
 }
 
 /* Cabeçalhos e células - Compacto */
@@ -759,28 +763,34 @@ table th {
 }
 
 /* Larguras específicas das colunas */
-table th:nth-child(1), /* ID */
+table th:nth-child(1),
+/* ID */
 table td:nth-child(1) {
   width: 8%;
   min-width: 50px;
 }
 
-table th:nth-child(2), /* Nome */
+table th:nth-child(2),
+/* Nome */
 table td:nth-child(2) {
   width: 25%;
   min-width: 120px;
 }
 
-table th:nth-child(3), /* Faltas */
+table th:nth-child(3),
+/* Faltas */
 table td:nth-child(3) {
   width: 8%;
   min-width: 60px;
   text-align: center;
 }
 
-table th:nth-child(4), /* 1º Bim */
-table th:nth-child(5), /* 2º Bim */
-table th:nth-child(6), /* 3º Bim */
+table th:nth-child(4),
+/* 1º Bim */
+table th:nth-child(5),
+/* 2º Bim */
+table th:nth-child(6),
+/* 3º Bim */
 table td:nth-child(4),
 table td:nth-child(5),
 table td:nth-child(6) {
@@ -789,22 +799,26 @@ table td:nth-child(6) {
   text-align: center;
 }
 
-table th:nth-child(7), /* Média */
+table th:nth-child(7),
+/* Média */
 table td:nth-child(7) {
   width: 8%;
   min-width: 50px;
   text-align: center;
 }
 
-table th:nth-child(8), /* Situação */
+table th:nth-child(8),
+/* Situação */
 table td:nth-child(8) {
   width: 15%;
   min-width: 80px;
   text-align: center;
 }
 
-table th:nth-child(9), /* Presente */
-table th:nth-child(10), /* Ausente */
+table th:nth-child(9),
+/* Presente */
+table th:nth-child(10),
+/* Ausente */
 table td:nth-child(9),
 table td:nth-child(10) {
   width: 10%;
@@ -941,6 +955,7 @@ table tbody tr:last-child td {
     opacity: 0;
     transform: scale(0.95) translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -1266,6 +1281,7 @@ select.full-width-input option {
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -1591,6 +1607,7 @@ select.full-width-input option {
       transform: translateY(100%);
       opacity: 0;
     }
+
     to {
       transform: translateY(0);
       opacity: 1;
@@ -2134,6 +2151,7 @@ select.full-width-input option {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -2223,10 +2241,12 @@ select.full-width-input option {
     opacity: 0;
     transform: scale(0.8) translateY(20px);
   }
+
   60% {
     opacity: 1;
     transform: scale(1.05) translateY(0);
   }
+
   100% {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -3906,7 +3926,8 @@ select.full-width-input option {
   }
 
   table {
-    min-width: 500px; /* Reduzido para mobile */
+    min-width: 500px;
+    /* Reduzido para mobile */
     font-size: 0.8rem;
   }
 
@@ -3920,27 +3941,33 @@ select.full-width-input option {
   }
 
   /* Ajustar larguras específicas para mobile */
-  table th:nth-child(1), /* ID */
+  table th:nth-child(1),
+  /* ID */
   table td:nth-child(1) {
     width: 5%;
     min-width: 30px;
   }
 
-  table th:nth-child(2), /* Nome */
+  table th:nth-child(2),
+  /* Nome */
   table td:nth-child(2) {
     width: 35%;
     min-width: 80px;
   }
 
-  table th:nth-child(3), /* Faltas */
+  table th:nth-child(3),
+  /* Faltas */
   table td:nth-child(3) {
     width: 8%;
     min-width: 40px;
   }
 
-  table th:nth-child(4), /* 1º Bim */
-  table th:nth-child(5), /* 2º Bim */
-  table th:nth-child(6), /* 3º Bim */
+  table th:nth-child(4),
+  /* 1º Bim */
+  table th:nth-child(5),
+  /* 2º Bim */
+  table th:nth-child(6),
+  /* 3º Bim */
   table td:nth-child(4),
   table td:nth-child(5),
   table td:nth-child(6) {
@@ -3948,20 +3975,24 @@ select.full-width-input option {
     min-width: 30px;
   }
 
-  table th:nth-child(7), /* Média */
+  table th:nth-child(7),
+  /* Média */
   table td:nth-child(7) {
     width: 7%;
     min-width: 35px;
   }
 
-  table th:nth-child(8), /* Situação */
+  table th:nth-child(8),
+  /* Situação */
   table td:nth-child(8) {
     width: 9%;
     min-width: 45px;
   }
 
-  table th:nth-child(9), /* Presente */
-  table th:nth-child(10), /* Ausente */
+  table th:nth-child(9),
+  /* Presente */
+  table th:nth-child(10),
+  /* Ausente */
   table td:nth-child(9),
   table td:nth-child(10) {
     width: 7.5%;
@@ -3999,7 +4030,8 @@ select.full-width-input option {
   }
 
   table {
-    min-width: 450px; /* Ainda mais compacto */
+    min-width: 450px;
+    /* Ainda mais compacto */
     font-size: 0.7rem;
   }
 
@@ -4014,27 +4046,33 @@ select.full-width-input option {
   }
 
   /* Layout ultra compacto para telas pequenas */
-  table th:nth-child(1), /* ID */
+  table th:nth-child(1),
+  /* ID */
   table td:nth-child(1) {
     width: 4%;
     min-width: 25px;
   }
 
-  table th:nth-child(2), /* Nome */
+  table th:nth-child(2),
+  /* Nome */
   table td:nth-child(2) {
     width: 40%;
     min-width: 70px;
   }
 
-  table th:nth-child(3), /* Faltas */
+  table th:nth-child(3),
+  /* Faltas */
   table td:nth-child(3) {
     width: 7%;
     min-width: 30px;
   }
 
-  table th:nth-child(4), /* 1º Bim */
-  table th:nth-child(5), /* 2º Bim */
-  table th:nth-child(6), /* 3º Bim */
+  table th:nth-child(4),
+  /* 1º Bim */
+  table th:nth-child(5),
+  /* 2º Bim */
+  table th:nth-child(6),
+  /* 3º Bim */
   table td:nth-child(4),
   table td:nth-child(5),
   table td:nth-child(6) {
@@ -4042,20 +4080,24 @@ select.full-width-input option {
     min-width: 25px;
   }
 
-  table th:nth-child(7), /* Média */
+  table th:nth-child(7),
+  /* Média */
   table td:nth-child(7) {
     width: 6%;
     min-width: 28px;
   }
 
-  table th:nth-child(8), /* Situação */
+  table th:nth-child(8),
+  /* Situação */
   table td:nth-child(8) {
     width: 8%;
     min-width: 35px;
   }
 
-  table th:nth-child(9), /* Presente */
-  table th:nth-child(10), /* Ausente */
+  table th:nth-child(9),
+  /* Presente */
+  table th:nth-child(10),
+  /* Ausente */
   table td:nth-child(9),
   table td:nth-child(10) {
     width: 7%;
