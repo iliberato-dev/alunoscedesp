@@ -677,8 +677,23 @@ function addAdminFeatures() {
       </svg>
       <span>📅 Controle de Presenças</span>
     `;
-    attendanceButton.addEventListener("click", abrirControlePresencas);
+    attendanceButton.addEventListener("click", () => {
+      console.log("🖱️ Botão Controle de Presenças clicado!");
+      abrirControlePresencas();
+    });
     buttonsContainer.appendChild(attendanceButton);
+    
+    // Adicionar aviso de modo visualização apenas (para edição de presenças individuais)
+    const infoButton = document.createElement("div");
+    infoButton.className = "admin-info-notice";
+    infoButton.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+        <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+      </svg>
+      <span>👁️ Visualização e Relatórios - Sem edição individual de presenças</span>
+    `;
+    buttonsContainer.appendChild(infoButton);
   }
 
   // Ocultar funcionalidades de edição individual para admin
@@ -693,7 +708,8 @@ function hideIndividualEditingForAdmin() {
     .admin-view .btn-detalhes,
     .admin-view #updateNotesButton,
     .admin-view #markPresentButton,
-    .admin-view #markAbsentButton {
+    .admin-view #markAbsentButton,
+    .admin-view .register-attendance-btn {
       display: none !important;
     }
     .admin-view .student-card {
@@ -701,6 +717,10 @@ function hideIndividualEditingForAdmin() {
     }
     .admin-view .student-card:hover {
       transform: none;
+    }
+    .admin-view input[type="checkbox"]:not(:disabled),
+    .admin-view input[type="radio"]:not(:disabled) {
+      pointer-events: none;
     }
   `;
   document.head.appendChild(style);
@@ -1129,6 +1149,9 @@ function abrirDetalhesAluno(alunoId) {
 
 // === CONTROLE DE PRESENÇAS POR DATA (ADMIN) ===
 function abrirControlePresencas() {
+  console.log("🔍 Abrindo controle de presenças...");
+  console.log("👤 Usuário atual:", currentUser);
+  
   if (currentUser.role !== "admin") {
     mostrarErro(
       "Acesso negado. Apenas administradores podem acessar esta funcionalidade.",
@@ -1136,6 +1159,8 @@ function abrirControlePresencas() {
     );
     return;
   }
+
+  console.log("✅ Usuário autorizado, criando modal...");
 
   const modal = document.createElement("div");
   modal.id = "attendanceControlModal";
@@ -1251,8 +1276,14 @@ function abrirControlePresencas() {
     </div>
   `;
 
+  console.log("📝 Modal HTML criado, adicionando ao DOM...");
   document.body.appendChild(modal);
-  modal.style.display = "block";
+  
+  // Usar setTimeout para garantir que o DOM foi atualizado antes de mostrar
+  setTimeout(() => {
+    modal.classList.add("active");
+    console.log("✅ Modal ativado e exibido!");
+  }, 10);
 
   // Event listeners
   document
@@ -1273,9 +1304,15 @@ function abrirControlePresencas() {
 }
 
 function fecharControlePresencas() {
+  console.log("🚪 Fechando controle de presenças...");
   const modal = document.getElementById("attendanceControlModal");
   if (modal) {
-    modal.remove();
+    modal.classList.remove("active");
+    // Aguardar animação de fechamento antes de remover
+    setTimeout(() => {
+      modal.remove();
+      console.log("✅ Modal removido!");
+    }, 300);
   }
 }
 
@@ -1310,6 +1347,13 @@ async function consultarPresencasPorData() {
   const courseInput = document.getElementById("attendanceCourse").value;
   const button = document.getElementById("consultarPresencas");
 
+  console.log("🔍 Valores dos campos:", {
+    dateInput,
+    startDateInput,
+    endDateInput,
+    courseInput
+  });
+
   let dateFilter = null;
   let startDate = null;
   let endDate = null;
@@ -1317,9 +1361,12 @@ async function consultarPresencasPorData() {
   // Validar inputs
   if (dateInput) {
     dateFilter = dateInput;
+    console.log("📅 Usando data específica:", dateFilter);
   } else if (startDateInput && endDateInput) {
     startDate = startDateInput;
     endDate = endDateInput;
+    console.log("📅 Usando período:", startDate, "a", endDate);
+    
     if (new Date(startDate) > new Date(endDate)) {
       mostrarErro(
         "Data inicial não pode ser maior que a data final.",
@@ -1382,19 +1429,46 @@ async function consultarPresencasPorData() {
         );
       }
     } else {
-      // Para período (múltiplas datas) - usar simulação por enquanto
-      let filteredStudents = [...allStudentsRawData];
-      if (courseInput) {
-        filteredStudents = filteredStudents.filter(
-          (student) => student.Origem === courseInput
+      // Para período (múltiplas datas) - usar API real do Google Sheets
+      console.log("📊 Processando consulta por período:", { startDate, endDate, courseInput });
+      
+      try {
+        const url = `${API_URL}?action=consultarPresencasPorPeriodo&dataInicial=${startDate}&dataFinal=${endDate}${
+          courseInput ? `&curso=${courseInput}` : ""
+        }`;
+        console.log("🔗 Chamando API para período:", url);
+
+        const response = await fetch(url);
+        const result = await response.json();
+
+        console.log("📊 Resposta da API para período:", result);
+
+        if (result.success) {
+          attendanceData = result.data || [];
+        } else {
+          throw new Error(result.error || "Erro ao consultar presenças por período");
+        }
+      } catch (apiError) {
+        console.warn("⚠️ Erro na API de período, usando dados locais:", apiError);
+        // Fallback para dados simulados se a API falhar
+        let filteredStudents = [...allStudentsRawData];
+        if (courseInput) {
+          filteredStudents = filteredStudents.filter(
+            (student) => student.Origem === courseInput
+          );
+        }
+        
+        console.log("👥 Alunos filtrados:", filteredStudents.length);
+        
+        attendanceData = simulateAttendanceData(
+          filteredStudents,
+          null,
+          startDate,
+          endDate
         );
+        
+        console.log("📋 Dados de presença gerados:", attendanceData.length);
       }
-      attendanceData = simulateAttendanceData(
-        filteredStudents,
-        null,
-        startDate,
-        endDate
-      );
     }
 
     exibirResultadosPresenca(
@@ -1526,58 +1600,131 @@ class AttendanceManager {
   clearAllRecords() {
     localStorage.removeItem(this.storageKey);
   }
+
+  // Gerar dados de demonstração para teste
+  generateSampleData() {
+    console.log("🎲 Gerando dados de demonstração...");
+    const sampleDates = ['2025-08-04', '2025-08-05', '2025-08-06', '2025-08-07'];
+    const sampleStudents = allStudentsRawData.slice(0, 10); // Primeiros 10 alunos
+
+    sampleDates.forEach(date => {
+      sampleStudents.forEach((student, index) => {
+        // Simular padrão realista: ~80% presença
+        const isPresent = Math.random() > 0.2;
+        this.markAttendance(student.ID_Unico, date, isPresent ? 'P' : 'A');
+      });
+    });
+
+    console.log("✅ Dados de demonstração gerados para", sampleDates.length, "datas e", sampleStudents.length, "alunos");
+  }
 }
 
 // Instância global do gerenciador de presença (para backup local)
 const attendanceManager = new AttendanceManager();
 
 function simulateAttendanceData(students, dateFilter, startDate, endDate) {
+  console.log("🔍 Simulando dados de presença:", { dateFilter, startDate, endDate });
   const attendanceData = [];
-  const targetDate = dateFilter || startDate;
 
-  students.forEach((student) => {
-    // Verificar se existe registro para este aluno nesta data
-    const attendanceStatus = attendanceManager.getStudentAttendance(
-      student.ID_Unico,
-      targetDate
-    );
+  if (dateFilter) {
+    // Consulta para data específica
+    const targetDate = dateFilter;
+    console.log("📅 Processando data específica:", targetDate);
 
-    let status, statusText, isMarked;
+    students.forEach((student) => {
+      const attendanceStatus = attendanceManager.getStudentAttendance(
+        student.ID_Unico,
+        targetDate
+      );
 
-    if (attendanceStatus) {
-      // Há registro explícito para este aluno
-      status = attendanceStatus;
-      statusText = attendanceStatus === "P" ? "Presente" : "Ausente";
-      isMarked = true;
-    } else {
-      // Verificar se algum aluno foi marcado nesta data
-      const hasAnyMarked = attendanceManager.hasAnyAttendanceMarked(targetDate);
+      let status, statusText, isMarked;
 
-      if (hasAnyMarked) {
-        // Se algum aluno foi marcado e este não foi, considera ausente
-        status = "A";
-        statusText = "Ausente (Não Marcado)";
-        isMarked = false;
+      if (attendanceStatus) {
+        status = attendanceStatus;
+        statusText = attendanceStatus === "P" ? "Presente" : "Ausente";
+        isMarked = true;
       } else {
-        // Se ninguém foi marcado ainda, não exibe nada (neutro)
-        status = null;
-        statusText = "Sem Registro";
-        isMarked = false;
+        const hasAnyMarked = attendanceManager.hasAnyAttendanceMarked(targetDate);
+        if (hasAnyMarked) {
+          status = "A";
+          statusText = "Ausente (Não Marcado)";
+          isMarked = false;
+        } else {
+          status = null;
+          statusText = "Sem Registro";
+          isMarked = false;
+        }
       }
-    }
 
-    attendanceData.push({
-      studentId: student.ID_Unico,
-      studentName: student.Nome,
-      course: student.Origem,
-      period: student.Periodo,
-      date: targetDate,
-      status: status,
-      statusText: statusText,
-      isMarked: isMarked,
+      attendanceData.push({
+        studentId: student.ID_Unico,
+        studentName: student.Nome,
+        course: student.Origem,
+        period: student.Periodo,
+        date: targetDate,
+        status: status,
+        statusText: statusText,
+        isMarked: isMarked,
+      });
     });
-  });
 
+  } else if (startDate && endDate) {
+    // Consulta para período - iterar através de cada data
+    console.log("📅 Processando período:", startDate, "até", endDate);
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const dateList = [];
+    
+    // Gerar lista de datas no período
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split('T')[0];
+      dateList.push(dateStr);
+    }
+    
+    console.log("📋 Datas no período:", dateList);
+
+    students.forEach((student) => {
+      dateList.forEach((currentDate) => {
+        const attendanceStatus = attendanceManager.getStudentAttendance(
+          student.ID_Unico,
+          currentDate
+        );
+
+        let status, statusText, isMarked;
+
+        if (attendanceStatus) {
+          status = attendanceStatus;
+          statusText = attendanceStatus === "P" ? "Presente" : "Ausente";
+          isMarked = true;
+        } else {
+          const hasAnyMarked = attendanceManager.hasAnyAttendanceMarked(currentDate);
+          if (hasAnyMarked) {
+            status = "A";
+            statusText = "Ausente (Não Marcado)";
+            isMarked = false;
+          } else {
+            status = null;
+            statusText = "Sem Registro";
+            isMarked = false;
+          }
+        }
+
+        attendanceData.push({
+          studentId: student.ID_Unico,
+          studentName: student.Nome,
+          course: student.Origem,
+          period: student.Periodo,
+          date: currentDate,
+          status: status,
+          statusText: statusText,
+          isMarked: isMarked,
+        });
+      });
+    });
+  }
+
+  console.log("📊 Dados de presença gerados:", attendanceData.length, "registros");
   return attendanceData;
 }
 
@@ -1591,11 +1738,47 @@ function exibirResultadosPresenca(
   const summaryDiv = document.getElementById("attendanceSummary");
   const resultsDiv = document.getElementById("attendanceResults");
 
+  console.log("📊 Calculando estatísticas para", attendanceData.length, "registros");
+
   // Calcular estatísticas
-  const total = attendanceData.length;
-  const present = attendanceData.filter((a) => a.status === "P").length;
-  const absent = attendanceData.filter((a) => a.status === "A").length;
-  const rate = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
+  let total, present, absent, rate;
+  
+  if (dateFilter) {
+    // Para data específica: contar todos os alunos
+    total = attendanceData.length;
+    present = attendanceData.filter((a) => a.status === "P").length;
+    absent = attendanceData.filter((a) => a.status === "A").length;
+    
+    // Para data específica, incluir alunos sem registro nas faltas se houver qualquer presença marcada
+    const hasAnyPresence = present > 0 || absent > 0;
+    if (hasAnyPresence) {
+      const withoutRecord = attendanceData.filter((a) => a.status === null).length;
+      absent += withoutRecord;
+    }
+    
+  } else {
+    // Para período: contar alunos únicos, não registros
+    const uniqueStudents = [...new Set(attendanceData.map(a => a.studentId))];
+    total = uniqueStudents.length;
+    
+    // Contar presenças e faltas do período
+    present = attendanceData.filter((a) => a.status === "P").length;
+    absent = attendanceData.filter((a) => a.status === "A").length;
+    
+    const uniqueDates = [...new Set(attendanceData.map(a => a.date))].length;
+    
+    console.log("📋 Estatísticas do período:", {
+      uniqueStudents: total,
+      uniqueDates,
+      totalRecords: attendanceData.length,
+      present,
+      absent
+    });
+  }
+  
+  rate = total > 0 ? ((present / (present + absent)) * 100).toFixed(1) : 0;
+  
+  console.log("📊 Estatísticas finais:", { total, present, absent, rate });
 
   // Atualizar cards de resumo
   document.getElementById("totalStudentsCount").textContent = total;
@@ -1614,6 +1797,9 @@ function exibirResultadosPresenca(
       )} a ${new Date(endDate + "T12:00:00").toLocaleDateString("pt-BR")}`;
 
   const courseText = course ? ` - Curso: ${course}` : " - Todos os Cursos";
+  
+  // Decidir se incluir coluna de data
+  const isPeriodQuery = !dateFilter && startDate && endDate;
 
   resultsDiv.innerHTML = `
     <div class="results-header">
@@ -1629,6 +1815,7 @@ function exibirResultadosPresenca(
             <th>Nome do Aluno</th>
             <th>Curso</th>
             <th>Período</th>
+            ${isPeriodQuery ? '<th>Data</th>' : ''}
             <th>Status</th>
           </tr>
         </thead>
@@ -1643,6 +1830,7 @@ function exibirResultadosPresenca(
               <td data-label="Nome do Aluno">${record.studentName}</td>
               <td data-label="Curso">${record.course}</td>
               <td data-label="Período">${record.period}</td>
+              ${isPeriodQuery ? `<td data-label="Data">${new Date(record.date + "T12:00:00").toLocaleDateString("pt-BR")}</td>` : ''}
               <td data-label="Status">
                 <span class="status-badge ${
                   record.status === "P" ? "present" : "absent"
@@ -1696,6 +1884,7 @@ function exportarDadosPresenca() {
 
   mostrarSucesso("Dados exportados com sucesso!", "Exportação Concluída");
 }
+
 function initializeEventListeners() {
   // Cache de elementos mais usados
   const elements = {
@@ -1748,13 +1937,20 @@ function initializeEventListeners() {
     debounce(aplicarFiltros, 300)
   );
 
-  // Modal de registro
-  elements.registerButton?.addEventListener("click", abrirModalRegistro);
-  elements.closeRegistrationModalButton?.addEventListener(
-    "click",
-    fecharModalRegistro
-  );
-  elements.submitPresencaButton?.addEventListener("click", submeterPresenca);
+  // Modal de registro (apenas para professores)
+  if (currentUser.role !== "admin") {
+    elements.registerButton?.addEventListener("click", abrirModalRegistro);
+    elements.closeRegistrationModalButton?.addEventListener(
+      "click",
+      fecharModalRegistro
+    );
+    elements.submitPresencaButton?.addEventListener("click", submeterPresenca);
+  } else {
+    // Ocultar botão de registro para administradores
+    if (elements.registerButton) {
+      elements.registerButton.style.display = "none";
+    }
+  }
 }
 
 // Função debounce para otimizar filtros
@@ -2610,6 +2806,7 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
               name="status-${aluno.ID_Unico}" 
               value="P" 
               checked
+              ${currentUser.role === "admin" ? "disabled" : ""}
             />
             <span class="radio-text">✅ Presente</span>
           </label>
@@ -2618,17 +2815,23 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
               type="radio" 
               name="status-${aluno.ID_Unico}" 
               value="A"
+              ${currentUser.role === "admin" ? "disabled" : ""}
             />
             <span class="radio-text">❌ Ausente</span>
           </label>
         </div>
         
-        <button 
-          class="register-attendance-btn" 
-          onclick="registrarPresencaCard('${aluno.ID_Unico}')"
-        >
-          📝 Registrar
-        </button>
+        ${currentUser.role === "admin" ? 
+          `<div class="admin-readonly-notice">
+            <span>👁️ Visualização apenas</span>
+          </div>` :
+          `<button 
+            class="register-attendance-btn" 
+            onclick="registrarPresencaCard('${aluno.ID_Unico}')"
+          >
+            📝 Registrar
+          </button>`
+        }
       </div>
     </div>
   `;
@@ -2700,6 +2903,7 @@ function exibirResultadosComoTabela(alunos) {
                        class="attendance-checkbox present" 
                        data-aluno-id="${aluno.ID_Unico}"
                        data-type="present"
+                       ${currentUser.role === "admin" ? "disabled" : ""}
                        onchange="handleAttendanceChange(this)">
             </td>
             <td data-label="❌ Ausente" class="attendance-col">
@@ -2707,6 +2911,7 @@ function exibirResultadosComoTabela(alunos) {
                        class="attendance-checkbox absent" 
                        data-aluno-id="${aluno.ID_Unico}"
                        data-type="absent"
+                       ${currentUser.role === "admin" ? "disabled" : ""}
                        onchange="handleAttendanceChange(this)">
             </td>
         `;
@@ -3630,6 +3835,13 @@ function esconderStatusRegistro() {
 
 // === SISTEMA DE PRESENÇA EM LOTE ===
 function handleAttendanceChange(checkbox) {
+  // Bloquear alterações para administradores
+  if (currentUser.role === "admin") {
+    checkbox.checked = false;
+    mostrarToast("Administradores não podem marcar presença", "error", "Acesso Negado");
+    return;
+  }
+
   const alunoId = checkbox.getAttribute("data-aluno-id");
   const type = checkbox.getAttribute("data-type");
   const row = checkbox.closest("tr");
@@ -3662,6 +3874,12 @@ function updateBatchControls() {
   const confirmBtn = domCache.get("confirmBatchBtn");
 
   const count = batchAttendanceData.size;
+
+  // Ocultar controles em lote para administradores
+  if (currentUser.role === "admin") {
+    batchControls.classList.add("hidden");
+    return;
+  }
 
   if (count > 0) {
     batchControls.classList.remove("hidden");
@@ -4426,6 +4644,12 @@ function handleCardAttendanceToggle(checkbox) {
 }
 
 async function registrarPresencaCard(studentId) {
+  // Bloquear registro para administradores
+  if (currentUser.role === "admin") {
+    mostrarToast("Administradores não podem registrar presença", "error", "Acesso Negado");
+    return;
+  }
+
   const checkbox = document.getElementById(`attendanceCheck-${studentId}`);
   const dateInput = document.getElementById(`attendanceDate-${studentId}`);
   const statusRadios = document.querySelectorAll(`input[name="status-${studentId}"]:checked`);
@@ -4587,5 +4811,7 @@ async function registrarPresencaCard(studentId) {
   }
 }
 
-// Tornar a função global para uso no onclick
+// Tornar as funções globais para uso no onclick
 window.registrarPresencaCard = registrarPresencaCard;
+window.abrirControlePresencas = abrirControlePresencas;
+window.fecharControlePresencas = fecharControlePresencas;
