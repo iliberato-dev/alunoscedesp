@@ -3046,6 +3046,18 @@ select.full-width-input option {
   border-color: var(--color-secondary);
 }
 
+.btn-accent.action-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.btn-accent.action-btn:hover {
+  background: linear-gradient(135deg, #764ba2, #667eea);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
 .attendance-summary {
   margin-bottom: 2rem;
 }
@@ -3606,6 +3618,65 @@ select.full-width-input option {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;
+}
+
+/* Aviso para administradores - Visualização apenas */
+.admin-readonly-notice {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 0.75rem;
+  border-radius: var(--border-radius-md);
+  text-align: center;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.admin-readonly-notice span {
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Estilo para campos desabilitados do admin */
+input:disabled,
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(30%);
+}
+
+/* Aviso de modo visualização para administrador */
+.admin-info-notice {
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  color: white;
+  padding: 1rem;
+  border-radius: var(--border-radius-lg);
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+  animation: pulse-info 2s infinite;
+}
+
+.admin-info-notice svg {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+@keyframes pulse-info {
+  0%, 100% { 
+    box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+  }
+  50% { 
+    box-shadow: 0 6px 20px rgba(79, 172, 254, 0.5);
+  }
 }
 
 .loading-spinner-small {
