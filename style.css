@@ -727,24 +727,22 @@ select.full-width-input option:focus {
 /* Tabela - Design Clean e Responsivo */
 table {
   width: 100%;
-  min-width: 600px;
-  /* Largura mínima reduzida para mobile */
+  min-width: 800px; /* Largura mínima aumentada para manter layout */
   border-collapse: separate;
   border-spacing: 0;
   background: var(--color-bg-card);
   border-radius: var(--border-radius-md);
   overflow: hidden;
-  table-layout: fixed;
-  /* Força controle de larguras */
+  table-layout: auto; /* Permite colunas flexíveis */
 }
 
-/* Cabeçalhos e células - Compacto */
+/* Cabeçalhos e células - Mantém tamanho original */
 table th,
 table td {
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem 1rem; /* Padding original restaurado */
   text-align: left;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  word-wrap: break-word;
+  white-space: nowrap; /* Evita quebra de linha */
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -1779,6 +1777,20 @@ select.full-width-input option {
   transform: scale(1.1);
 }
 
+/* Mobile Portrait - Ocultar botão de tabela */
+.view-toggle.mobile-portrait-mode .view-btn:last-child {
+  display: none;
+}
+
+.view-toggle.mobile-portrait-mode {
+  justify-content: flex-start;
+}
+
+/* Ajustes para quando só há um botão visível */
+.view-toggle.mobile-portrait-mode .view-btn {
+  flex: 0 0 auto;
+}
+
 /* Grid de Cards */
 .students-grid {
   display: grid;
@@ -2108,6 +2120,68 @@ select.full-width-input option {
   .view-toggle {
     flex-direction: column;
     align-items: center;
+  }
+}
+
+/* === MEDIA QUERIES ESPECÍFICAS PARA CONTROLE DE TABELA === */
+
+/* Mobile Retrato - Tabela desabilitada */
+@media (max-width: 768px) and (orientation: portrait) {
+  .view-toggle .view-btn:last-child {
+    display: none !important;
+  }
+  
+  .view-toggle {
+    justify-content: flex-start !important;
+  }
+  
+  /* Garantir que só cards seja usado */
+  #tableContainer {
+    display: none !important;
+  }
+  
+  #cardsContainer {
+    display: block !important;
+  }
+}
+
+/* Mobile Landscape - Tabela permitida com layout original */
+@media (max-width: 768px) and (orientation: landscape) {
+  .view-toggle .view-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  /* Mantém o layout original da tabela - permitindo scroll horizontal */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Força largura mínima para manter layout */
+    min-width: 100%;
+  }
+  
+  /* Mantém tamanhos originais das células */
+  table {
+    min-width: 800px; /* Largura mínima para manter todas as colunas */
+    font-size: 0.9rem; /* Ligeiramente menor mas ainda legível */
+  }
+  
+  table th,
+  table td {
+    /* Mantém padding original para melhor legibilidade */
+    white-space: nowrap; /* Evita quebra de linha nas células */
+  }
+  
+  /* Melhora a experiência de scroll */
+  .table-wrapper::-webkit-scrollbar {
+    height: 12px; /* Scrollbar um pouco maior para facilitar uso em mobile */
+  }
+}
+
+/* Desktop - Comportamento normal */
+@media (min-width: 769px) {
+  .view-toggle .view-btn {
+    display: flex !important;
   }
 }
 
@@ -3205,6 +3279,156 @@ select.full-width-input option {
   margin: 1rem 0;
 }
 
+/* === ESTILOS PARA ÚLTIMO REGISTRO DE PRESENÇA === */
+.last-attendance {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  background: rgba(244, 196, 48, 0.08);
+  border: 1px solid rgba(244, 196, 48, 0.2);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.8rem;
+  transition: all var(--transition-normal);
+}
+
+.last-attendance:hover {
+  background: rgba(244, 196, 48, 0.12);
+  border-color: rgba(244, 196, 48, 0.3);
+}
+
+.last-attendance.no-record {
+  background: rgba(160, 160, 160, 0.08);
+  border-color: rgba(160, 160, 160, 0.2);
+  opacity: 0.7;
+}
+
+.last-attendance.no-record:hover {
+  background: rgba(160, 160, 160, 0.12);
+}
+
+.attendance-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--color-secondary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.last-attendance.no-record .attendance-icon {
+  color: var(--color-text-muted);
+}
+
+.attendance-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.attendance-label {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  font-size: 0.75rem;
+}
+
+.attendance-date {
+  color: var(--color-text-primary);
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+.attendance-status {
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  align-self: flex-start;
+  white-space: nowrap;
+}
+
+.attendance-status.presente {
+  background: rgba(40, 167, 69, 0.2);
+  color: #28a745;
+  border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.attendance-status.ausente {
+  background: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+  border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+/* Tema claro - último registro */
+[data-theme="light"] .last-attendance {
+  background: rgba(26, 41, 81, 0.05);
+  border-color: rgba(26, 41, 81, 0.15);
+}
+
+[data-theme="light"] .last-attendance:hover {
+  background: rgba(26, 41, 81, 0.08);
+  border-color: rgba(26, 41, 81, 0.2);
+}
+
+[data-theme="light"] .attendance-icon {
+  color: var(--color-primary);
+}
+
+[data-theme="light"] .attendance-label {
+  color: var(--color-primary-light);
+}
+
+[data-theme="light"] .attendance-date {
+  color: var(--color-primary);
+}
+
+[data-theme="light"] .last-attendance.no-record {
+  background: rgba(108, 117, 125, 0.05);
+  border-color: rgba(108, 117, 125, 0.15);
+}
+
+[data-theme="light"] .last-attendance.no-record:hover {
+  background: rgba(108, 117, 125, 0.08);
+}
+
+[data-theme="light"] .last-attendance.no-record .attendance-icon {
+  color: #6c757d;
+}
+
+/* Responsividade para último registro */
+@media (max-width: 768px) {
+  .last-attendance {
+    padding: 0.5rem 0.75rem;
+    gap: 0.5rem;
+  }
+  
+  .attendance-icon {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .attendance-info {
+    gap: 0.15rem;
+  }
+  
+  .attendance-label {
+    font-size: 0.7rem;
+  }
+  
+  .attendance-date {
+    font-size: 0.75rem;
+  }
+  
+  .attendance-status {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+  }
+}
+
 .performance-value.faltas.excesso {
   color: #dc3545;
   font-weight: 700;
@@ -3214,6 +3438,246 @@ select.full-width-input option {
   background: rgba(220, 53, 69, 0.2);
   color: #dc3545;
   border-color: rgba(220, 53, 69, 0.4);
+}
+
+/* === ESTILOS PARA PRESENÇA NOS CARDS === */
+.card-attendance-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(244, 196, 48, 0.2);
+}
+
+.attendance-toggle {
+  margin-bottom: 0.75rem;
+}
+
+.attendance-checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  transition: color var(--transition-normal);
+}
+
+.attendance-checkbox-label:hover {
+  color: var(--color-secondary);
+}
+
+.attendance-checkbox-label input[type="checkbox"] {
+  display: none;
+}
+
+.checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(244, 196, 48, 0.5);
+  border-radius: 4px;
+  margin-right: 0.5rem;
+  position: relative;
+  transition: all var(--transition-normal);
+  background: rgba(244, 196, 48, 0.1);
+}
+
+.attendance-checkbox-label input[type="checkbox"]:checked + .checkmark {
+  background: var(--color-secondary);
+  border-color: var(--color-secondary);
+}
+
+.attendance-checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+  content: "✓";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--color-primary);
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.checkbox-text {
+  font-weight: 500;
+  user-select: none;
+}
+
+.attendance-controls {
+  padding: 0.75rem;
+  background: rgba(244, 196, 48, 0.05);
+  border: 1px solid rgba(244, 196, 48, 0.2);
+  border-radius: var(--border-radius-sm);
+  margin-top: 0.5rem;
+  animation: slideDown 0.3s ease-out;
+}
+
+.attendance-controls.hidden {
+  display: none;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 200px;
+  }
+}
+
+.attendance-date-group {
+  margin-bottom: 0.75rem;
+}
+
+.attendance-date-group label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+.attendance-date-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid rgba(244, 196, 48, 0.3);
+  border-radius: var(--border-radius-sm);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+  transition: all var(--transition-normal);
+}
+
+.attendance-date-input:focus {
+  outline: none;
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 2px rgba(244, 196, 48, 0.2);
+}
+
+.attendance-status-group {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.status-radio {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--color-text-primary);
+}
+
+.status-radio input[type="radio"] {
+  margin-right: 0.5rem;
+  accent-color: var(--color-secondary);
+}
+
+.radio-text {
+  user-select: none;
+}
+
+.register-attendance-btn {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: var(--gradient-secondary);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.register-attendance-btn:hover {
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(244, 196, 48, 0.3);
+}
+
+.register-attendance-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loading-spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(26, 41, 81, 0.3);
+  border-top: 2px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Tema claro - ajustes para presença nos cards */
+[data-theme="light"] .card-attendance-section {
+  border-top-color: rgba(26, 41, 81, 0.2);
+}
+
+[data-theme="light"] .attendance-checkbox-label {
+  color: var(--color-primary-light);
+}
+
+[data-theme="light"] .attendance-checkbox-label:hover {
+  color: var(--color-primary);
+}
+
+[data-theme="light"] .checkmark {
+  border-color: rgba(26, 41, 81, 0.3);
+  background: rgba(26, 41, 81, 0.1);
+}
+
+[data-theme="light"] .attendance-controls {
+  background: rgba(26, 41, 81, 0.05);
+  border-color: rgba(26, 41, 81, 0.15);
+}
+
+[data-theme="light"] .attendance-date-group label {
+  color: var(--color-primary-light);
+}
+
+[data-theme="light"] .attendance-date-input {
+  border-color: rgba(26, 41, 81, 0.2);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--color-primary);
+}
+
+[data-theme="light"] .attendance-date-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(26, 41, 81, 0.2);
+}
+
+[data-theme="light"] .status-radio {
+  color: var(--color-primary);
+}
+
+[data-theme="light"] .status-radio input[type="radio"] {
+  accent-color: var(--color-primary);
+}
+
+/* Responsividade para presença nos cards */
+@media (max-width: 768px) {
+  .attendance-status-group {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .attendance-controls {
+    padding: 0.5rem;
+  }
+  
+  .register-attendance-btn {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
 }
 
 /* === ESTILOS PARA TABELA DE RESULTADOS === */
@@ -3925,83 +4389,30 @@ select.full-width-input option {
     border-radius: var(--border-radius-md);
   }
 
+  /* Mantém design consistente com scroll horizontal */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   table {
-    min-width: 500px;
-    /* Reduzido para mobile */
-    font-size: 0.8rem;
+    min-width: 800px; /* Mantém largura mínima consistente */
+    font-size: 0.9rem;
   }
 
   table th,
   table td {
-    padding: 0.3rem 0.4rem;
+    padding: 0.7rem 0.9rem; /* Padding ligeiramente reduzido mas legível */
+    white-space: nowrap;
   }
 
   table th {
-    font-size: 0.65rem;
-  }
-
-  /* Ajustar larguras específicas para mobile */
-  table th:nth-child(1),
-  /* ID */
-  table td:nth-child(1) {
-    width: 5%;
-    min-width: 30px;
-  }
-
-  table th:nth-child(2),
-  /* Nome */
-  table td:nth-child(2) {
-    width: 35%;
-    min-width: 80px;
-  }
-
-  table th:nth-child(3),
-  /* Faltas */
-  table td:nth-child(3) {
-    width: 8%;
-    min-width: 40px;
-  }
-
-  table th:nth-child(4),
-  /* 1º Bim */
-  table th:nth-child(5),
-  /* 2º Bim */
-  table th:nth-child(6),
-  /* 3º Bim */
-  table td:nth-child(4),
-  table td:nth-child(5),
-  table td:nth-child(6) {
-    width: 6%;
-    min-width: 30px;
-  }
-
-  table th:nth-child(7),
-  /* Média */
-  table td:nth-child(7) {
-    width: 7%;
-    min-width: 35px;
-  }
-
-  table th:nth-child(8),
-  /* Situação */
-  table td:nth-child(8) {
-    width: 9%;
-    min-width: 45px;
-  }
-
-  table th:nth-child(9),
-  /* Presente */
-  table th:nth-child(10),
-  /* Ausente */
-  table td:nth-child(9),
-  table td:nth-child(10) {
-    width: 7.5%;
-    min-width: 38px;
+    font-size: 0.85rem;
   }
 
   .attendance-checkbox {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     transform: scale(1);
   }
 
@@ -4010,12 +4421,12 @@ select.full-width-input option {
   }
 
   .batch-header h3 {
-    font-size: 0.9rem;
+    font-size: 1rem;
   }
 
   .batch-date input {
-    width: 120px;
-    font-size: 0.8rem;
+    width: 130px;
+    font-size: 0.9rem;
   }
 }
 
@@ -4029,84 +4440,33 @@ select.full-width-input option {
     margin: 0.25rem;
   }
 
+  /* Mantém design consistente com scroll horizontal */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   table {
-    min-width: 450px;
-    /* Ainda mais compacto */
-    font-size: 0.7rem;
+    min-width: 800px; /* Mantém largura mínima consistente */
+    font-size: 0.85rem; /* Ligeiramente menor para caber melhor */
   }
 
   table th,
   table td {
-    padding: 0.2rem 0.25rem;
+    padding: 0.6rem 0.8rem; /* Padding reduzido mas legível */
+    white-space: nowrap;
   }
 
   table th {
-    font-size: 0.55rem;
+    font-size: 0.8rem;
     line-height: 1.2;
   }
 
   /* Layout ultra compacto para telas pequenas */
   table th:nth-child(1),
-  /* ID */
-  table td:nth-child(1) {
-    width: 4%;
-    min-width: 25px;
-  }
-
-  table th:nth-child(2),
-  /* Nome */
-  table td:nth-child(2) {
-    width: 40%;
-    min-width: 70px;
-  }
-
-  table th:nth-child(3),
-  /* Faltas */
-  table td:nth-child(3) {
-    width: 7%;
-    min-width: 30px;
-  }
-
-  table th:nth-child(4),
-  /* 1º Bim */
-  table th:nth-child(5),
-  /* 2º Bim */
-  table th:nth-child(6),
-  /* 3º Bim */
-  table td:nth-child(4),
-  table td:nth-child(5),
-  table td:nth-child(6) {
-    width: 5%;
-    min-width: 25px;
-  }
-
-  table th:nth-child(7),
-  /* Média */
-  table td:nth-child(7) {
-    width: 6%;
-    min-width: 28px;
-  }
-
-  table th:nth-child(8),
-  /* Situação */
-  table td:nth-child(8) {
-    width: 8%;
-    min-width: 35px;
-  }
-
-  table th:nth-child(9),
-  /* Presente */
-  table th:nth-child(10),
-  /* Ausente */
-  table td:nth-child(9),
-  table td:nth-child(10) {
-    width: 7%;
-    min-width: 32px;
-  }
-
   .attendance-checkbox {
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
   }
 
   .batch-controls {
@@ -4114,20 +4474,20 @@ select.full-width-input option {
   }
 
   .batch-header h3 {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
   }
 
   .batch-btn {
-    padding: 0.35rem 0.5rem;
-    font-size: 0.7rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
   }
 
   .batch-date label {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
   }
 
   .batch-date input {
-    width: 90px;
+    width: 110px;
     padding: 0.25rem 0.3rem;
     font-size: 0.7rem;
   }
