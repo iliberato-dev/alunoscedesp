@@ -1342,7 +1342,24 @@ document.addEventListener("DOMContentLoaded", () => {
   // Configurar limpeza automática do cache de status
   setInterval(invalidarCacheSeNecessario, 2 * 60 * 1000); // A cada 2 minutos
   console.log("🔧 Limpeza automática de cache configurada");
+
+  // Mostrar botão de estatísticas para admins
+  setupStatsButton();
 });
+
+// Função para configurar botão de estatísticas
+function setupStatsButton() {
+  const currentUser = AuthSystem.getCurrentUser();
+  const statsButton = document.getElementById("statsButton");
+
+  if (currentUser && statsButton) {
+    statsButton.style.display = "flex";
+    console.log(
+      "📊 Botão de estatísticas habilitado para usuário:",
+      currentUser.name
+    );
+  }
+}
 
 // === VARIÁVEIS GLOBAIS OTIMIZADAS ===
 let allStudentsRawData = [];
