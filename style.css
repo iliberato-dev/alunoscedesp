@@ -3406,6 +3406,57 @@ select.full-width-input option {
   border: 1px solid rgba(220, 53, 69, 0.3);
 }
 
+/* === INDICADORES DE PROFESSOR === */
+.professor-indicator {
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-left: 8px;
+  padding: 4px 8px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: help;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.professor-indicator:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.professor-indicator.prof-mundo-trabalho {
+  background: rgba(40, 167, 69, 0.15);
+  border-color: rgba(40, 167, 69, 0.3);
+  color: #28a745;
+}
+
+.professor-indicator.prof-convivio {
+  background: rgba(0, 123, 255, 0.15);
+  border-color: rgba(0, 123, 255, 0.3);
+  color: #007bff;
+}
+
+/* Tema claro - indicadores de professor */
+[data-theme="light"] .professor-indicator {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .professor-indicator.prof-mundo-trabalho {
+  background: rgba(40, 167, 69, 0.1);
+  border-color: rgba(40, 167, 69, 0.2);
+}
+
+[data-theme="light"] .professor-indicator.prof-convivio {
+  background: rgba(0, 123, 255, 0.1);
+  border-color: rgba(0, 123, 255, 0.2);
+}
+
 /* Tema claro - último registro */
 [data-theme="light"] .last-attendance {
   background: rgba(26, 41, 81, 0.05);
@@ -4935,6 +4986,85 @@ button:disabled {
 
 .registro-professor:before {
   content: "👨‍🏫";
+}
+
+/* Status dos registros */
+.status-registro {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-presente {
+  background: linear-gradient(135deg, #d4edda, #c3e6cb);
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.status-presente::before {
+  content: "✓";
+  font-weight: bold;
+}
+
+.status-falta {
+  background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.status-falta::before {
+  content: "✗";
+  font-weight: bold;
+}
+
+.status-ausente {
+  background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.status-ausente::before {
+  content: "!";
+  font-weight: bold;
+}
+
+.status-nao-marcado {
+  opacity: 0.7;
+  border-style: dashed !important;
+}
+
+.status-nao-marcado::after {
+  content: " (não marcado)";
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+/* Dark theme para status dos registros */
+@media (prefers-color-scheme: dark) {
+  .status-presente {
+    background: linear-gradient(135deg, #1e4620, #2d5a30);
+    color: #a3d977;
+    border-color: #2d5a30;
+  }
+
+  .status-falta {
+    background: linear-gradient(135deg, #4a1e1e, #5a2d2d);
+    color: #ff9999;
+    border-color: #5a2d2d;
+  }
+
+  .status-ausente {
+    background: linear-gradient(135deg, #4a3d1e, #5a4a2d);
+    color: #ffcc66;
+    border-color: #5a4a2d;
+  }
 }
 
 .sem-registros {

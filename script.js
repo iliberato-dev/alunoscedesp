@@ -113,19 +113,36 @@ function atualizarCardImediatamente(alunoId, novoRegistro) {
   }
 
   // Determinar o texto e classe do status
-  let statusText, statusClass, statusIcon;
+  let statusText, statusClass;
   if (novoRegistro.status === "P") {
     statusText = "Presente";
-    statusClass = "presente";
-    statusIcon = "✅";
+    statusClass = "status-presente";
   } else if (novoRegistro.status === "F") {
     statusText = "Falta";
-    statusClass = "falta";
-    statusIcon = "❌";
+    statusClass = "status-falta";
   } else {
     statusText = "Ausente";
-    statusClass = "ausente";
-    statusIcon = "📝";
+    statusClass = "status-ausente";
+  }
+
+  // Determinar ícone e texto do professor
+  let professorIcon = "";
+  let professorText = "";
+  let professorClass = "";
+  if (novoRegistro.professor) {
+    const professor = novoRegistro.professor.toLowerCase();
+    if (professor.includes("mundo") && professor.includes("trabalho")) {
+      professorIcon = "🌍";
+      professorText = "Mundo do Trabalho";
+      professorClass = "prof-mundo-trabalho";
+    } else if (
+      professor.includes("convívio") ||
+      professor.includes("convivio")
+    ) {
+      professorIcon = "🤝";
+      professorText = "Convívio";
+      professorClass = "prof-convivio";
+    }
   }
 
   lastAttendanceElement.innerHTML = `
@@ -136,7 +153,12 @@ function atualizarCardImediatamente(alunoId, novoRegistro) {
     <div class="attendance-info">
       <span class="attendance-label">Último registro:</span>
       <span class="attendance-date">${novoRegistro.displayTime}</span>
-      <span class="attendance-status ${statusClass}">${statusIcon} ${statusText}</span>
+      <span class="status-registro ${statusClass}">${statusText}</span>
+      ${
+        professorIcon
+          ? `<span class="professor-indicator ${professorClass}" title="${novoRegistro.professor}">${professorText} ${professorIcon}</span>`
+          : ""
+      }
     </div>
   `;
   lastAttendanceElement.className = "last-attendance";
@@ -564,21 +586,64 @@ class OnlineAttendanceManager {
           <h4>📋 Últimos Registros de Presença</h4>
           <div class="registros-lista">
             ${resultado.registros
-              .map(
-                (registro) => `
+              .map((registro) => {
+                // Determinar ícone e texto do professor
+                let professorIcon = "";
+                let professorText = "";
+                let professorClass = "";
+                if (registro.professor) {
+                  const professor = registro.professor.toLowerCase();
+                  if (
+                    professor.includes("mundo") &&
+                    professor.includes("trabalho")
+                  ) {
+                    professorIcon = "🌍";
+                    professorText = "Mundo do Trabalho";
+                    professorClass = "prof-mundo-trabalho";
+                  } else if (
+                    professor.includes("convívio") ||
+                    professor.includes("convivio")
+                  ) {
+                    professorIcon = "🤝";
+                    professorText = "Convívio";
+                    professorClass = "prof-convivio";
+                  }
+                }
+
+                // Determinar ícone do status
+                let statusText = "";
+                let statusClass = "";
+                if (registro.status === "P") {
+                  statusText = "Presente";
+                  statusClass = "status-presente";
+                } else if (registro.status === "F") {
+                  statusText = "Falta";
+                  statusClass = "status-falta";
+                } else {
+                  statusText = "Ausente";
+                  statusClass = "status-ausente";
+                }
+
+                return `
               <div class="registro-item">
                 <div class="registro-info">
                   <strong>${registro.nome}</strong>
                   <span class="registro-curso">${registro.curso}</span>
+                  <span class="status-registro ${statusClass}">${statusText}</span>
                 </div>
                 <div class="registro-detalhes">
                   <span class="registro-data">${registro.data}</span>
                   <span class="registro-horario">${registro.horario}</span>
                   <span class="registro-professor">${registro.professor}</span>
+                  ${
+                    professorIcon
+                      ? `<span class="professor-indicator ${professorClass}" title="${registro.professor}">${professorText} ${professorIcon}</span>`
+                      : ""
+                  }
                 </div>
               </div>
-            `
-              )
+            `;
+              })
               .join("")}
           </div>
         </div>
@@ -2609,10 +2674,20 @@ function exibirResultadosPresenca(
                   : ""
               }
               <td data-label="Status">
-                <span class="status-badge ${
-                  record.status === "P" ? "present" : "absent"
-                } ${!record.isMarked ? "not-marked" : ""}">
-                  ${record.status === "P" ? "✅" : "❌"} ${record.statusText}
+                <span class="status-registro ${
+                  record.status === "P"
+                    ? "status-presente"
+                    : record.status === "F"
+                    ? "status-falta"
+                    : "status-ausente"
+                } ${!record.isMarked ? "status-nao-marcado" : ""}">
+                  ${
+                    record.status === "P"
+                      ? "Presente"
+                      : record.status === "F"
+                      ? "Falta"
+                      : "Ausente"
+                  }
                   ${!record.isMarked && record.status === "A" ? " ⚠️" : ""}
                 </span>
               </td>
