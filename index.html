@@ -1,343 +1,307 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="shortcut icon" href="https://colegiorealengo.br/novo-portal/assets/images/icons/online_course.png" type="image/x-icon">
-    <title>Consulta de Alunos</title>
-    <link rel="stylesheet" href="style.css" />
 
-    <script src="auth.js"></script>
-    <script src="script.js" defer></script>
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="shortcut icon" href="https://colegiorealengo.br/novo-portal/assets/images/icons/online_course.png"
+    type="image/x-icon">
+  <title>Consulta de Alunos</title>
+  <link rel="stylesheet" href="style.css" />
 
-  <body>
-    <div class="container">
-      <header>
-        <div class="header-content">
-          <h1>Sistema de Gestão Acadêmica</h1>
-          <p class="subtitle">Consulta e acompanhamento de alunos</p>
-        </div>
+  <script src="auth.js"></script>
+  <script src="script.js" defer></script>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <div class="header-content">
+        <h1>Sistema de Gestão Acadêmica</h1>
+        <p class="subtitle">Consulta e acompanhamento de alunos</p>
+
         <div class="user-info">
 
-    <div class="header-actions">
-          <button id="statsButton" class="stats-btn" style="display: flex;" onclick="window.open('stats.html', '_blank')" title="Estatísticas Administrativas">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zM1 11a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"></path>
-            </svg>
-            Estatísticas
-          </button>
-          <button id="themeToggle" class="theme-toggle" title="Alternar tema">
-          <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" style="display: block;">
-            <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.414a.5.5 0 1 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z"></path>
-          </svg>
-          <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" style="display: none;">
-            <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"></path>
-          </svg>
-        </button>
-      </div>
-    
-    
-      <div class="user-badge">
-        <span class="user-avatar">👨&zwj;💻</span>
-        <div class="user-details">
-          <span class="user-name">Prof. Programação</span>
-          <span class="user-role">Professor</span>
-        </div>
-        <button id="logoutBtn" class="logout-btn" title="Sair">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"></path>
-            <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"></path>
-          </svg>
-        </button>
-      </div>
-    </div>
-      </header>
+          <div class="header-actions">
+            <button id="statsButton" class="stats-btn" style="display: flex;"
+              onclick="window.open('stats.html', '_blank')" title="Estatísticas Administrativas">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                <path
+                  d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zM1 11a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z">
+                </path>
+              </svg>
+              Estatísticas
+            </button>
+            <button id="themeToggle" class="theme-toggle" title="Alternar tema">
+              <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                viewBox="0 0 16 16" style="display: block;">
+                <path
+                  d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.414a.5.5 0 1 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z">
+                </path>
+              </svg>
+              <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                viewBox="0 0 16 16" style="display: none;">
+                <path
+                  d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z">
+                </path>
+              </svg>
+            </button>
+          </div>
 
-      <section class="search-section">
-        <div class="filter-group">
-          <label for="searchInput">Buscar por Nome</label>
-          <div class="autocomplete-container">
-            <input
-              type="text"
-              id="searchInput"
-              placeholder="Digite o nome do aluno"
-              autocomplete="off"
-            />
-            <div id="autocompleteDropdown" class="autocomplete-dropdown"></div>
+
+          <div class="user-badge">
+            <span class="user-avatar">👨&zwj;💻</span>
+            <div class="user-details">
+              <span class="user-name">Prof. Programação</span>
+              <span class="user-role">Professor</span>
+            </div>
+            <button id="logoutBtn" class="logout-btn" title="Sair">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd"
+                  d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z">
+                </path>
+                <path fill-rule="evenodd"
+                  d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z">
+                </path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="search-section">
+      <div class="filter-group">
+        <label for="searchInput">Buscar por Nome</label>
+        <div class="autocomplete-container">
+          <input type="text" id="searchInput" placeholder="Digite o nome do aluno" autocomplete="off" />
+          <div id="autocompleteDropdown" class="autocomplete-dropdown"></div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label for="periodoFilter">Período</label>
+        <select id="periodoFilter">
+          <option value="">Todos os períodos</option>
+          <option value="Tarde">Tarde</option>
+          <option value="Noite">Noite</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="cursoFilter">Curso</label>
+        <select id="cursoFilter">
+          <option value="">Todos os cursos</option>
+          <!-- Opções serão preenchidas dinamicamente baseadas nas permissões do usuário -->
+        </select>
+      </div>
+
+      <div id="buttons">
+        <button id="searchButton">
+          <span>Buscar</span>
+        </button>
+        <button id="clearSearchButton">
+          <span>Limpar</span>
+        </button>
+        <button id="showAllButton">
+          <span>Mostrar Todos</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="results-container">
+      <!-- Toggle para alternar entre visualizações -->
+      <div class="view-toggle">
+        <button id="cardViewBtn" class="view-btn active">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path
+              d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zM2.5 2a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zm6.5.5A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zM1 10.5A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zm6.5.5A1.5 1.5 0 0 1 10.5 9h3A1.5 1.5 0 0 1 15 10.5v3A1.5 1.5 0 0 1 13.5 15h-3A1.5 1.5 0 0 1 9 13.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3z" />
+          </svg>
+          Cards
+        </button>
+        <button id="tableViewBtn" class="view-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path
+              d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm15 2h-4v3h4V4zm0 4h-4v3h4V8zm0 4h-4v3h3a1 1 0 0 0 1-1v-2zm-5 3v-3H6v3h4zm-5 0v-3H1v2a1 1 0 0 0 1 1h3zm-4-4h4V8H1v3zm0-4h4V4H1v3zm5-3v3h4V4H6zm4 4H6v3h4V8z" />
+          </svg>
+          Tabela
+        </button>
+      </div>
+
+      <!-- Visualização em Cards -->
+      <div id="cardsContainer" class="cards-container">
+        <div id="studentsGrid" class="students-grid"></div>
+      </div>
+
+      <!-- Visualização em Tabela -->
+      <div id="tableContainer" class="table-wrapper hidden">
+        <!-- Controles de Presença em Lote -->
+        <div id="batchAttendanceControls" class="batch-controls hidden">
+          <div class="batch-header">
+            <h3>📋 Registro de Presença em Lote</h3>
+            <div class="batch-date">
+              <label for="batchDate">Data:</label>
+              <input type="date" id="batchDate" />
+            </div>
+          </div>
+          <div class="batch-actions">
+            <button id="confirmBatchBtn" class="batch-btn confirm">
+              ✅ Confirmar Presenças (<span id="selectedCount">0</span>)
+            </button>
+            <button id="cancelBatchBtn" class="batch-btn cancel">
+              ❌ Cancelar
+            </button>
           </div>
         </div>
 
+        <div class="table-wrapper">
+          <table id="alunosTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Faltas</th>
+                <th>1º Bimestre</th>
+                <th>2º Bimestre</th>
+                <th>3º Bimestre</th>
+                <th>Média</th>
+                <th>Situação</th>
+                <th class="attendance-col">✅ Presente</th>
+                <th class="attendance-col">❌ Ausente</th>
+              </tr>
+            </thead>
+            <tbody id="resultTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="noResults" class="hidden">
+        <div class="no-results-content">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+            <path
+              d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z" />
+          </svg>
+          <p>Nenhum aluno encontrado com os critérios especificados.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <button id="registerButton" title="Registrar">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-check"
+      viewBox="0 0 16 16">
+      <path
+        d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m1.679-4.493-1.335 2.214a.5.5 0 0 1-.753.116l-.882-.882a.5.5 0 1 1 .707-.707l.646.647 1.179-1.875a.5.5 0 1 1 .858.534ZM11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+      <path
+        d="M8.256 14.995c.57-.16.96-.544 1.144-.99.5-.99.47-2.31.252-3.282A3.5 3.5 0 0 0 8 10.5a3.5 3.5 0 0 0-4.752-3.377c-.218.972-.248 2.292.251 3.282.184.445.574.83 1.144.99M3 13.5a.5.5 0 0 1-.5-.5.5.5 0 0 0-.5-.5.5.5 0 0 1-.5-.5.5.5 0 0 0-.5-.5.5.5 0 0 1-.5-.5.5.5 0 0 0-.5-.5.5.5 0 0 1-.5-.5.5.5 0 0 0-.5-.5c.08-.094.125-.1.147-.1h3.364c.254 0 .524.024.795.06M2.5 14a.5.5 0 0 0-.5.5V15h-.5a.5.5 0 0 0 0 1H13a.5.5 0 0 0 0-1h-.5v-.5a.5.5 0 0 0-.5-.5H2.5Z" />
+    </svg>
+    <span>Registrar</span>
+  </button>
+
+  <div id="registrationModal" class="modal hidden">
+    <div class="modal-content">
+      <span id="closeRegistrationModalButton" class="close-button">&times;</span>
+      <h2>Registrar Presença</h2>
+
+      <!-- Overlay de Status -->
+      <div id="registrationStatus" class="registration-status">
+        <div class="status-content">
+          <div class="status-spinner"></div>
+          <div class="status-message">Processando...</div>
+          <div class="status-detail">
+            Aguarde enquanto salvamos as informações
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Selecionar Aluno</h3>
         <div class="filter-group">
-          <label for="periodoFilter">Período</label>
-          <select id="periodoFilter">
-            <option value="">Todos os períodos</option>
+          <label for="filtroPeriodoModal">Filtrar por Período:</label>
+          <select id="filtroPeriodoModal" class="full-width-input">
+            <option value="">Todos</option>
             <option value="Tarde">Tarde</option>
             <option value="Noite">Noite</option>
           </select>
         </div>
 
         <div class="filter-group">
-          <label for="cursoFilter">Curso</label>
-          <select id="cursoFilter">
-            <option value="">Todos os cursos</option>
+          <label for="filtroOrigemModal">Filtrar por Curso:</label>
+          <select id="filtroOrigemModal" class="full-width-input">
+            <option value="">Todos</option>
             <!-- Opções serão preenchidas dinamicamente baseadas nas permissões do usuário -->
           </select>
         </div>
-
-        <div id="buttons">
-          <button id="searchButton">
-            <span>Buscar</span>
-          </button>
-          <button id="clearSearchButton">
-            <span>Limpar</span>
-          </button>
-          <button id="showAllButton">
-            <span>Mostrar Todos</span>
-          </button>
-        </div>
-      </section>
-
-      <section class="results-container">
-        <!-- Toggle para alternar entre visualizações -->
-        <div class="view-toggle">
-          <button id="cardViewBtn" class="view-btn active">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              fill="currentColor"
-              viewBox="0 0 16 16"
-            >
-              <path
-                d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zM2.5 2a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zm6.5.5A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zM1 10.5A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zm6.5.5A1.5 1.5 0 0 1 10.5 9h3A1.5 1.5 0 0 1 15 10.5v3A1.5 1.5 0 0 1 13.5 15h-3A1.5 1.5 0 0 1 9 13.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3z"
-              />
-            </svg>
-            Cards
-          </button>
-          <button id="tableViewBtn" class="view-btn">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              fill="currentColor"
-              viewBox="0 0 16 16"
-            >
-              <path
-                d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm15 2h-4v3h4V4zm0 4h-4v3h4V8zm0 4h-4v3h3a1 1 0 0 0 1-1v-2zm-5 3v-3H6v3h4zm-5 0v-3H1v2a1 1 0 0 0 1 1h3zm-4-4h4V8H1v3zm0-4h4V4H1v3zm5-3v3h4V4H6zm4 4H6v3h4V8z"
-              />
-            </svg>
-            Tabela
-          </button>
-        </div>
-
-        <!-- Visualização em Cards -->
-        <div id="cardsContainer" class="cards-container">
-          <div id="studentsGrid" class="students-grid"></div>
-        </div>
-
-        <!-- Visualização em Tabela -->
-        <div id="tableContainer" class="table-wrapper hidden">
-          <!-- Controles de Presença em Lote -->
-          <div id="batchAttendanceControls" class="batch-controls hidden">
-            <div class="batch-header">
-              <h3>📋 Registro de Presença em Lote</h3>
-              <div class="batch-date">
-                <label for="batchDate">Data:</label>
-                <input type="date" id="batchDate" />
-              </div>
-            </div>
-            <div class="batch-actions">
-              <button id="confirmBatchBtn" class="batch-btn confirm">
-                ✅ Confirmar Presenças (<span id="selectedCount">0</span>)
-              </button>
-              <button id="cancelBatchBtn" class="batch-btn cancel">
-                ❌ Cancelar
-              </button>
-            </div>
-          </div>
-
-          <div class="table-wrapper">
-            <table id="alunosTable">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Nome</th>
-                  <th>Faltas</th>
-                  <th>1º Bimestre</th>
-                  <th>2º Bimestre</th>
-                  <th>3º Bimestre</th>
-                  <th>Média</th>
-                  <th>Situação</th>
-                  <th class="attendance-col">✅ Presente</th>
-                  <th class="attendance-col">❌ Ausente</th>
-                </tr>
-              </thead>
-              <tbody id="resultTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div id="noResults" class="hidden">
-          <div class="no-results-content">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="48"
-              height="48"
-              fill="currentColor"
-              viewBox="0 0 16 16"
-            >
-              <path
-                d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"
-              />
-              <path
-                d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"
-              />
-            </svg>
-            <p>Nenhum aluno encontrado com os critérios especificados.</p>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <button id="registerButton" title="Registrar">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
-        fill="currentColor"
-        class="bi bi-person-check"
-        viewBox="0 0 16 16"
-      >
-        <path
-          d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m1.679-4.493-1.335 2.214a.5.5 0 0 1-.753.116l-.882-.882a.5.5 0 1 1 .707-.707l.646.647 1.179-1.875a.5.5 0 1 1 .858.534ZM11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"
-        />
-        <path
-          d="M8.256 14.995c.57-.16.96-.544 1.144-.99.5-.99.47-2.31.252-3.282A3.5 3.5 0 0 0 8 10.5a3.5 3.5 0 0 0-4.752-3.377c-.218.972-.248 2.292.251 3.282.184.445.574.83 1.144.99M3 13.5a.5.5 0 0 1-.5-.5.5.5 0 0 0-.5-.5.5.5 0 0 1-.5-.5.5.5 0 0 0-.5-.5.5.5 0 0 1-.5-.5.5.5 0 0 0-.5-.5.5.5 0 0 1-.5-.5.5.5 0 0 0-.5-.5c.08-.094.125-.1.147-.1h3.364c.254 0 .524.024.795.06M2.5 14a.5.5 0 0 0-.5.5V15h-.5a.5.5 0 0 0 0 1H13a.5.5 0 0 0 0-1h-.5v-.5a.5.5 0 0 0-.5-.5H2.5Z"
-        />
-      </svg>
-      <span>Registrar</span>
-    </button>
-
-    <div id="registrationModal" class="modal hidden">
-      <div class="modal-content">
-        <span id="closeRegistrationModalButton" class="close-button"
-          >&times;</span
-        >
-        <h2>Registrar Presença</h2>
-
-        <!-- Overlay de Status -->
-        <div id="registrationStatus" class="registration-status">
-          <div class="status-content">
-            <div class="status-spinner"></div>
-            <div class="status-message">Processando...</div>
-            <div class="status-detail">
-              Aguarde enquanto salvamos as informações
-            </div>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h3>Selecionar Aluno</h3>
-          <div class="filter-group">
-            <label for="filtroPeriodoModal">Filtrar por Período:</label>
-            <select id="filtroPeriodoModal" class="full-width-input">
-              <option value="">Todos</option>
-              <option value="Tarde">Tarde</option>
-              <option value="Noite">Noite</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label for="filtroOrigemModal">Filtrar por Curso:</label>
-            <select id="filtroOrigemModal" class="full-width-input">
-              <option value="">Todos</option>
-              <!-- Opções serão preenchidas dinamicamente baseadas nas permissões do usuário -->
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="alunoSelecionado">Aluno:</label>
-            <select id="alunoSelecionado" class="full-width-input">
-              <option value="">Selecione um aluno</option>
-            </select>
-          </div>
-        </div>
-
-        <hr class="form-separator" />
-
-        <div class="form-section">
-          <h3>Registrar Presença</h3>
-          <div class="form-group">
-            <label for="dataPresenca">Data:</label>
-            <input type="date" id="dataPresenca" class="full-width-input" />
-          </div>
-          <div class="form-group status-radio-group">
-            <label>Status:</label>
-            <div>
-              <input
-                type="radio"
-                id="presente"
-                name="statusPresenca"
-                value="P"
-                checked
-              />
-              <label for="presente">Presente</label>
-            </div>
-            <div>
-              <input
-                type="radio"
-                id="ausente"
-                name="statusPresenca"
-                value="F"
-              />
-              <label for="ausente">Ausente</label>
-            </div>
-          </div>
-          <button id="submitPresenca" class="form-button">
-            <span class="btn-text">Registrar Presença</span>
-          </button>
-        </div>
-
-        <p id="feedbackMessage" class="hidden feedback-message"></p>
-      </div>
-    </div>
-
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay">
-      <div class="loading-spinner"></div>
-      <div class="loading-text">Carregando...</div>
-      <div class="loading-subtext">Aguarde um momento</div>
-    </div>
-
-    <!-- Progress Indicator -->
-    <div id="progressIndicator" class="progress-indicator">
-      <div id="progressBar" class="progress-bar"></div>
-    </div>
-
-    <!-- Toast Container -->
-    <div id="toastContainer" class="toast-container"></div>
-
-    <!-- Notification Modal -->
-    <div id="notificationModal" class="notification-modal">
-      <div class="notification-content">
-        <div id="notificationIcon" class="notification-icon">
-          <span id="notificationIconSymbol">✓</span>
-        </div>
-        <h3 id="notificationTitle" class="notification-title">Título</h3>
-        <p id="notificationMessage" class="notification-message">Mensagem</p>
-        <div class="notification-actions">
-          <button id="notificationOkBtn" class="notification-btn primary">
-            OK
-          </button>
-          <button
-            id="notificationCancelBtn"
-            class="notification-btn secondary"
-            style="display: none"
-          >
-            Cancelar
-          </button>
+        <div class="form-group">
+          <label for="alunoSelecionado">Aluno:</label>
+          <select id="alunoSelecionado" class="full-width-input">
+            <option value="">Selecione um aluno</option>
+          </select>
         </div>
       </div>
+
+      <hr class="form-separator" />
+
+      <div class="form-section">
+        <h3>Registrar Presença</h3>
+        <div class="form-group">
+          <label for="dataPresenca">Data:</label>
+          <input type="date" id="dataPresenca" class="full-width-input" />
+        </div>
+        <div class="form-group status-radio-group">
+          <label>Status:</label>
+          <div>
+            <input type="radio" id="presente" name="statusPresenca" value="P" checked />
+            <label for="presente">Presente</label>
+          </div>
+          <div>
+            <input type="radio" id="ausente" name="statusPresenca" value="F" />
+            <label for="ausente">Ausente</label>
+          </div>
+        </div>
+        <button id="submitPresenca" class="form-button">
+          <span class="btn-text">Registrar Presença</span>
+        </button>
+      </div>
+
+      <p id="feedbackMessage" class="hidden feedback-message"></p>
     </div>
-  </body>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Carregando...</div>
+    <div class="loading-subtext">Aguarde um momento</div>
+  </div>
+
+  <!-- Progress Indicator -->
+  <div id="progressIndicator" class="progress-indicator">
+    <div id="progressBar" class="progress-bar"></div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Notification Modal -->
+  <div id="notificationModal" class="notification-modal">
+    <div class="notification-content">
+      <div id="notificationIcon" class="notification-icon">
+        <span id="notificationIconSymbol">✓</span>
+      </div>
+      <h3 id="notificationTitle" class="notification-title">Título</h3>
+      <p id="notificationMessage" class="notification-message">Mensagem</p>
+      <div class="notification-actions">
+        <button id="notificationOkBtn" class="notification-btn primary">
+          OK
+        </button>
+        <button id="notificationCancelBtn" class="notification-btn secondary" style="display: none">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+
 </html>
