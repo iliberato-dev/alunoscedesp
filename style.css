@@ -252,12 +252,10 @@ header {
 
 /* Informações do Usuário */
 .user-info {
-  position: absolute;
-  top: 75%;
-  right: -19%;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+     display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-wrap: wrap;
 }
 
 .user-badge {
@@ -6127,5 +6125,6 @@ button:disabled {
     padding: 16px;
   }
 }
+
 
 
