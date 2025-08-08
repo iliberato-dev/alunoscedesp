@@ -194,6 +194,169 @@ function mostrarLoadingOverlay(mensagem = "Carregando dados...") {
   document.body.appendChild(overlay);
 }
 
+// === LOADING ESPECÍFICO PARA CARDS ===
+function mostrarLoadingCard(studentId, mensagem = "Registrando...") {
+  const card = document
+    .querySelector(`input[data-student-id="${studentId}"]`)
+    ?.closest(".student-card");
+  if (!card) return;
+
+  // Remove loading existente se houver
+  removerLoadingCard(studentId);
+
+  const overlay = document.createElement("div");
+  overlay.className = "card-loading-overlay";
+  overlay.id = `card-loading-${studentId}`;
+  overlay.innerHTML = `
+    <div class="card-loading-content">
+      <div class="loading-spinner-small"></div>
+      <div class="card-loading-text">${mensagem}</div>
+    </div>
+  `;
+
+  // Adicionar posição relativa ao card se não tiver
+  card.style.position = "relative";
+  card.appendChild(overlay);
+}
+
+function removerLoadingCard(studentId) {
+  const loadingOverlay = document.getElementById(`card-loading-${studentId}`);
+  if (loadingOverlay) {
+    loadingOverlay.remove();
+  }
+}
+
+function atualizarMensagemLoadingCard(studentId, novaMensagem) {
+  const loadingText = document.querySelector(
+    `#card-loading-${studentId} .card-loading-text`
+  );
+  if (loadingText) {
+    loadingText.textContent = novaMensagem;
+  }
+}
+
+// === NOTIFICAÇÕES ESPECÍFICAS PARA CARDS ===
+function mostrarSucessoCard(
+  studentId,
+  mensagem,
+  titulo = "Sucesso",
+  duracao = 4000
+) {
+  const card = document
+    .querySelector(`input[data-student-id="${studentId}"]`)
+    ?.closest(".student-card");
+  if (!card) return;
+
+  // Remove notificação existente se houver
+  removerNotificacaoCard(studentId);
+
+  const notification = document.createElement("div");
+  notification.className = "card-notification card-notification-success";
+  notification.id = `card-notification-${studentId}`;
+  notification.innerHTML = `
+    <div class="card-notification-content">
+      <div class="card-notification-header">
+        <span class="card-notification-icon">✅</span>
+        <span class="card-notification-title">${titulo}</span>
+        <button class="card-notification-close" onclick="removerNotificacaoCard('${studentId}')">✕</button>
+      </div>
+      <div class="card-notification-message">${mensagem}</div>
+    </div>
+  `;
+
+  // Adicionar posição relativa ao card se não tiver
+  card.style.position = "relative";
+  card.appendChild(notification);
+
+  // Auto-remover após duração especificada
+  setTimeout(() => {
+    removerNotificacaoCard(studentId);
+  }, duracao);
+}
+
+function mostrarErroCard(studentId, mensagem, titulo = "Erro", duracao = 5000) {
+  const card = document
+    .querySelector(`input[data-student-id="${studentId}"]`)
+    ?.closest(".student-card");
+  if (!card) return;
+
+  // Remove notificação existente se houver
+  removerNotificacaoCard(studentId);
+
+  const notification = document.createElement("div");
+  notification.className = "card-notification card-notification-error";
+  notification.id = `card-notification-${studentId}`;
+  notification.innerHTML = `
+    <div class="card-notification-content">
+      <div class="card-notification-header">
+        <span class="card-notification-icon">❌</span>
+        <span class="card-notification-title">${titulo}</span>
+        <button class="card-notification-close" onclick="removerNotificacaoCard('${studentId}')">✕</button>
+      </div>
+      <div class="card-notification-message">${mensagem}</div>
+    </div>
+  `;
+
+  // Adicionar posição relativa ao card se não tiver
+  card.style.position = "relative";
+  card.appendChild(notification);
+
+  // Auto-remover após duração especificada
+  setTimeout(() => {
+    removerNotificacaoCard(studentId);
+  }, duracao);
+}
+
+function mostrarAvisoCard(
+  studentId,
+  mensagem,
+  titulo = "Atenção",
+  duracao = 6000
+) {
+  const card = document
+    .querySelector(`input[data-student-id="${studentId}"]`)
+    ?.closest(".student-card");
+  if (!card) return;
+
+  // Remove notificação existente se houver
+  removerNotificacaoCard(studentId);
+
+  const notification = document.createElement("div");
+  notification.className = "card-notification card-notification-warning";
+  notification.id = `card-notification-${studentId}`;
+  notification.innerHTML = `
+    <div class="card-notification-content">
+      <div class="card-notification-header">
+        <span class="card-notification-icon">⚠️</span>
+        <span class="card-notification-title">${titulo}</span>
+        <button class="card-notification-close" onclick="removerNotificacaoCard('${studentId}')">✕</button>
+      </div>
+      <div class="card-notification-message">${mensagem}</div>
+    </div>
+  `;
+
+  // Adicionar posição relativa ao card se não tiver
+  card.style.position = "relative";
+  card.appendChild(notification);
+
+  // Auto-remover após duração especificada
+  setTimeout(() => {
+    removerNotificacaoCard(studentId);
+  }, duracao);
+}
+
+function removerNotificacaoCard(studentId) {
+  const notification = document.getElementById(
+    `card-notification-${studentId}`
+  );
+  if (notification) {
+    notification.style.animation = "slideOutUp 0.3s ease-in";
+    setTimeout(() => {
+      notification.remove();
+    }, 300);
+  }
+}
+
 function removerLoadingOverlay() {
   const existingOverlay = document.getElementById("loading-overlay");
   if (existingOverlay) {
@@ -5749,8 +5912,8 @@ async function registrarPresencaCard(studentId) {
       '<div class="loading-spinner-small"></div> Registrando...';
     registerBtn.disabled = true;
 
-    // Mostrar overlay de carregamento
-    mostrarLoadingOverlay(`Registrando presença de ${studentName}...`);
+    // Mostrar loading específico do card
+    mostrarLoadingCard(studentId, `Registrando presença...`);
 
     const currentUser = AuthSystem.getCurrentUser();
     if (!currentUser) {
@@ -5767,7 +5930,7 @@ async function registrarPresencaCard(studentId) {
 
     console.log("📝 Registrando presença via card:", registro);
 
-    atualizarMensagemLoading("Enviando dados para a planilha...");
+    atualizarMensagemLoadingCard(studentId, "Enviando dados...");
 
     // Usar o mesmo sistema de processamento do sistema principal
     let success = false;
@@ -5791,16 +5954,19 @@ async function registrarPresencaCard(studentId) {
         );
 
         // Mesmo com timeout, mostrar mensagem informativa
-        mostrarAviso(
-          `A requisição demorou mais que o esperado, mas a presença pode ter sido registrada com sucesso.\n\nAluno: ${studentName}\nData: ${new Date(
+        const statusText =
+          selectedStatus === "P"
+            ? "Presente"
+            : selectedStatus === "F"
+            ? "Falta"
+            : "Ausente";
+        mostrarAvisoCard(
+          studentId,
+          `A requisição demorou mais que o esperado, mas a presença pode ter sido registrada.\n\nData: ${new Date(
             selectedDate
-          ).toLocaleDateString("pt-BR")}\nStatus: ${
-            selectedStatus === "P"
-              ? "Presente"
-              : selectedStatus === "F"
-              ? "Falta"
-              : "Ausente"
-          }\n\nVerifique o sistema para confirmar.`,
+          ).toLocaleDateString(
+            "pt-BR"
+          )}\nStatus: ${statusText}\n\nVerifique o sistema para confirmar.`,
           "Timeout - Verifique o Registro"
         );
 
@@ -5833,6 +5999,11 @@ async function registrarPresencaCard(studentId) {
             }
           }
         }, 100);
+
+        // Remover loading do card e resetar botão no caso de timeout
+        removerLoadingCard(studentId);
+        registerBtn.innerHTML = originalText;
+        registerBtn.disabled = false;
 
         return; // Sair da função sem lançar erro
       } else {
@@ -5911,8 +6082,9 @@ async function registrarPresencaCard(studentId) {
         );
       }
 
-      mostrarSucesso(
-        `Presença registrada com sucesso!\n\nAluno: ${studentName}\nData: ${new Date(
+      mostrarSucessoCard(
+        studentId,
+        `Aluno: ${studentName}\nData: ${new Date(
           selectedDate
         ).toLocaleDateString("pt-BR")}\nStatus: ${statusText}`,
         "Presença Registrada"
@@ -5933,15 +6105,16 @@ async function registrarPresencaCard(studentId) {
   } catch (error) {
     console.error("❌ Erro ao registrar presença via card:", error);
 
-    mostrarErro(
-      `Erro ao registrar presença: ${error.message || "Erro desconhecido"}`,
+    mostrarErroCard(
+      studentId,
+      `${error.message || "Erro desconhecido"}`,
       "Erro no Registro"
     );
   } finally {
     // Restaurar botão sempre, mesmo em caso de erro
     registerBtn.innerHTML = originalText;
     registerBtn.disabled = false;
-    removerLoadingOverlay();
+    removerLoadingCard(studentId);
   }
 }
 
@@ -5951,3 +6124,4 @@ window.abrirControlePresencas = abrirControlePresencas;
 window.fecharControlePresencas = fecharControlePresencas;
 window.atualizarCardImediatamente = atualizarCardImediatamente;
 window.invalidarCacheSeNecessario = invalidarCacheSeNecessario;
+window.removerNotificacaoCard = removerNotificacaoCard;
