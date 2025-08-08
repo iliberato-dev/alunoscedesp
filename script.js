@@ -6,32 +6,181 @@ const IS_LOCAL =
   location.hostname === "localhost" || location.hostname === "127.0.0.1";
 const API_URL = IS_LOCAL ? WEB_APP_URL : "/api/appsscript";
 
+// === CACHE LOCAL DE STATUS ===
+class StatusCache {
+  constructor() {
+    this.cache = new Map();
+    this.lastUpdate = null;
+  }
+
+  setStatus(alunoNome, registro) {
+    this.cache.set(alunoNome.toLowerCase(), {
+      ...registro,
+      timestamp: Date.now(),
+    });
+    this.lastUpdate = Date.now();
+    console.log(`📝 Cache atualizado para ${alunoNome}:`, registro);
+  }
+
+  getStatus(alunoNome) {
+    return this.cache.get(alunoNome.toLowerCase());
+  }
+
+  clear() {
+    this.cache.clear();
+    this.lastUpdate = null;
+    console.log("🗑️ Cache de status limpo");
+  }
+
+  clearStudent(alunoNome) {
+    this.cache.delete(alunoNome.toLowerCase());
+    console.log(`🗑️ Cache removido para ${alunoNome}`);
+  }
+
+  isExpired(maxAge = 5 * 60 * 1000) {
+    // 5 minutos
+    return !this.lastUpdate || Date.now() - this.lastUpdate > maxAge;
+  }
+
+  size() {
+    return this.cache.size;
+  }
+}
+
+const statusCache = new StatusCache();
+
+// Limpeza automática do cache a cada 2 minutos
+setInterval(() => {
+  invalidarCacheSeNecessario();
+}, 2 * 60 * 1000);
+
+// === UTILITÁRIOS DE FORMATAÇÃO DE DATA/HORÁRIO ===
+function formatarDataBrasileira(data) {
+  if (data instanceof Date) {
+    const dia = data.getDate().toString().padStart(2, "0");
+    const mes = (data.getMonth() + 1).toString().padStart(2, "0");
+    const ano = data.getFullYear();
+    return `${dia}/${mes}/${ano}`;
+  } else if (typeof data === "string" && data.trim() !== "") {
+    const dataStr = data.trim();
+    // Se for formato YYYY-MM-DD, converter para Date local
+    if (dataStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [ano, mes, dia] = dataStr.split("-");
+      return `${dia}/${mes}/${ano}`;
+    }
+    return dataStr;
+  }
+  // Se não for Date nem string válida, usar data atual
+  const agora = new Date();
+  const dia = agora.getDate().toString().padStart(2, "0");
+  const mes = (agora.getMonth() + 1).toString().padStart(2, "0");
+  const ano = agora.getFullYear();
+  return `${dia}/${mes}/${ano}`;
+}
+
+function formatarHorarioBrasileiro(horario) {
+  if (horario instanceof Date) {
+    const horas = horario.getHours().toString().padStart(2, "0");
+    const minutos = horario.getMinutes().toString().padStart(2, "0");
+    return `${horas}:${minutos}`;
+  } else if (typeof horario === "string" && horario.trim() !== "") {
+    return horario.trim();
+  }
+  // Se não for Date nem string válida, usar horário atual
+  const agora = new Date();
+  const horas = agora.getHours().toString().padStart(2, "0");
+  const minutos = agora.getMinutes().toString().padStart(2, "0");
+  return `${horas}:${minutos}`;
+}
+
+function obterDataHorarioAtual() {
+  const agora = new Date();
+  return {
+    data: formatarDataBrasileira(agora),
+    horario: formatarHorarioBrasileiro(agora),
+  };
+}
+
+// === FUNÇÕES DE ATUALIZAÇÃO IMEDIATA DE CARDS ===
+function atualizarCardImediatamente(alunoId, novoRegistro) {
+  const lastAttendanceElement = document.getElementById(
+    `lastAttendance_${alunoId}`
+  );
+
+  if (!lastAttendanceElement) {
+    console.warn(`⚠️ Elemento lastAttendance_${alunoId} não encontrado`);
+    return;
+  }
+
+  // Determinar o texto e classe do status
+  let statusText, statusClass, statusIcon;
+  if (novoRegistro.status === "P") {
+    statusText = "Presente";
+    statusClass = "presente";
+    statusIcon = "✅";
+  } else if (novoRegistro.status === "F") {
+    statusText = "Falta";
+    statusClass = "falta";
+    statusIcon = "❌";
+  } else {
+    statusText = "Ausente";
+    statusClass = "ausente";
+    statusIcon = "📝";
+  }
+
+  lastAttendanceElement.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="attendance-icon">
+      <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+      <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+    </svg>
+    <div class="attendance-info">
+      <span class="attendance-label">Último registro:</span>
+      <span class="attendance-date">${novoRegistro.displayTime}</span>
+      <span class="attendance-status ${statusClass}">${statusIcon} ${statusText}</span>
+    </div>
+  `;
+  lastAttendanceElement.className = "last-attendance";
+
+  console.log(
+    `✅ Card atualizado imediatamente para ${alunoId}: ${statusText}`
+  );
+}
+
+// Função para invalidar cache quando necessário
+function invalidarCacheSeNecessario() {
+  // Limpar cache se muito antigo (mais de 10 minutos)
+  if (statusCache.isExpired(10 * 60 * 1000)) {
+    statusCache.clear();
+    console.log("🗑️ Cache expirado limpo automaticamente");
+  }
+}
+
 // === SISTEMA DE INDICADORES VISUAIS DE CARREGAMENTO ===
 function mostrarLoadingOverlay(mensagem = "Carregando dados...") {
   // Remove overlay existente se houver
   removerLoadingOverlay();
-  
-  const overlay = document.createElement('div');
-  overlay.id = 'loading-overlay';
+
+  const overlay = document.createElement("div");
+  overlay.id = "loading-overlay";
   overlay.innerHTML = `
     <div class="loading-content">
       <div class="loading-spinner"></div>
       <div class="loading-text">${mensagem}</div>
     </div>
   `;
-  
+
   document.body.appendChild(overlay);
 }
 
 function removerLoadingOverlay() {
-  const existingOverlay = document.getElementById('loading-overlay');
+  const existingOverlay = document.getElementById("loading-overlay");
   if (existingOverlay) {
     existingOverlay.remove();
   }
 }
 
 function atualizarMensagemLoading(novaMensagem) {
-  const loadingText = document.querySelector('.loading-text');
+  const loadingText = document.querySelector(".loading-text");
   if (loadingText) {
     loadingText.textContent = novaMensagem;
   }
@@ -40,22 +189,22 @@ function atualizarMensagemLoading(novaMensagem) {
 // === SISTEMA DE RASTREAMENTO DE ÚLTIMOS REGISTROS ===
 class LastAttendanceTracker {
   constructor() {
-    this.storageKey = 'cedesp_last_attendance';
+    this.storageKey = "cedesp_last_attendance";
   }
 
   // Registrar último acesso de um aluno
   recordAttendance(alunoId, data, status, professor) {
     const records = this.getRecords();
     const timestamp = new Date().toISOString();
-    
+
     records[alunoId] = {
       data: data,
       status: status,
       professor: professor,
       timestamp: timestamp,
-      displayTime: this.formatDateTime(timestamp)
+      displayTime: this.formatDateTime(timestamp),
     };
-    
+
     localStorage.setItem(this.storageKey, JSON.stringify(records));
     console.log(`📝 Registro salvo para aluno ${alunoId}:`, records[alunoId]);
   }
@@ -72,7 +221,7 @@ class LastAttendanceTracker {
       const saved = localStorage.getItem(this.storageKey);
       return saved ? JSON.parse(saved) : {};
     } catch (error) {
-      console.error('Erro ao ler registros de presença:', error);
+      console.error("Erro ao ler registros de presença:", error);
       return {};
     }
   }
@@ -80,10 +229,10 @@ class LastAttendanceTracker {
   // Formatar data e hora para exibição
   formatDateTime(isoString) {
     const date = new Date(isoString);
-    const dateStr = date.toLocaleDateString('pt-BR');
-    const timeStr = date.toLocaleTimeString('pt-BR', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    const dateStr = date.toLocaleDateString("pt-BR");
+    const timeStr = date.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
     return `${dateStr} às ${timeStr}`;
   }
@@ -96,6 +245,449 @@ class LastAttendanceTracker {
 
 // Instância global do rastreador
 const lastAttendanceTracker = new LastAttendanceTracker();
+
+// === SISTEMA DE PRESENÇA ONLINE NA ABA "PRESENÇAS" ===
+class OnlineAttendanceManager {
+  constructor() {
+    this.apiUrl = API_URL;
+    console.log(
+      "🔧 OnlineAttendanceManager inicializado com URL:",
+      this.apiUrl
+    );
+    console.log("🌍 IS_LOCAL:", IS_LOCAL);
+    console.log("🔗 WEB_APP_URL:", WEB_APP_URL);
+  }
+
+  // Testar conectividade com o App Script
+  async testarConectividade() {
+    try {
+      console.log("🔍 Testando conectividade...");
+
+      const params = new URLSearchParams({
+        teste: "1",
+      });
+
+      const response = await withTimeout(
+        fetch(`${this.apiUrl}?${params.toString()}`),
+        10000
+      );
+
+      if (response.ok) {
+        const resultado = await response.json();
+        console.log("✅ Conectividade OK:", resultado);
+        return { success: true, resultado };
+      } else {
+        console.error(
+          "❌ Erro de conectividade:",
+          response.status,
+          response.statusText
+        );
+        return { success: false, error: `HTTP ${response.status}` };
+      }
+    } catch (error) {
+      console.error("❌ Erro de rede:", error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Registrar presença online na aba "Presenças"
+  async registrarPresencaOnline(
+    nome,
+    data,
+    horario,
+    curso,
+    professor,
+    status = "P"
+  ) {
+    try {
+      // GARANTIR FORMATAÇÃO CORRETA usando as funções utilitárias
+      const dataFormatada = formatarDataBrasileira(data);
+      const horarioFormatado = formatarHorarioBrasileiro(horario);
+
+      console.log("📝 Registrando presença online:", {
+        nome,
+        data: dataFormatada,
+        horario: horarioFormatado,
+        curso,
+        professor,
+        status,
+      });
+      console.log("🔗 URL da API:", this.apiUrl);
+
+      const params = new URLSearchParams({
+        action: "registrarPresencaOnline",
+        nome: nome.toString(),
+        data: dataFormatada,
+        horario: horarioFormatado,
+        curso: curso.toString(),
+        professor: professor.toString(),
+        status: status.toString(),
+      });
+
+      console.log("📤 Parâmetros da requisição:", params.toString());
+      console.log("🌐 URL completa:", `${this.apiUrl}?${params.toString()}`);
+
+      const response = await withTimeout(
+        fetchWithRetry(`${this.apiUrl}?${params.toString()}`, {}, 2),
+        10000
+      );
+
+      console.log("📨 Status da resposta:", response.status);
+      console.log("📨 Headers da resposta:", response.headers);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const resultado = await response.json();
+      console.log("📊 Resultado completo:", resultado);
+
+      if (resultado.success) {
+        console.log("✅ Presença registrada online com sucesso");
+        return resultado;
+      } else {
+        console.error("❌ Erro ao registrar presença online:", resultado.error);
+        return resultado;
+      }
+    } catch (error) {
+      console.error("❌ Erro na requisição de presença online:", error);
+      return {
+        success: false,
+        error: error.message,
+        message: "Erro ao conectar com o servidor",
+      };
+    }
+  }
+
+  // Buscar últimos registros de presença online
+  async buscarUltimosRegistros(limite = 10) {
+    try {
+      console.log("🔍 Buscando últimos registros de presença online...");
+
+      const params = new URLSearchParams({
+        action: "buscarUltimosRegistrosPresenca",
+        limite: limite,
+      });
+
+      console.log("🌐 URL da busca:", `${this.apiUrl}?${params.toString()}`);
+
+      const response = await withTimeout(
+        fetchWithRetry(`${this.apiUrl}?${params.toString()}`, {}, 2),
+        10000
+      );
+
+      console.log("📨 Status da resposta da busca:", response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const resultado = await response.json();
+      console.log("📊 Resultado completo da busca:", resultado);
+
+      if (resultado.success) {
+        console.log(
+          `✅ ${resultado.registros.length} registros encontrados na busca`
+        );
+        return resultado;
+      } else {
+        console.error("❌ Erro ao buscar registros:", resultado.error);
+        return resultado;
+      }
+    } catch (error) {
+      console.error("❌ Erro na requisição de busca:", error);
+      return {
+        success: false,
+        error: error.message,
+        registros: [],
+      };
+    }
+  }
+
+  // Buscar último registro de um aluno específico na aba "Presenças"
+  async buscarUltimoRegistroAluno(nomeAluno) {
+    try {
+      console.log(
+        `🔍 BUSCA INDIVIDUAL - Procurando último registro para: "${nomeAluno}"`
+      );
+
+      // ✅ OTIMIZAÇÃO: Verificar cache primeiro
+      const cachedStatus = statusCache.getStatus(nomeAluno);
+      if (cachedStatus && !statusCache.isExpired()) {
+        console.log(`📋 Cache hit para ${nomeAluno}:`, cachedStatus);
+        return {
+          success: true,
+          registro: cachedStatus,
+        };
+      }
+
+      // Buscar todos os registros recentes e filtrar pelo nome
+      console.log("📋 Buscando registros gerais...");
+      const resultado = await this.buscarUltimosRegistros(50); // Buscar mais registros para encontrar o aluno
+
+      console.log("📊 Resultado da busca geral:", resultado);
+
+      if (resultado.success && resultado.registros.length > 0) {
+        console.log(
+          `📋 Total de registros encontrados: ${resultado.registros.length}`
+        );
+
+        // Log de todos os nomes encontrados para debug
+        const nomesEncontrados = resultado.registros.map((r) => r.nome);
+        console.log("👥 Nomes nos registros:", nomesEncontrados);
+
+        // Filtrar registros pelo nome do aluno
+        const registrosDoAluno = resultado.registros.filter((registro) => {
+          const nomeRegistro = registro.nome.toLowerCase();
+          const nomeAluno_lower = nomeAluno.toLowerCase();
+
+          const match =
+            nomeRegistro.includes(nomeAluno_lower) ||
+            nomeAluno_lower.includes(nomeRegistro);
+
+          if (match) {
+            console.log(
+              `✅ MATCH encontrado: "${registro.nome}" ↔ "${nomeAluno}"`
+            );
+          }
+
+          return match;
+        });
+
+        console.log(
+          `🎯 Registros filtrados para "${nomeAluno}": ${registrosDoAluno.length}`
+        );
+
+        if (registrosDoAluno.length > 0) {
+          const ultimoRegistro = registrosDoAluno[0]; // Já vem ordenado por mais recente
+          console.log(
+            `✅ SUCESSO - Último registro encontrado para ${nomeAluno}:`,
+            ultimoRegistro
+          );
+
+          return {
+            success: true,
+            registro: {
+              data: ultimoRegistro.data,
+              horario: ultimoRegistro.horario,
+              curso: ultimoRegistro.curso,
+              professor: ultimoRegistro.professor,
+              status: ultimoRegistro.status || "P", // Usar status real ou P como fallback
+              displayTime: `${ultimoRegistro.data} às ${ultimoRegistro.horario}`,
+              timestamp: new Date().toISOString(), // Para compatibilidade
+            },
+          };
+        }
+      } else {
+        console.log("❌ ERRO ou nenhum registro retornado da busca geral");
+      }
+
+      console.log(
+        `⚠️ RESULTADO VAZIO - Nenhum registro encontrado para: "${nomeAluno}"`
+      );
+      return { success: false, registro: null };
+    } catch (error) {
+      console.error(`❌ Erro ao buscar registro de ${nomeAluno}:`, error);
+      return { success: false, registro: null };
+    }
+  }
+
+  // ✅ OTIMIZAÇÃO: Pré-carregar status de múltiplos alunos
+  async preCarregarStatusAlunos(nomesAlunos) {
+    if (statusCache.size() > 0 && !statusCache.isExpired()) {
+      console.log("📋 Cache ainda válido, pulando pré-carregamento");
+      return;
+    }
+
+    try {
+      console.log("🔄 Pré-carregando status de todos os alunos...");
+      const resultado = await this.buscarUltimosRegistros(100); // Buscar mais registros
+
+      if (resultado.success && resultado.registros.length > 0) {
+        // Agrupar registros por nome do aluno
+        const registrosPorAluno = new Map();
+
+        resultado.registros.forEach((registro) => {
+          const nomeNormalizado = registro.nome.toLowerCase();
+          if (
+            !registrosPorAluno.has(nomeNormalizado) ||
+            registrosPorAluno.get(nomeNormalizado).id < registro.id
+          ) {
+            registrosPorAluno.set(nomeNormalizado, registro);
+          }
+        });
+
+        // Adicionar ao cache
+        registrosPorAluno.forEach((registro, nome) => {
+          const registroFormatado = {
+            data: registro.data,
+            horario: registro.horario,
+            curso: registro.curso,
+            professor: registro.professor,
+            status: registro.status || "P",
+            displayTime: `${registro.data} às ${registro.horario}`,
+            timestamp: Date.now(),
+          };
+          statusCache.setStatus(nome, registroFormatado);
+        });
+
+        console.log(
+          `✅ Cache pré-carregado com ${registrosPorAluno.size} alunos`
+        );
+      }
+    } catch (error) {
+      console.error("❌ Erro no pré-carregamento:", error);
+    }
+  }
+
+  // Exibir últimos registros na interface
+  async exibirUltimosRegistros(containerId = "ultimosRegistros") {
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.warn("Container para últimos registros não encontrado");
+      return;
+    }
+
+    // Mostrar loading
+    container.innerHTML = `
+      <div class="loading-registros">
+        <div class="loading-spinner"></div>
+        <span>Carregando últimos registros...</span>
+      </div>
+    `;
+
+    const resultado = await this.buscarUltimosRegistros(5);
+
+    if (resultado.success && resultado.registros.length > 0) {
+      const html = `
+        <div class="ultimos-registros">
+          <h4>📋 Últimos Registros de Presença</h4>
+          <div class="registros-lista">
+            ${resultado.registros
+              .map(
+                (registro) => `
+              <div class="registro-item">
+                <div class="registro-info">
+                  <strong>${registro.nome}</strong>
+                  <span class="registro-curso">${registro.curso}</span>
+                </div>
+                <div class="registro-detalhes">
+                  <span class="registro-data">${registro.data}</span>
+                  <span class="registro-horario">${registro.horario}</span>
+                  <span class="registro-professor">${registro.professor}</span>
+                </div>
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+        </div>
+      `;
+      container.innerHTML = html;
+    } else {
+      container.innerHTML = `
+        <div class="sem-registros">
+          <span>📄 Nenhum registro encontrado</span>
+        </div>
+      `;
+    }
+  }
+}
+
+// Instância global do gerenciador de presença online
+const onlineAttendanceManager = new OnlineAttendanceManager();
+
+// === FUNÇÃO PARA REGISTRAR LOTE NA ABA "PRESENÇAS" ===
+async function registrarLotePresencaOnline(registrosPorCurso, data) {
+  try {
+    console.log("📝 Iniciando registro em lote na aba Presenças...");
+
+    // Usar as funções utilitárias para garantir formatação consistente
+    const { data: dataFormatada, horario: horarioFormatado } =
+      obterDataHorarioAtual();
+
+    console.log(`📅 Data formatada: "${dataFormatada}"`);
+    console.log(`🕐 Horário formatado: "${horarioFormatado}"`);
+
+    let totalRegistrados = 0;
+    let totalErros = 0;
+
+    // Processar cada curso
+    for (const [curso, registros] of registrosPorCurso.entries()) {
+      console.log(`📚 Registrando curso ${curso}: ${registros.length} alunos`);
+
+      // Processar registros do curso em pequenos lotes para não sobrecarregar
+      const chunkSize = 5;
+      for (let i = 0; i < registros.length; i += chunkSize) {
+        const chunk = registros.slice(i, i + chunkSize);
+
+        const promises = chunk.map(async (registro) => {
+          try {
+            // Buscar nome do aluno
+            const aluno = allStudentsRawData.find(
+              (a) => a.ID_Unico === registro.alunoId
+            );
+            const nomeAluno = aluno ? aluno.Nome : registro.alunoId;
+
+            const resultado =
+              await onlineAttendanceManager.registrarPresencaOnline(
+                nomeAluno,
+                dataFormatada,
+                horarioFormatado,
+                curso,
+                currentUser.name,
+                "P"
+              );
+
+            if (resultado.success) {
+              totalRegistrados++;
+              const acaoTexto = resultado.atualizado
+                ? "atualizado"
+                : "registrado";
+              console.log(`✅ ${nomeAluno} ${acaoTexto} na aba Presenças`);
+            } else {
+              totalErros++;
+              console.warn(
+                `⚠️ Erro ao registrar ${nomeAluno}:`,
+                resultado.error
+              );
+            }
+
+            return resultado;
+          } catch (error) {
+            totalErros++;
+            console.error(`❌ Erro no registro:`, error);
+            return { success: false, error: error.message };
+          }
+        });
+
+        // Aguardar processamento do chunk
+        await Promise.allSettled(promises);
+
+        // Pequena pausa entre chunks
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
+
+    console.log(
+      `📊 Registro na aba Presenças concluído: ${totalRegistrados} sucessos, ${totalErros} erros`
+    );
+
+    return {
+      success: true,
+      totalRegistrados,
+      totalErros,
+    };
+  } catch (error) {
+    console.error("❌ Erro geral no registro em lote na aba Presenças:", error);
+    return {
+      success: false,
+      error: error.message,
+      totalRegistrados: 0,
+      totalErros: 1,
+    };
+  }
+}
 
 // === SISTEMA DE CACHE OTIMIZADO ===
 class CacheManager {
@@ -461,6 +1053,10 @@ function setupCacheCleanup() {
 // Inicializar limpeza quando a página carregar
 document.addEventListener("DOMContentLoaded", () => {
   setupCacheCleanup();
+
+  // Configurar limpeza automática do cache de status
+  setInterval(invalidarCacheSeNecessario, 2 * 60 * 1000); // A cada 2 minutos
+  console.log("🔧 Limpeza automática de cache configurada");
 });
 
 // === VARIÁVEIS GLOBAIS OTIMIZADAS ===
@@ -553,12 +1149,12 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeViewToggle();
   setupUserInterface();
   initializeBatchAttendance();
-  
+
   // Garantir que a visibilidade da tabela esteja correta na inicialização
   setTimeout(() => {
     updateTableButtonVisibility();
   }, 100);
-  
+
   carregarTodosAlunos();
 });
 
@@ -636,6 +1232,62 @@ function setupUserInterface() {
   if (currentUser.role === "admin") {
     addAdminFeatures();
   }
+
+  // ✅ NOVO: Adicionar seção de últimos registros para professores
+  if (currentUser.role === "professor") {
+    addUltimosRegistrosSection();
+  }
+}
+
+// === SEÇÃO DE ÚLTIMOS REGISTROS ONLINE ===
+function addUltimosRegistrosSection() {
+  // Verificar se já existe para evitar duplicação
+  if (document.getElementById("ultimosRegistrosSection")) {
+    return;
+  }
+
+  const container = document.querySelector(".container");
+  if (!container) return;
+
+  // Criar seção para últimos registros
+  const ultimosRegistrosSection = document.createElement("div");
+  ultimosRegistrosSection.id = "ultimosRegistrosSection";
+  ultimosRegistrosSection.className = "ultimos-registros-section";
+  ultimosRegistrosSection.innerHTML = `
+    <div class="section-header">
+      <h3>📋 Últimos Registros de Presença</h3>
+      <button id="refreshRegistrosBtn" class="btn-refresh" title="Atualizar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+          <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+        </svg>
+      </button>
+    </div>
+    <div id="ultimosRegistros" class="registros-container">
+      <!-- Será preenchido dinamicamente -->
+    </div>
+  `;
+
+  // Inserir antes do painel de detalhes
+  const painelDetalhes = document.getElementById("painelDetalhes");
+  if (painelDetalhes) {
+    container.insertBefore(ultimosRegistrosSection, painelDetalhes);
+  } else {
+    container.appendChild(ultimosRegistrosSection);
+  }
+
+  // Event listener para o botão de refresh
+  const refreshBtn = document.getElementById("refreshRegistrosBtn");
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", () => {
+      onlineAttendanceManager.exibirUltimosRegistros();
+    });
+  }
+
+  // Carregar registros iniciais
+  setTimeout(() => {
+    onlineAttendanceManager.exibirUltimosRegistros();
+  }, 1000);
 }
 
 // === CONFIGURAÇÃO DE FILTROS BASEADOS NO USUÁRIO ===
@@ -713,7 +1365,7 @@ function addAdminFeatures() {
       abrirControlePresencas();
     });
     buttonsContainer.appendChild(attendanceButton);
-    
+
     // Adicionar aviso de modo visualização apenas (para edição de presenças individuais)
     const infoButton = document.createElement("div");
     infoButton.className = "admin-info-notice";
@@ -1182,7 +1834,7 @@ function abrirDetalhesAluno(alunoId) {
 function abrirControlePresencas() {
   console.log("🔍 Abrindo controle de presenças...");
   console.log("👤 Usuário atual:", currentUser);
-  
+
   if (currentUser.role !== "admin") {
     mostrarErro(
       "Acesso negado. Apenas administradores podem acessar esta funcionalidade.",
@@ -1309,7 +1961,7 @@ function abrirControlePresencas() {
 
   console.log("📝 Modal HTML criado, adicionando ao DOM...");
   document.body.appendChild(modal);
-  
+
   // Usar setTimeout para garantir que o DOM foi atualizado antes de mostrar
   setTimeout(() => {
     modal.classList.add("active");
@@ -1324,10 +1976,8 @@ function abrirControlePresencas() {
     .getElementById("exportarPresencas")
     .addEventListener("click", exportarDadosPresenca);
 
-  // Definir data padrão como hoje (corrigindo timezone)
-  const hoje = new Date();
-  hoje.setMinutes(hoje.getMinutes() - hoje.getTimezoneOffset());
-  const hojeFormatado = hoje.toISOString().split("T")[0];
+  // Definir data padrão como hoje
+  const hojeFormatado = getLocalDateString();
   document.getElementById("attendanceDate").value = hojeFormatado;
 
   // Melhorar interação entre campos de data
@@ -1382,7 +2032,7 @@ async function consultarPresencasPorData() {
     dateInput,
     startDateInput,
     endDateInput,
-    courseInput
+    courseInput,
   });
 
   let dateFilter = null;
@@ -1397,7 +2047,7 @@ async function consultarPresencasPorData() {
     startDate = startDateInput;
     endDate = endDateInput;
     console.log("📅 Usando período:", startDate, "a", endDate);
-    
+
     if (new Date(startDate) > new Date(endDate)) {
       mostrarErro(
         "Data inicial não pode ser maior que a data final.",
@@ -1415,7 +2065,7 @@ async function consultarPresencasPorData() {
 
   try {
     mostrarLoadingButton(button, true);
-    
+
     // Mostrar overlay de carregamento com mensagem específica
     if (dateFilter) {
       mostrarLoadingOverlay("Consultando presenças da data específica...");
@@ -1436,16 +2086,16 @@ async function consultarPresencasPorData() {
       // Consulta para data específica - usar API real
       try {
         atualizarMensagemLoading("Conectando com a planilha Google...");
-        
+
         const url = `${API_URL}?action=consultarPresencas&data=${dateFilter}${
           courseInput ? `&curso=${courseInput}` : ""
         }`;
         console.log("🔗 Chamando API:", url);
 
         const response = await fetch(url);
-        
+
         atualizarMensagemLoading("Processando dados recebidos...");
-        
+
         const result = await response.json();
 
         console.log("📊 Resposta da API:", result);
@@ -1458,7 +2108,7 @@ async function consultarPresencasPorData() {
       } catch (apiError) {
         console.warn("⚠️ Erro na API, usando dados locais:", apiError);
         atualizarMensagemLoading("Carregando dados locais...");
-        
+
         // Fallback para dados simulados se a API falhar
         let filteredStudents = [...allStudentsRawData];
         if (courseInput) {
@@ -1475,20 +2125,24 @@ async function consultarPresencasPorData() {
       }
     } else {
       // Para período (múltiplas datas) - usar API real do Google Sheets
-      console.log("📊 Processando consulta por período:", { startDate, endDate, courseInput });
-      
+      console.log("📊 Processando consulta por período:", {
+        startDate,
+        endDate,
+        courseInput,
+      });
+
       try {
         atualizarMensagemLoading("Conectando com a planilha Google...");
-        
+
         const url = `${API_URL}?action=consultarPresencasPorPeriodo&dataInicial=${startDate}&dataFinal=${endDate}${
           courseInput ? `&curso=${courseInput}` : ""
         }`;
         console.log("🔗 Chamando API para período:", url);
 
         const response = await fetch(url);
-        
+
         atualizarMensagemLoading("Processando dados do período...");
-        
+
         const result = await response.json();
 
         console.log("📊 Resposta da API para período:", result);
@@ -1496,12 +2150,17 @@ async function consultarPresencasPorData() {
         if (result.success) {
           attendanceData = result.data || [];
         } else {
-          throw new Error(result.error || "Erro ao consultar presenças por período");
+          throw new Error(
+            result.error || "Erro ao consultar presenças por período"
+          );
         }
       } catch (apiError) {
-        console.warn("⚠️ Erro na API de período, usando dados locais:", apiError);
+        console.warn(
+          "⚠️ Erro na API de período, usando dados locais:",
+          apiError
+        );
         atualizarMensagemLoading("Carregando dados locais...");
-        
+
         // Fallback para dados simulados se a API falhar
         let filteredStudents = [...allStudentsRawData];
         if (courseInput) {
@@ -1509,16 +2168,16 @@ async function consultarPresencasPorData() {
             (student) => student.Origem === courseInput
           );
         }
-        
+
         console.log("👥 Alunos filtrados:", filteredStudents.length);
-        
+
         attendanceData = simulateAttendanceData(
           filteredStudents,
           null,
           startDate,
           endDate
         );
-        
+
         console.log("📋 Dados de presença gerados:", attendanceData.length);
       }
     }
@@ -1659,18 +2318,29 @@ class AttendanceManager {
   // Gerar dados de demonstração para teste
   generateSampleData() {
     console.log("🎲 Gerando dados de demonstração...");
-    const sampleDates = ['2025-08-04', '2025-08-05', '2025-08-06', '2025-08-07'];
+    const sampleDates = [
+      "2025-08-04",
+      "2025-08-05",
+      "2025-08-06",
+      "2025-08-07",
+    ];
     const sampleStudents = allStudentsRawData.slice(0, 10); // Primeiros 10 alunos
 
-    sampleDates.forEach(date => {
+    sampleDates.forEach((date) => {
       sampleStudents.forEach((student, index) => {
         // Simular padrão realista: ~80% presença
         const isPresent = Math.random() > 0.2;
-        this.markAttendance(student.ID_Unico, date, isPresent ? 'P' : 'A');
+        this.markAttendance(student.ID_Unico, date, isPresent ? "P" : "A");
       });
     });
 
-    console.log("✅ Dados de demonstração gerados para", sampleDates.length, "datas e", sampleStudents.length, "alunos");
+    console.log(
+      "✅ Dados de demonstração gerados para",
+      sampleDates.length,
+      "datas e",
+      sampleStudents.length,
+      "alunos"
+    );
   }
 }
 
@@ -1678,7 +2348,11 @@ class AttendanceManager {
 const attendanceManager = new AttendanceManager();
 
 function simulateAttendanceData(students, dateFilter, startDate, endDate) {
-  console.log("🔍 Simulando dados de presença:", { dateFilter, startDate, endDate });
+  console.log("🔍 Simulando dados de presença:", {
+    dateFilter,
+    startDate,
+    endDate,
+  });
   const attendanceData = [];
 
   if (dateFilter) {
@@ -1687,19 +2361,34 @@ function simulateAttendanceData(students, dateFilter, startDate, endDate) {
     console.log("📅 Processando data específica:", targetDate);
 
     students.forEach((student) => {
-      const attendanceStatus = attendanceManager.getStudentAttendance(
-        student.ID_Unico,
-        targetDate
-      );
+      // ✅ CORREÇÃO: Buscar status diretamente dos dados do servidor ao invés do cache local
+      let attendanceStatus = getServerAttendanceStatus(student, targetDate);
+
+      // Se não encontrou nos dados do servidor, buscar no cache local como fallback
+      if (!attendanceStatus) {
+        attendanceStatus = attendanceManager.getStudentAttendance(
+          student.ID_Unico,
+          targetDate
+        );
+      }
 
       let status, statusText, isMarked;
 
       if (attendanceStatus) {
         status = attendanceStatus;
-        statusText = attendanceStatus === "P" ? "Presente" : "Ausente";
+        if (attendanceStatus === "P") {
+          statusText = "Presente";
+        } else if (attendanceStatus === "F") {
+          statusText = "Falta";
+        } else if (attendanceStatus === "A") {
+          statusText = "Ausente";
+        } else {
+          statusText = "Ausente";
+        }
         isMarked = true;
       } else {
-        const hasAnyMarked = attendanceManager.hasAnyAttendanceMarked(targetDate);
+        const hasAnyMarked =
+          attendanceManager.hasAnyAttendanceMarked(targetDate);
         if (hasAnyMarked) {
           status = "A";
           statusText = "Ausente (Não Marcado)";
@@ -1722,38 +2411,52 @@ function simulateAttendanceData(students, dateFilter, startDate, endDate) {
         isMarked: isMarked,
       });
     });
-
   } else if (startDate && endDate) {
     // Consulta para período - iterar através de cada data
     console.log("📅 Processando período:", startDate, "até", endDate);
-    
+
     const start = new Date(startDate);
     const end = new Date(endDate);
     const dateList = [];
-    
+
     // Gerar lista de datas no período
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = d.toISOString().split("T")[0];
       dateList.push(dateStr);
     }
-    
+
     console.log("📋 Datas no período:", dateList);
 
     students.forEach((student) => {
       dateList.forEach((currentDate) => {
-        const attendanceStatus = attendanceManager.getStudentAttendance(
-          student.ID_Unico,
-          currentDate
-        );
+        // ✅ CORREÇÃO: Buscar status diretamente dos dados do servidor ao invés do cache local
+        let attendanceStatus = getServerAttendanceStatus(student, currentDate);
+
+        // Se não encontrou nos dados do servidor, buscar no cache local como fallback
+        if (!attendanceStatus) {
+          attendanceStatus = attendanceManager.getStudentAttendance(
+            student.ID_Unico,
+            currentDate
+          );
+        }
 
         let status, statusText, isMarked;
 
         if (attendanceStatus) {
           status = attendanceStatus;
-          statusText = attendanceStatus === "P" ? "Presente" : "Ausente";
+          if (attendanceStatus === "P") {
+            statusText = "Presente";
+          } else if (attendanceStatus === "F") {
+            statusText = "Falta";
+          } else if (attendanceStatus === "A") {
+            statusText = "Ausente";
+          } else {
+            statusText = "Ausente";
+          }
           isMarked = true;
         } else {
-          const hasAnyMarked = attendanceManager.hasAnyAttendanceMarked(currentDate);
+          const hasAnyMarked =
+            attendanceManager.hasAnyAttendanceMarked(currentDate);
           if (hasAnyMarked) {
             status = "A";
             statusText = "Ausente (Não Marcado)";
@@ -1779,7 +2482,11 @@ function simulateAttendanceData(students, dateFilter, startDate, endDate) {
     });
   }
 
-  console.log("📊 Dados de presença gerados:", attendanceData.length, "registros");
+  console.log(
+    "📊 Dados de presença gerados:",
+    attendanceData.length,
+    "registros"
+  );
   return attendanceData;
 }
 
@@ -1793,46 +2500,55 @@ function exibirResultadosPresenca(
   const summaryDiv = document.getElementById("attendanceSummary");
   const resultsDiv = document.getElementById("attendanceResults");
 
-  console.log("📊 Calculando estatísticas para", attendanceData.length, "registros");
+  console.log(
+    "📊 Calculando estatísticas para",
+    attendanceData.length,
+    "registros"
+  );
 
   // Calcular estatísticas
   let total, present, absent, rate;
-  
+
   if (dateFilter) {
     // Para data específica: contar todos os alunos
     total = attendanceData.length;
     present = attendanceData.filter((a) => a.status === "P").length;
-    absent = attendanceData.filter((a) => a.status === "A").length;
-    
+    absent = attendanceData.filter(
+      (a) => a.status === "A" || a.status === "F"
+    ).length;
+
     // Para data específica, incluir alunos sem registro nas faltas se houver qualquer presença marcada
     const hasAnyPresence = present > 0 || absent > 0;
     if (hasAnyPresence) {
-      const withoutRecord = attendanceData.filter((a) => a.status === null).length;
+      const withoutRecord = attendanceData.filter(
+        (a) => a.status === null
+      ).length;
       absent += withoutRecord;
     }
-    
   } else {
     // Para período: contar alunos únicos, não registros
-    const uniqueStudents = [...new Set(attendanceData.map(a => a.studentId))];
+    const uniqueStudents = [...new Set(attendanceData.map((a) => a.studentId))];
     total = uniqueStudents.length;
-    
+
     // Contar presenças e faltas do período
     present = attendanceData.filter((a) => a.status === "P").length;
-    absent = attendanceData.filter((a) => a.status === "A").length;
-    
-    const uniqueDates = [...new Set(attendanceData.map(a => a.date))].length;
-    
+    absent = attendanceData.filter(
+      (a) => a.status === "A" || a.status === "F"
+    ).length;
+
+    const uniqueDates = [...new Set(attendanceData.map((a) => a.date))].length;
+
     console.log("📋 Estatísticas do período:", {
       uniqueStudents: total,
       uniqueDates,
       totalRecords: attendanceData.length,
       present,
-      absent
+      absent,
     });
   }
-  
+
   rate = total > 0 ? ((present / (present + absent)) * 100).toFixed(1) : 0;
-  
+
   console.log("📊 Estatísticas finais:", { total, present, absent, rate });
 
   // Atualizar cards de resumo
@@ -1852,7 +2568,7 @@ function exibirResultadosPresenca(
       )} a ${new Date(endDate + "T12:00:00").toLocaleDateString("pt-BR")}`;
 
   const courseText = course ? ` - Curso: ${course}` : " - Todos os Cursos";
-  
+
   // Decidir se incluir coluna de data
   const isPeriodQuery = !dateFilter && startDate && endDate;
 
@@ -1870,7 +2586,7 @@ function exibirResultadosPresenca(
             <th>Nome do Aluno</th>
             <th>Curso</th>
             <th>Período</th>
-            ${isPeriodQuery ? '<th>Data</th>' : ''}
+            ${isPeriodQuery ? "<th>Data</th>" : ""}
             <th>Status</th>
           </tr>
         </thead>
@@ -1885,7 +2601,13 @@ function exibirResultadosPresenca(
               <td data-label="Nome do Aluno">${record.studentName}</td>
               <td data-label="Curso">${record.course}</td>
               <td data-label="Período">${record.period}</td>
-              ${isPeriodQuery ? `<td data-label="Data">${new Date(record.date + "T12:00:00").toLocaleDateString("pt-BR")}</td>` : ''}
+              ${
+                isPeriodQuery
+                  ? `<td data-label="Data">${new Date(
+                      record.date + "T12:00:00"
+                    ).toLocaleDateString("pt-BR")}</td>`
+                  : ""
+              }
               <td data-label="Status">
                 <span class="status-badge ${
                   record.status === "P" ? "present" : "absent"
@@ -2079,7 +2801,7 @@ function shouldShowTableOption() {
   if (!isMobileDevice()) {
     return true; // Desktop sempre pode usar tabela
   }
-  
+
   // Mobile: só permite tabela em landscape
   return isLandscape();
 }
@@ -2091,9 +2813,13 @@ function updateTableButtonVisibility() {
   const isMobile = isMobileDevice();
   const isPortrait = !isLandscape();
   const shouldShow = shouldShowTableOption();
-  
-  console.log(`📱 Dispositivo: ${isMobile ? 'Mobile' : 'Desktop'}, Orientação: ${isPortrait ? 'Retrato' : 'Paisagem'}, Mostrar Tabela: ${shouldShow}`);
-  
+
+  console.log(
+    `📱 Dispositivo: ${isMobile ? "Mobile" : "Desktop"}, Orientação: ${
+      isPortrait ? "Retrato" : "Paisagem"
+    }, Mostrar Tabela: ${shouldShow}`
+  );
+
   if (tableViewBtn && viewToggle) {
     if (shouldShow) {
       tableViewBtn.style.display = "flex";
@@ -2103,7 +2829,7 @@ function updateTableButtonVisibility() {
       tableViewBtn.style.display = "none";
       viewToggle.classList.add("mobile-portrait-mode");
       console.log("❌ Botão tabela desabilitado - Mobile Portrait");
-      
+
       // Se estava em modo tabela e não pode mais usar, volta para cards
       if (currentView === "table") {
         console.log("🔄 Forçando volta para modo cards");
@@ -2159,10 +2885,10 @@ function initializeViewToggle() {
 
   // Carrega visualização salva ou usa cards como padrão
   const savedView = localStorage.getItem("viewMode") || "cards";
-  
+
   // Inicializar visibilidade do botão
   updateTableButtonVisibility();
-  
+
   // Aplicar view apenas se permitida
   if (savedView === "table" && shouldShowTableOption()) {
     switchView("table");
@@ -2177,7 +2903,7 @@ function switchView(view) {
     console.log("Forçando modo cards - tabela não disponível");
     view = "cards";
   }
-  
+
   currentView = view;
   localStorage.setItem("viewMode", view);
 
@@ -2291,10 +3017,16 @@ async function carregarTodosAlunos(forceRefresh = false) {
     exibirResultados(currentFilteredStudents);
     preencherFiltros();
 
+    // ✅ OTIMIZAÇÃO: Pré-carregar status dos alunos carregados
+    const nomesAlunos = filteredByUser.map((aluno) => aluno.Nome);
+    setTimeout(() => {
+      onlineAttendanceManager.preCarregarStatusAlunos(nomesAlunos);
+    }, 500);
+
     // 🔥 PRÉ-CACHE INTELIGENTE: Carregar dados de presença em background
     if (filteredByUser.length > 0 && filteredByUser.length <= 50) {
       // Apenas para listas pequenas
-      const today = new Date().toISOString().split("T")[0];
+      const today = getLocalDateString();
       const studentIds = filteredByUser.map((aluno) => aluno.ID_Unico);
 
       // Fazer pré-cache em background (não bloquear UI)
@@ -2462,7 +3194,7 @@ async function registrarPresencaFalta(status) {
     mostrarLoadingButton(button, true);
     atualizarTextoLoading("Registrando presença...", "Salvando dados");
 
-    const dataHoje = new Date().toISOString().split("T")[0];
+    const dataHoje = getLocalDateString();
 
     console.log("📝 Registrando presença/falta:", {
       selectedStudentId,
@@ -2499,10 +3231,65 @@ async function registrarPresencaFalta(status) {
       throw new Error(resultado.error || "Erro desconhecido");
     }
 
+    // ✅ NOVO: Registrar também na aba "Presenças" para histórico online
+    try {
+      console.log("🔄 Iniciando registro na aba Presenças...");
+
+      // Usar as funções utilitárias para garantir formatação consistente
+      const { data: dataFormatada, horario: horarioFormatado } =
+        obterDataHorarioAtual();
+
+      console.log("📅 Dados formatados:", {
+        nome: aluno.Nome,
+        data: dataFormatada,
+        horario: horarioFormatado,
+        curso: cursoAluno,
+        professor: currentUser.name,
+      });
+
+      const resultadoPresenca =
+        await onlineAttendanceManager.registrarPresencaOnline(
+          aluno.Nome,
+          dataFormatada,
+          horarioFormatado,
+          cursoAluno,
+          currentUser.name,
+          "P"
+        );
+
+      console.log("📊 Resultado presença online:", resultadoPresenca);
+
+      if (resultadoPresenca.success) {
+        const acaoTexto = resultadoPresenca.atualizado
+          ? "atualizada"
+          : "registrada";
+        console.log(`✅ Presença ${acaoTexto} também na aba Presenças`);
+      } else {
+        console.warn(
+          "⚠️ Falha ao registrar na aba Presenças:",
+          resultadoPresenca.error
+        );
+      }
+    } catch (presencaOnlineError) {
+      console.warn(
+        "⚠️ Erro ao registrar na aba Presenças (não crítico):",
+        presencaOnlineError
+      );
+      // Não interromper o fluxo principal por erro não crítico
+    }
+
     const acao = status === "P" ? "Presença" : "Falta";
     mostrarSucesso(
       `${acao} registrada com sucesso! Outros alunos marcados automaticamente como falta.`,
       "Registro Salvo"
+    );
+
+    // ✅ NOVO: Registrar no rastreador local (substitui o localStorage)
+    lastAttendanceTracker.recordAttendance(
+      selectedStudentId,
+      dataHoje,
+      status,
+      currentUser.name
     );
 
     // Atualizar a interface
@@ -2705,31 +3492,59 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
   const reprovadoPorFalta = situacao === "Reprovado" && faltasExibir > 15;
   const situacaoDisplay = reprovadoPorFalta ? "Reprovado por Falta" : situacao;
 
-  // Obter último registro de presença
-  const lastAttendance = lastAttendanceTracker.getLastAttendance(aluno.ID_Unico);
-  const lastAttendanceDisplay = lastAttendance 
-    ? `<div class="last-attendance">
-         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="attendance-icon">
-           <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
-           <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
-         </svg>
-         <div class="attendance-info">
-           <span class="attendance-label">Último registro:</span>
-           <span class="attendance-date">${lastAttendance.displayTime}</span>
-           <span class="attendance-status ${lastAttendance.status === 'P' ? 'presente' : 'ausente'}">
-             ${lastAttendance.status === 'P' ? '✅ Presente' : '❌ Ausente'}
-           </span>
-         </div>
-       </div>`
-    : `<div class="last-attendance no-record">
-         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="attendance-icon">
-           <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-           <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
-         </svg>
-         <div class="attendance-info">
-           <span class="attendance-label">Nenhum registro encontrado</span>
-         </div>
-       </div>`;
+  // Criar um placeholder para último registro que será preenchido assincronamente
+  const lastAttendanceId = `lastAttendance_${aluno.ID_Unico}`;
+
+  // Verificar cache primeiro
+  const cachedStatus = statusCache.getStatus(aluno.Nome);
+  if (cachedStatus && !statusCache.isExpired()) {
+    // Usar dados do cache imediatamente
+    setTimeout(() => {
+      atualizarCardImediatamente(aluno.ID_Unico, cachedStatus);
+    }, 10);
+  } else {
+    // Buscar último registro online de forma assíncrona apenas se não houver cache válido
+    setTimeout(async () => {
+      try {
+        const resultado =
+          await onlineAttendanceManager.buscarUltimoRegistroAluno(aluno.Nome);
+        const lastAttendanceElement = document.getElementById(lastAttendanceId);
+
+        if (lastAttendanceElement) {
+          if (resultado.success && resultado.registro) {
+            const registro = resultado.registro;
+
+            // Salvar no cache
+            statusCache.setStatus(aluno.Nome, registro);
+
+            // Atualizar card
+            atualizarCardImediatamente(aluno.ID_Unico, registro);
+          } else {
+            lastAttendanceElement.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="attendance-icon">
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+              <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
+            </svg>
+            <div class="attendance-info">
+              <span class="attendance-label">Nenhum registro encontrado</span>
+            </div>
+          `;
+            lastAttendanceElement.className = "last-attendance no-record";
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao buscar último registro:", error);
+      }
+    }, 100);
+  }
+
+  // HTML inicial com placeholder
+  const lastAttendanceDisplay = `<div id="${lastAttendanceId}" class="last-attendance loading">
+    <div class="loading-spinner-small"></div>
+    <div class="attendance-info">
+      <span class="attendance-label">Carregando último registro...</span>
+    </div>
+  </div>`;
 
   // Alerta para excesso de faltas
   const alertaFalta =
@@ -2827,7 +3642,9 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
     </div>
 
     <!-- Seção de Presença no Card -->
-    <div class="card-attendance-section" id="attendanceSection-${aluno.ID_Unico}">
+    <div class="card-attendance-section" id="attendanceSection-${
+      aluno.ID_Unico
+    }">
       <div class="attendance-toggle">
         <label class="attendance-checkbox-label">
           <input 
@@ -2843,14 +3660,16 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
         </label>
       </div>
       
-      <div class="attendance-controls hidden" id="attendanceControls-${aluno.ID_Unico}">
+      <div class="attendance-controls hidden" id="attendanceControls-${
+        aluno.ID_Unico
+      }">
         <div class="attendance-date-group">
           <label for="attendanceDate-${aluno.ID_Unico}">Data:</label>
           <input 
             type="date" 
             id="attendanceDate-${aluno.ID_Unico}" 
             class="attendance-date-input"
-            value="${new Date().toISOString().split('T')[0]}"
+            value="${getLocalDateString()}"
           />
         </div>
         
@@ -2869,18 +3688,19 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
             <input 
               type="radio" 
               name="status-${aluno.ID_Unico}" 
-              value="A"
+              value="F"
               ${currentUser.role === "admin" ? "disabled" : ""}
             />
             <span class="radio-text">❌ Ausente</span>
           </label>
         </div>
         
-        ${currentUser.role === "admin" ? 
-          `<div class="admin-readonly-notice">
+        ${
+          currentUser.role === "admin"
+            ? `<div class="admin-readonly-notice">
             <span>👁️ Visualização apenas</span>
-          </div>` :
-          `<button 
+          </div>`
+            : `<button 
             class="register-attendance-btn" 
             onclick="registrarPresencaCard('${aluno.ID_Unico}')"
           >
@@ -3411,7 +4231,7 @@ function preencherModalRegistro() {
   }
 
   if (dataPresencaInput) {
-    const hoje = new Date().toISOString().split("T")[0];
+    const hoje = getLocalDateString();
     dataPresencaInput.value = hoje;
   }
 }
@@ -3430,7 +4250,7 @@ async function submeterPresenca() {
     presenteRadio && presenteRadio.checked
       ? "P"
       : ausenteRadio && ausenteRadio.checked
-      ? "A"
+      ? "F"
       : "";
 
   if (!alunoId || !data || !status) {
@@ -3476,6 +4296,44 @@ async function submeterPresenca() {
     const dataObj = new Date(data + "T00:00:00");
     attendanceManager.markAttendance(alunoId, dataObj, status, true);
 
+    // ✅ NOVO: Registrar também na aba "Presenças" para qualquer status (P ou F)
+    try {
+      const dataFormatada = formatarDataBrasileira(data);
+      const horarioAtual = formatarHorarioBrasileiro(new Date());
+
+      const professorAtual = currentUser?.username || "Sistema";
+
+      console.log("📝 Registrando presença online na aba Presenças:", {
+        nome: aluno.Nome,
+        data: dataFormatada,
+        horario: horarioAtual,
+        curso: cursoAluno,
+        professor: professorAtual,
+        status: status,
+      });
+
+      // Registrar na aba Presenças
+      const resultadoRegistro =
+        await onlineAttendanceManager.registrarPresencaOnline(
+          aluno.Nome,
+          dataFormatada,
+          horarioAtual,
+          cursoAluno,
+          professorAtual,
+          status
+        );
+
+      const acaoTexto = resultadoRegistro.atualizado
+        ? "atualizada"
+        : "registrada";
+      console.log(`✅ Presença ${acaoTexto} na aba Presenças com sucesso!`);
+    } catch (error) {
+      console.warn(
+        "⚠️ Erro ao registrar na aba Presenças (continuando normalmente):",
+        error
+      );
+    }
+
     // ✅ OTIMIZAÇÃO: Salvar na planilha via API APENAS NO CURSO ESPECÍFICO
     const params = new URLSearchParams({
       action: "registrarPresencaAutomatica",
@@ -3508,11 +4366,15 @@ async function submeterPresenca() {
       `${acao} registrada com sucesso! Outros alunos marcados automaticamente como falta.`
     );
 
-    // Fechar modal após delay
+    // Atualizar interface imediatamente
+    cacheManager.clearAttendance();
+    attendanceManager.clearAllRecords(); // Limpar cache local de presença
+    await carregarTodosAlunos(true);
+
+    // Fechar modal após delay menor
     setTimeout(() => {
       fecharModalRegistro();
-      carregarTodosAlunos();
-    }, 2000);
+    }, 1500);
   } catch (error) {
     console.error("❌ Erro ao submeter presença:", error);
 
@@ -3536,6 +4398,52 @@ async function submeterPresenca() {
 }
 
 // === FUNÇÕES AUXILIARES ===
+
+// Função para obter data atual no formato YYYY-MM-DD respeitando o fuso horário local
+function getLocalDateString(date = null) {
+  const now = date || new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+// Função para buscar status de presença dos dados do servidor
+function getServerAttendanceStatus(student, targetDate) {
+  if (!student || typeof student !== "object") return null;
+
+  // Formatar data em diferentes formatos para buscar
+  const dateFormats = [
+    targetDate.toLocaleDateString("pt-BR"), // DD/MM/YYYY
+    targetDate.toISOString().split("T")[0], // YYYY-MM-DD
+    targetDate.getDate().toString().padStart(2, "0") +
+      "/" +
+      (targetDate.getMonth() + 1).toString().padStart(2, "0"), // DD/MM
+    targetDate.getDate().toString(), // D
+    `${targetDate.getDate()}/${
+      targetDate.getMonth() + 1
+    }/${targetDate.getFullYear()}`, // D/M/YYYY
+  ];
+
+  // Procurar em todas as propriedades do aluno
+  for (const [key, value] of Object.entries(student)) {
+    // Verificar se a chave contém algum formato de data
+    for (const dateFormat of dateFormats) {
+      if (key.includes(dateFormat)) {
+        const status = value && value.toString().trim().toUpperCase();
+        if (status && ["P", "F", "A"].includes(status)) {
+          console.log(
+            `📅 Status encontrado nos dados do servidor: ${key} = ${status}`
+          );
+          return status;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 function calcularMediaESituacao(aluno) {
   const nota1 = parseFloat(String(aluno.Nota1 || 0).replace(",", ".")) || 0;
   const nota2 = parseFloat(String(aluno.Nota2 || 0).replace(",", ".")) || 0;
@@ -3893,7 +4801,11 @@ function handleAttendanceChange(checkbox) {
   // Bloquear alterações para administradores
   if (currentUser.role === "admin") {
     checkbox.checked = false;
-    mostrarToast("Administradores não podem marcar presença", "error", "Acesso Negado");
+    mostrarToast(
+      "Administradores não podem marcar presença",
+      "error",
+      "Acesso Negado"
+    );
     return;
   }
 
@@ -3944,7 +4856,7 @@ function updateBatchControls() {
     // Definir data padrão como hoje
     const batchDate = domCache.get("batchDate");
     if (!batchDate.value) {
-      batchDate.value = new Date().toISOString().split("T")[0];
+      batchDate.value = getLocalDateString();
     }
   } else {
     batchControls.classList.add("hidden");
@@ -4143,10 +5055,28 @@ async function confirmBatchAttendance() {
       }
 
       if (totalProcessados > 0 && !isCancelled) {
+        // ✅ NOVO: Registrar também na aba "Presenças" para histórico online
+        try {
+          console.log("📝 Registrando lote na aba Presenças...");
+          await registrarLotePresencaOnline(registrosPorCurso, batchDate);
+        } catch (presencaOnlineError) {
+          console.warn(
+            "⚠️ Erro ao registrar lote na aba Presenças (não crítico):",
+            presencaOnlineError
+          );
+        }
+
         mostrarSucesso(
           `${totalProcessados} presenças registradas com sucesso! Processamento por curso.`,
           "Registro Concluído"
         );
+
+        // ✅ NOVO: Atualizar seção de últimos registros
+        setTimeout(() => {
+          if (document.getElementById("ultimosRegistros")) {
+            onlineAttendanceManager.exibirUltimosRegistros();
+          }
+        }, 1000);
       }
     } catch (error) {
       console.error("Erro no processamento por curso:", error);
@@ -4687,8 +5617,10 @@ function initializeBatchAttendance() {
 // === FUNÇÕES DE PRESENÇA NOS CARDS ===
 function handleCardAttendanceToggle(checkbox) {
   const studentId = checkbox.dataset.studentId;
-  const controlsDiv = document.getElementById(`attendanceControls-${studentId}`);
-  
+  const controlsDiv = document.getElementById(
+    `attendanceControls-${studentId}`
+  );
+
   if (checkbox.checked) {
     controlsDiv.classList.remove("hidden");
     // Animar a entrada dos controles
@@ -4701,15 +5633,23 @@ function handleCardAttendanceToggle(checkbox) {
 async function registrarPresencaCard(studentId) {
   // Bloquear registro para administradores
   if (currentUser.role === "admin") {
-    mostrarToast("Administradores não podem registrar presença", "error", "Acesso Negado");
+    mostrarToast(
+      "Administradores não podem registrar presença",
+      "error",
+      "Acesso Negado"
+    );
     return;
   }
 
   const checkbox = document.getElementById(`attendanceCheck-${studentId}`);
   const dateInput = document.getElementById(`attendanceDate-${studentId}`);
-  const statusRadios = document.querySelectorAll(`input[name="status-${studentId}"]:checked`);
-  const registerBtn = document.querySelector(`button[onclick="registrarPresencaCard('${studentId}')"]`);
-  
+  const statusRadios = document.querySelectorAll(
+    `input[name="status-${studentId}"]:checked`
+  );
+  const registerBtn = document.querySelector(
+    `button[onclick="registrarPresencaCard('${studentId}')"]`
+  );
+
   if (!checkbox || !dateInput || statusRadios.length === 0) {
     mostrarErro("Erro ao obter dados da presença", "Erro");
     return;
@@ -4719,7 +5659,7 @@ async function registrarPresencaCard(studentId) {
   const studentCourse = checkbox.dataset.studentCourse;
   const selectedDate = dateInput.value;
   const selectedStatus = statusRadios[0].value;
-  
+
   if (!selectedDate) {
     mostrarAviso("Por favor, selecione uma data", "Data Obrigatória");
     return;
@@ -4730,9 +5670,10 @@ async function registrarPresencaCard(studentId) {
 
   try {
     // Mostrar loading no botão
-    registerBtn.innerHTML = '<div class="loading-spinner-small"></div> Registrando...';
+    registerBtn.innerHTML =
+      '<div class="loading-spinner-small"></div> Registrando...';
     registerBtn.disabled = true;
-    
+
     // Mostrar overlay de carregamento
     mostrarLoadingOverlay(`Registrando presença de ${studentName}...`);
 
@@ -4746,7 +5687,7 @@ async function registrarPresencaCard(studentId) {
       data: selectedDate,
       status: selectedStatus,
       professor: currentUser.name,
-      curso: studentCourse
+      curso: studentCourse,
     };
 
     console.log("📝 Registrando presença via card:", registro);
@@ -4756,14 +5697,16 @@ async function registrarPresencaCard(studentId) {
     // Usar o mesmo sistema de processamento do sistema principal
     let success = false;
     let timeoutOccurred = false;
-    
+
     try {
       success = await smartProcessor.processWithCache(registro);
     } catch (timeoutError) {
       if (timeoutError.message && timeoutError.message.includes("Timeout")) {
         timeoutOccurred = true;
-        console.log("⚠️ Timeout detectado, mas presença pode ter sido registrada");
-        
+        console.log(
+          "⚠️ Timeout detectado, mas presença pode ter sido registrada"
+        );
+
         // Registrar o último acesso mesmo com timeout (provável sucesso)
         lastAttendanceTracker.recordAttendance(
           studentId,
@@ -4771,37 +5714,51 @@ async function registrarPresencaCard(studentId) {
           selectedStatus,
           currentUser.name
         );
-        
+
         // Mesmo com timeout, mostrar mensagem informativa
         mostrarAviso(
-          `A requisição demorou mais que o esperado, mas a presença pode ter sido registrada com sucesso.\n\nAluno: ${studentName}\nData: ${new Date(selectedDate).toLocaleDateString('pt-BR')}\nStatus: ${selectedStatus === "P" ? "Presente" : "Ausente"}\n\nVerifique o sistema para confirmar.`,
+          `A requisição demorou mais que o esperado, mas a presença pode ter sido registrada com sucesso.\n\nAluno: ${studentName}\nData: ${new Date(
+            selectedDate
+          ).toLocaleDateString("pt-BR")}\nStatus: ${
+            selectedStatus === "P"
+              ? "Presente"
+              : selectedStatus === "F"
+              ? "Falta"
+              : "Ausente"
+          }\n\nVerifique o sistema para confirmar.`,
           "Timeout - Verifique o Registro"
         );
-        
+
         // Resetar o formulário mesmo com timeout
         checkbox.checked = false;
-        document.getElementById(`attendanceControls-${studentId}`).classList.add("hidden");
-        
+        document
+          .getElementById(`attendanceControls-${studentId}`)
+          .classList.add("hidden");
+
         // Atualizar a exibição do card
         setTimeout(() => {
-          const cardElement = document.querySelector(`input[data-student-id="${studentId}"]`);
+          const cardElement = document.querySelector(
+            `input[data-student-id="${studentId}"]`
+          );
           if (cardElement) {
-            const studentCard = cardElement.closest('.student-card');
+            const studentCard = cardElement.closest(".student-card");
             if (studentCard) {
-              const alunoData = allStudentsRawData.find(a => a.ID_Unico === studentId);
+              const alunoData = allStudentsRawData.find(
+                (a) => a.ID_Unico === studentId
+              );
               if (alunoData) {
                 const calculado = calcularMediaESituacao(alunoData);
                 studentCard.innerHTML = createStudentCardHTML(
-                  alunoData, 
-                  calculado.media, 
-                  calculado.situacao, 
+                  alunoData,
+                  calculado.media,
+                  calculado.situacao,
                   calculado.faltas
                 );
               }
             }
           }
         }, 100);
-        
+
         return; // Sair da função sem lançar erro
       } else {
         throw timeoutError; // Re-lançar se não for timeout
@@ -4809,8 +5766,13 @@ async function registrarPresencaCard(studentId) {
     }
 
     if (success) {
-      const statusText = selectedStatus === "P" ? "Presente" : "Ausente";
-      
+      const statusText =
+        selectedStatus === "P"
+          ? "Presente"
+          : selectedStatus === "F"
+          ? "Falta"
+          : "Ausente";
+
       // Registrar o último acesso do aluno
       lastAttendanceTracker.recordAttendance(
         studentId,
@@ -4818,48 +5780,84 @@ async function registrarPresencaCard(studentId) {
         selectedStatus,
         currentUser.name
       );
-      
+
+      // ✅ NOVO: Registrar também na aba "Presenças" para qualquer status (P ou F)
+      try {
+        const dataFormatada = formatarDataBrasileira(selectedDate);
+        const horarioAtual = formatarHorarioBrasileiro(new Date());
+
+        console.log("📝 Registrando presença do card na aba Presenças:", {
+          nome: studentName,
+          data: dataFormatada,
+          horario: horarioAtual,
+          curso: studentCourse,
+          professor: currentUser.name,
+          status: selectedStatus,
+        });
+
+        // Registrar na aba Presenças
+        const resultadoRegistro =
+          await onlineAttendanceManager.registrarPresencaOnline(
+            studentName,
+            dataFormatada,
+            horarioAtual,
+            studentCourse,
+            currentUser.name,
+            selectedStatus
+          );
+
+        // ✅ OTIMIZAÇÃO: Atualizar cache e frontend imediatamente
+        const novoRegistro = {
+          data: dataFormatada,
+          horario: horarioAtual,
+          curso: studentCourse,
+          professor: currentUser.name,
+          status: selectedStatus,
+          displayTime: `${dataFormatada} às ${horarioAtual}`,
+          timestamp: Date.now(),
+        };
+
+        // Atualizar cache local
+        statusCache.setStatus(studentName, novoRegistro);
+
+        // Atualizar card imediatamente
+        atualizarCardImediatamente(studentId, novoRegistro);
+
+        const acaoTexto = resultadoRegistro.atualizado
+          ? "atualizada"
+          : "registrada";
+        console.log(
+          `✅ Presença do card ${acaoTexto} na aba Presenças com sucesso!`
+        );
+      } catch (error) {
+        console.warn(
+          "⚠️ Erro ao registrar presença do card na aba Presenças (continuando normalmente):",
+          error
+        );
+      }
+
       mostrarSucesso(
-        `Presença registrada com sucesso!\n\nAluno: ${studentName}\nData: ${new Date(selectedDate).toLocaleDateString('pt-BR')}\nStatus: ${statusText}`,
+        `Presença registrada com sucesso!\n\nAluno: ${studentName}\nData: ${new Date(
+          selectedDate
+        ).toLocaleDateString("pt-BR")}\nStatus: ${statusText}`,
         "Presença Registrada"
       );
 
       // Resetar o formulário
       checkbox.checked = false;
-      document.getElementById(`attendanceControls-${studentId}`).classList.add("hidden");
-      
-      // Atualizar cache se necessário
+      document
+        .getElementById(`attendanceControls-${studentId}`)
+        .classList.add("hidden");
+
+      // ✅ OTIMIZAÇÃO: Limpar apenas o cache específico, não recarregar tudo
       cacheManager.clearAttendance();
-      
-      // Atualizar a exibição do card para mostrar o novo último registro
-      setTimeout(() => {
-        // Re-renderizar apenas este card específico
-        const cardElement = document.querySelector(`input[data-student-id="${studentId}"]`);
-        if (cardElement) {
-          const studentCard = cardElement.closest('.student-card');
-          if (studentCard) {
-            // Encontrar o aluno nos dados
-            const alunoData = allStudentsRawData.find(a => a.ID_Unico === studentId);
-            if (alunoData) {
-              const calculado = calcularMediaESituacao(alunoData);
-              studentCard.innerHTML = createStudentCardHTML(
-                alunoData, 
-                calculado.media, 
-                calculado.situacao, 
-                calculado.faltas
-              );
-            }
-          }
-        }
-      }, 100);
-      
+      attendanceManager.clearAllRecords();
     } else {
       throw new Error("Falha ao registrar presença");
     }
-
   } catch (error) {
     console.error("❌ Erro ao registrar presença via card:", error);
-    
+
     mostrarErro(
       `Erro ao registrar presença: ${error.message || "Erro desconhecido"}`,
       "Erro no Registro"
@@ -4876,3 +5874,5 @@ async function registrarPresencaCard(studentId) {
 window.registrarPresencaCard = registrarPresencaCard;
 window.abrirControlePresencas = abrirControlePresencas;
 window.fecharControlePresencas = fecharControlePresencas;
+window.atualizarCardImediatamente = atualizarCardImediatamente;
+window.invalidarCacheSeNecessario = invalidarCacheSeNecessario;
