@@ -3306,6 +3306,278 @@ select.full-width-input option {
   margin: 1rem 0;
 }
 
+/* === ESTILOS PARA FLIP CARD === */
+.flip-card-container {
+  position: relative;
+  overflow: visible;
+}
+
+.flip-card-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 20;
+  background: var(--color-bg-primary);
+  border: 1px solid rgba(244, 196, 48, 0.3);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.flip-card-btn:hover {
+  background: var(--color-secondary);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(244, 196, 48, 0.3);
+}
+
+.flip-card-btn svg {
+  width: 18px;
+  height: 18px;
+  color: var(--color-secondary);
+  transition: color 0.3s ease;
+}
+
+.flip-card-btn:hover svg {
+  color: var(--color-primary);
+}
+
+.flip-card {
+  position: relative;
+  width: 100%;
+  min-height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s ease;
+}
+
+.flip-card.flipped {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+  position: relative;
+  width: 100%;
+  backface-visibility: hidden;
+  border-radius: var(--border-radius-lg);
+}
+
+.flip-card-back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  transform: rotateY(180deg);
+  background: var(--color-bg-card);
+  border: var(--border-subtle);
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  min-height: fit-content;
+  height: auto;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+/* Garantir que o student-card se ajuste quando flipado */
+.student-card:has(.flip-card.flipped) {
+  overflow: visible;
+  min-height: auto;
+  transition: min-height 0.4s ease-out;
+}
+
+.student-card {
+  transition: min-height 0.3s ease;
+}
+
+.flip-card.flipped ~ * {
+  display: none; /* Esconder outros conteúdos quando flipado */
+}
+
+.card-back-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: var(--border-subtle);
+}
+
+.card-back-header h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.card-back-subtitle {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.detailed-grades {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.grade-section {
+  background: rgba(244, 196, 48, 0.05);
+  border: 1px solid rgba(244, 196, 48, 0.15);
+  border-radius: var(--border-radius-md);
+  padding: 1rem;
+}
+
+.grade-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.grade-section-icon {
+  font-size: 1.1rem;
+}
+
+.grade-section-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.detailed-grade-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detailed-grade-label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.detailed-grade-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detailed-grade-value.empty {
+  color: var(--color-text-muted);
+  opacity: 0.6;
+}
+
+/* Estilos para seções de notas não disponíveis */
+.grade-section-unavailable {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius-sm);
+  padding: 1rem;
+  text-align: center;
+  margin: 0.5rem 0;
+}
+
+.unavailable-message {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.unavailable-note {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-disabled);
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.overall-average {
+  background: linear-gradient(
+    135deg,
+    rgba(244, 196, 48, 0.15),
+    rgba(244, 196, 48, 0.08)
+  );
+  border: 2px solid rgba(244, 196, 48, 0.3);
+  border-radius: var(--border-radius-md);
+  padding: 1rem;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.overall-average-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.overall-average-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.overall-average-value.empty {
+  color: var(--color-text-muted);
+  opacity: 0.6;
+}
+
+/* Responsividade para flip cards */
+@media (max-width: 768px) {
+  .flip-card-btn {
+    width: 32px;
+    height: 32px;
+    top: 8px;
+    right: 8px;
+  }
+
+  .flip-card-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .grade-section-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .detailed-grade-item {
+    padding: 0.4rem;
+  }
+
+  .detailed-grade-label {
+    font-size: 0.7rem;
+  }
+
+  .detailed-grade-value {
+    font-size: 0.9rem;
+  }
+
+  .overall-average-value {
+    font-size: 1.5rem;
+  }
+}
+
 /* === ESTILOS PARA ÚLTIMO REGISTRO DE PRESENÇA === */
 .last-attendance {
   display: flex;
@@ -3536,8 +3808,8 @@ select.full-width-input option {
 
 /* === ESTILOS PARA PRESENÇA NOS CARDS === */
 .card-attendance-section {
-  margin-top: 1rem;
-  padding-top: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
   border-top: 1px solid rgba(244, 196, 48, 0.2);
 }
 
@@ -5265,4 +5537,103 @@ button:disabled {
     align-items: flex-start;
     gap: var(--spacing-xs);
   }
+}
+
+/* === ESTILOS PARA EDIÇÃO DE NOTAS NO CARD === */
+
+/* Indicador de campo editável */
+.editable-indicator {
+  font-size: 0.7rem;
+  color: var(--color-secondary);
+  font-weight: 500;
+  margin-left: var(--spacing-xs);
+  opacity: 0.8;
+}
+
+/* Campo de entrada para notas editáveis */
+.editable-grade-input {
+  width: 50px;
+  padding: 4px 6px;
+  background: var(--color-bg-input);
+  border: 1px solid rgba(244, 196, 48, 0.3);
+  border-radius: 4px;
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.editable-grade-input:focus {
+  border-color: var(--color-secondary);
+  background: rgba(244, 196, 48, 0.1);
+  box-shadow: 0 0 0 2px rgba(244, 196, 48, 0.2);
+  transform: scale(1.05);
+}
+
+.editable-grade-input:hover {
+  border-color: rgba(244, 196, 48, 0.5);
+  background: rgba(244, 196, 48, 0.05);
+}
+
+.editable-grade-input.empty {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* Animação para campo sendo atualizado */
+.editable-grade-input.updating {
+  border-color: var(--color-success);
+  background: rgba(40, 167, 69, 0.1);
+  animation: pulseUpdate 1s ease-in-out infinite;
+}
+
+@keyframes pulseUpdate {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Ajustes para campos somente leitura quando não editável */
+.detailed-grade-value {
+  min-width: 50px;
+  text-align: center;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+}
+
+/* Estilo para seções não editáveis */
+.grade-section:not(.editable) .grade-section-title {
+  opacity: 0.8;
+}
+
+/* Responsividade para campos editáveis */
+@media (max-width: 768px) {
+  .editable-grade-input {
+    width: 45px;
+    font-size: 0.8rem;
+    padding: 3px 4px;
+  }
+
+  .editable-indicator {
+    font-size: 0.6rem;
+  }
+}
+
+/* Estados de validação */
+.editable-grade-input:invalid {
+  border-color: var(--color-error);
+  background: rgba(220, 53, 69, 0.1);
+}
+
+.editable-grade-input[data-changed="true"] {
+  border-color: var(--color-success);
+  background: rgba(40, 167, 69, 0.1);
 }

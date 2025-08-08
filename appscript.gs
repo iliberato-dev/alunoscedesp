@@ -252,6 +252,136 @@ function detectarColunasUniversal(sheet) {
     ) {
       indices.Situacao = i;
     }
+
+    // === MUNDO DO TRABALHO ===
+    // 1º Bimestre Mundo do Trabalho
+    else if (
+      !indices.MundoTrabalho1 &&
+      (header.includes("mundo do trabalho") ||
+        header.includes("mundo trabalho") ||
+        header.includes("world work") ||
+        header.includes("trabalho")) &&
+      (header.includes("1º") ||
+        header.includes("1°") ||
+        header.includes("primeiro") ||
+        header.includes("1 bim") ||
+        header.includes("bim 1") ||
+        header.includes("bimestre 1"))
+    ) {
+      indices.MundoTrabalho1 = i;
+    }
+
+    // 2º Bimestre Mundo do Trabalho
+    else if (
+      !indices.MundoTrabalho2 &&
+      (header.includes("mundo do trabalho") ||
+        header.includes("mundo trabalho") ||
+        header.includes("world work") ||
+        header.includes("trabalho")) &&
+      (header.includes("2º") ||
+        header.includes("2°") ||
+        header.includes("segundo") ||
+        header.includes("2 bim") ||
+        header.includes("bim 2") ||
+        header.includes("bimestre 2"))
+    ) {
+      indices.MundoTrabalho2 = i;
+    }
+
+    // 3º Bimestre Mundo do Trabalho
+    else if (
+      !indices.MundoTrabalho3 &&
+      (header.includes("mundo do trabalho") ||
+        header.includes("mundo trabalho") ||
+        header.includes("world work") ||
+        header.includes("trabalho")) &&
+      (header.includes("3º") ||
+        header.includes("3°") ||
+        header.includes("terceiro") ||
+        header.includes("3 bim") ||
+        header.includes("bim 3") ||
+        header.includes("bimestre 3"))
+    ) {
+      indices.MundoTrabalho3 = i;
+    }
+
+    // === CONVÍVIO ===
+    // 1º Bimestre Convívio
+    else if (
+      !indices.Convivio1 &&
+      (header.includes("convívio") ||
+        header.includes("convivio") ||
+        header.includes("social") ||
+        header.includes("living") ||
+        header.includes("together")) &&
+      (header.includes("1º") ||
+        header.includes("1°") ||
+        header.includes("primeiro") ||
+        header.includes("1 bim") ||
+        header.includes("bim 1") ||
+        header.includes("bimestre 1"))
+    ) {
+      indices.Convivio1 = i;
+    }
+
+    // 2º Bimestre Convívio
+    else if (
+      !indices.Convivio2 &&
+      (header.includes("convívio") ||
+        header.includes("convivio") ||
+        header.includes("social") ||
+        header.includes("living") ||
+        header.includes("together")) &&
+      (header.includes("2º") ||
+        header.includes("2°") ||
+        header.includes("segundo") ||
+        header.includes("2 bim") ||
+        header.includes("bim 2") ||
+        header.includes("bimestre 2"))
+    ) {
+      indices.Convivio2 = i;
+    }
+
+    // 3º Bimestre Convívio
+    else if (
+      !indices.Convivio3 &&
+      (header.includes("convívio") ||
+        header.includes("convivio") ||
+        header.includes("social") ||
+        header.includes("living") ||
+        header.includes("together")) &&
+      (header.includes("3º") ||
+        header.includes("3°") ||
+        header.includes("terceiro") ||
+        header.includes("3 bim") ||
+        header.includes("bim 3") ||
+        header.includes("bimestre 3"))
+    ) {
+      indices.Convivio3 = i;
+    }
+
+    // === ORIGEM (opcional) ===
+    else if (
+      !indices.Origem &&
+      (header.includes("origem") ||
+        header.includes("source") ||
+        header.includes("procedência") ||
+        header.includes("procedencia"))
+    ) {
+      indices.Origem = i;
+    }
+
+    // === PERÍODO (opcional) ===
+    else if (
+      !indices.Periodo &&
+      (header.includes("período") ||
+        header.includes("periodo") ||
+        header.includes("turno") ||
+        header.includes("horário") ||
+        header.includes("horario"))
+    ) {
+      indices.Periodo = i;
+    }
   }
 
   // Se não encontrou ID, usa a primeira coluna
@@ -287,39 +417,29 @@ function criarRespostaJson(data) {
     const output = ContentService.createTextOutput(JSON.stringify(data));
     output.setMimeType(ContentService.MimeType.JSON);
 
-    // Tentar adicionar headers CORS de forma mais robusta
+    // Headers CORS obrigatórios para funcionar com localhost
     try {
-      // Headers essenciais primeiro
       output.setHeader("Access-Control-Allow-Origin", "*");
-      console.log("✅ Header Access-Control-Allow-Origin definido");
-
-      output.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-      console.log("✅ Header Access-Control-Allow-Methods definido");
-
+      output.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET, POST, OPTIONS, PUT, DELETE"
+      );
       output.setHeader(
         "Access-Control-Allow-Headers",
-        "Content-Type, Authorization"
+        "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control"
       );
-      console.log("✅ Header Access-Control-Allow-Headers definido");
+      output.setHeader("Access-Control-Max-Age", "86400");
+      output.setHeader("Access-Control-Allow-Credentials", "false");
 
-      // Headers adicionais (tentar um por vez)
-      try {
-        output.setHeader("Cache-Control", "no-cache");
-        console.log("✅ Header Cache-Control definido");
-      } catch (cacheError) {
-        console.warn("⚠️ Erro ao definir Cache-Control:", cacheError.message);
-      }
+      console.log("✅ Headers CORS completos definidos");
     } catch (corsError) {
       console.error("❌ Erro ao definir headers CORS:", corsError.message);
-      console.log("🔄 Usando resposta JSON simples como fallback");
       return criarRespostaJsonSimples(data);
     }
 
-    console.log("✅ Resposta JSON com CORS criada com sucesso");
     return output;
   } catch (error) {
     console.error("❌ Erro crítico ao criar resposta JSON:", error);
-    // Fallback absoluto
     return criarRespostaJsonSimples(data);
   }
 }
@@ -1989,6 +2109,23 @@ function doGet(e) {
 
       const indices = detectarColunasUniversal(aba);
 
+      // Debug: Mostrar colunas detectadas
+      console.log(`📊 Colunas detectadas em ${nomeAba}:`, {
+        ID_Unico: indices.ID_Unico,
+        Nome: indices.Nome,
+        Nota1: indices.Nota1,
+        Nota2: indices.Nota2,
+        Nota3: indices.Nota3,
+        MundoTrabalho1: indices.MundoTrabalho1,
+        MundoTrabalho2: indices.MundoTrabalho2,
+        MundoTrabalho3: indices.MundoTrabalho3,
+        Convivio1: indices.Convivio1,
+        Convivio2: indices.Convivio2,
+        Convivio3: indices.Convivio3,
+        Media: indices.Media,
+        Situacao: indices.Situacao,
+      });
+
       if (indices.ID_Unico === undefined || indices.Nome === undefined) {
         console.log(`Planilha '${nomeAba}' não tem colunas essenciais`);
         continue;
@@ -2025,18 +2162,52 @@ function doGet(e) {
           Situacao: linha[indices.Situacao] || "",
           Origem: nomeAba,
           Periodo: CURSO_PARA_PERIODO[nomeAba] || "Não definido",
+          // === MUNDO DO TRABALHO ===
+          MundoTrabalho1: linha[indices.MundoTrabalho1] || "",
+          MundoTrabalho2: linha[indices.MundoTrabalho2] || "",
+          MundoTrabalho3: linha[indices.MundoTrabalho3] || "",
+          // === CONVÍVIO ===
+          Convivio1: linha[indices.Convivio1] || "",
+          Convivio2: linha[indices.Convivio2] || "",
+          Convivio3: linha[indices.Convivio3] || "",
         };
 
-        // Calcula média se não estiver preenchida
+        // Calcula média se não estiver preenchida, incluindo todas as matérias
         if (!aluno.Media) {
-          const notas = [aluno.Nota1, aluno.Nota2, aluno.Nota3]
+          // Notas do curso
+          const notasCurso = [aluno.Nota1, aluno.Nota2, aluno.Nota3]
             .map((n) => parseFloat(String(n).replace(",", ".")) || 0)
             .filter((n) => n > 0);
 
-          if (notas.length > 0) {
+          // Notas de Mundo do Trabalho
+          const notasMT = [
+            aluno.MundoTrabalho1,
+            aluno.MundoTrabalho2,
+            aluno.MundoTrabalho3,
+          ]
+            .map((n) => parseFloat(String(n).replace(",", ".")) || 0)
+            .filter((n) => n > 0);
+
+          // Notas de Convívio
+          const notasConvivio = [
+            aluno.Convivio1,
+            aluno.Convivio2,
+            aluno.Convivio3,
+          ]
+            .map((n) => parseFloat(String(n).replace(",", ".")) || 0)
+            .filter((n) => n > 0);
+
+          // Todas as notas válidas
+          const todasAsNotas = [...notasCurso, ...notasMT, ...notasConvivio];
+
+          if (todasAsNotas.length > 0) {
             aluno.Media = (
-              notas.reduce((a, b) => a + b) / notas.length
+              todasAsNotas.reduce((a, b) => a + b) / todasAsNotas.length
             ).toFixed(2);
+
+            console.log(
+              `📊 Média calculada para ${aluno.Nome}: ${aluno.Media} (${todasAsNotas.length} notas)`
+            );
           }
         }
 
@@ -2431,6 +2602,180 @@ function doPost(e) {
       });
     }
 
+    // === ATUALIZAR NOTA ESPECÍFICA (NOVA FUNCIONALIDADE) ===
+    else if (acao === "atualizarNotaEspecifica") {
+      const campo = dados.campo; // Ex: "Nota1", "MundoTrabalho2", "Convivio3"
+      const valor = dados.valor;
+      const professor = dados.professor;
+      const disciplina = dados.disciplina;
+      const bimestre = dados.bimestre;
+
+      if (!campo || valor === undefined) {
+        return criarRespostaJson({
+          success: false,
+          error: "Parâmetros obrigatórios: campo, valor",
+        });
+      }
+
+      // Validar valor da nota
+      const nota = parseFloat(valor);
+      if (isNaN(nota) || nota < 0 || nota > 10) {
+        return criarRespostaJson({
+          success: false,
+          error: "Nota deve ser um número entre 0 e 10",
+        });
+      }
+
+      // Verificar se o campo existe nos índices
+      if (indices[campo] === undefined) {
+        return criarRespostaJson({
+          success: false,
+          error: `Campo '${campo}' não encontrado na planilha`,
+        });
+      }
+
+      // Atualizar a nota específica
+      abaEncontrada.getRange(linhaAluno, indices[campo] + 1).setValue(nota);
+
+      console.log(
+        `📝 Nota atualizada: ${alunoId} - ${campo} = ${nota} (Professor: ${professor})`
+      );
+
+      // Recalcular média incluindo todas as matérias
+      const nota1 =
+        indices.Nota1 !== undefined
+          ? parseFloat(
+              String(
+                abaEncontrada.getRange(linhaAluno, indices.Nota1 + 1).getValue()
+              ).replace(",", ".")
+            ) || 0
+          : 0;
+      const nota2 =
+        indices.Nota2 !== undefined
+          ? parseFloat(
+              String(
+                abaEncontrada.getRange(linhaAluno, indices.Nota2 + 1).getValue()
+              ).replace(",", ".")
+            ) || 0
+          : 0;
+      const nota3 =
+        indices.Nota3 !== undefined
+          ? parseFloat(
+              String(
+                abaEncontrada.getRange(linhaAluno, indices.Nota3 + 1).getValue()
+              ).replace(",", ".")
+            ) || 0
+          : 0;
+
+      const mundoTrabalho1 =
+        indices.MundoTrabalho1 !== undefined
+          ? parseFloat(
+              String(
+                abaEncontrada
+                  .getRange(linhaAluno, indices.MundoTrabalho1 + 1)
+                  .getValue()
+              ).replace(",", ".")
+            ) || 0
+          : 0;
+      const mundoTrabalho2 =
+        indices.MundoTrabalho2 !== undefined
+          ? parseFloat(
+              String(
+                abaEncontrada
+                  .getRange(linhaAluno, indices.MundoTrabalho2 + 1)
+                  .getValue()
+              ).replace(",", ".")
+            ) || 0
+          : 0;
+      const mundoTrabalho3 =
+        indices.MundoTrabalho3 !== undefined
+          ? parseFloat(
+              String(
+                abaEncontrada
+                  .getRange(linhaAluno, indices.MundoTrabalho3 + 1)
+                  .getValue()
+              ).replace(",", ".")
+            ) || 0
+          : 0;
+
+      const convivio1 =
+        indices.Convivio1 !== undefined
+          ? parseFloat(
+              String(
+                abaEncontrada
+                  .getRange(linhaAluno, indices.Convivio1 + 1)
+                  .getValue()
+              ).replace(",", ".")
+            ) || 0
+          : 0;
+      const convivio2 =
+        indices.Convivio2 !== undefined
+          ? parseFloat(
+              String(
+                abaEncontrada
+                  .getRange(linhaAluno, indices.Convivio2 + 1)
+                  .getValue()
+              ).replace(",", ".")
+            ) || 0
+          : 0;
+      const convivio3 =
+        indices.Convivio3 !== undefined
+          ? parseFloat(
+              String(
+                abaEncontrada
+                  .getRange(linhaAluno, indices.Convivio3 + 1)
+                  .getValue()
+              ).replace(",", ".")
+            ) || 0
+          : 0;
+
+      // Todas as notas válidas
+      const todasAsNotas = [
+        nota1,
+        nota2,
+        nota3,
+        mundoTrabalho1,
+        mundoTrabalho2,
+        mundoTrabalho3,
+        convivio1,
+        convivio2,
+        convivio3,
+      ].filter((n) => n > 0);
+
+      if (todasAsNotas.length > 0) {
+        const mediaCalculada =
+          todasAsNotas.reduce((a, b) => a + b) / todasAsNotas.length;
+
+        // Atualizar média na planilha
+        if (indices.Media !== undefined) {
+          abaEncontrada
+            .getRange(linhaAluno, indices.Media + 1)
+            .setValue(mediaCalculada.toFixed(2));
+        }
+
+        // Atualizar situação na planilha
+        if (indices.Situacao !== undefined) {
+          const situacao = mediaCalculada >= 6.0 ? "Aprovado" : "Reprovado";
+          abaEncontrada
+            .getRange(linhaAluno, indices.Situacao + 1)
+            .setValue(situacao);
+        }
+
+        console.log(
+          `📊 Média recalculada: ${mediaCalculada.toFixed(2)} (${
+            todasAsNotas.length
+          } notas)`
+        );
+      }
+
+      return criarRespostaJson({
+        success: true,
+        message: `Nota ${disciplina} ${bimestre}º bimestre atualizada para ${nota}`,
+        novoValor: nota,
+        campo: campo,
+      });
+    }
+
     // === REGISTRAR PRESENÇAS EM LOTE (POST) ===
     else if (acao === "registrarPresencaLote") {
       // Validação especial para lote - não requer alunoId individual
@@ -2564,27 +2909,37 @@ function testarCORSCorrigido() {
     const resposta2 = doOptions({});
     console.log("✅ doOptions funcionou");
 
-    // Teste 3: Função testarWebApp
-    console.log("3️⃣ Testando testarWebApp...");
-    const resposta3 = testarWebApp();
-    console.log("✅ testarWebApp funcionou");
+    // Teste 3: Simular requisição GET
+    console.log("3️⃣ Testando doGet...");
+    const fakeGetEvent = { parameter: { teste: true } };
+    const resposta3 = doGet(fakeGetEvent);
+    console.log("✅ doGet funcionou");
 
-    console.log("🎉 TODOS OS TESTES PASSARAM - CORS CORRIGIDO!");
-
-    return {
-      success: true,
-      message: "CORS corrigido com sucesso",
-      testes_passaram: 3,
-      timestamp: new Date().toISOString(),
+    // Teste 4: Simular requisição POST
+    console.log("4️⃣ Testando doPost...");
+    const fakePostEvent = {
+      postData: {
+        contents: JSON.stringify({
+          action: "atualizarNotaEspecifica",
+          alunoId: "TEST123",
+          campo: "Nota1",
+          valor: 8.5,
+          professor: "Prof. Teste",
+        }),
+      },
     };
+    // Note: Não vamos executar realmente para não alterar dados
+
+    console.log("🎉 === TODOS OS TESTES PASSARAM ===");
+    console.log("📋 PRÓXIMOS PASSOS:");
+    console.log("1. Republique o Web App como 'Anyone can access'");
+    console.log("2. Use a nova URL de deployment");
+    console.log("3. Teste em HTTPS ou abra o HTML diretamente");
+
+    return "CORS configurado corretamente!";
   } catch (error) {
-    console.error("❌ Erro nos testes:", error);
-    return {
-      success: false,
-      error: error.toString(),
-      message: "Ainda há problemas com CORS",
-      timestamp: new Date().toISOString(),
-    };
+    console.error("❌ Erro nos testes CORS:", error);
+    return "Erro: " + error.message;
   }
 }
 

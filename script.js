@@ -49,6 +49,63 @@ class StatusCache {
 
 const statusCache = new StatusCache();
 
+// === SISTEMA DE PERMISSÕES DE EDIÇÃO DE NOTAS ===
+function getProfessorPermissions() {
+  if (!currentUser || currentUser.role !== "professor") {
+    return { canEdit: false, subjects: [] };
+  }
+
+  const permissions = { canEdit: true, subjects: [] };
+
+  // Determinar disciplinas que o professor pode editar baseado no nome
+  const userName = currentUser.name.toLowerCase();
+
+  if (userName.includes("convívio") || userName.includes("convivio")) {
+    permissions.subjects.push("convivio");
+  }
+
+  if (userName.includes("mundo") && userName.includes("trabalho")) {
+    permissions.subjects.push("mundoTrabalho");
+  }
+
+  // Se não for professor específico de disciplina, pode editar o curso
+  if (permissions.subjects.length === 0) {
+    permissions.subjects.push("curso");
+  }
+
+  console.log("👨‍🏫 Permissões do professor:", permissions);
+  return permissions;
+}
+
+// === FUNÇÃO PARA RENDERIZAR CAMPO DE NOTA (EDITÁVEL OU READONLY) ===
+function renderGradeField(studentId, subject, bimester, currentValue, canEdit) {
+  const fieldId = `grade-${studentId}-${subject}-${bimester}`;
+  const isEmpty = !currentValue || currentValue === "-" || currentValue === "";
+
+  if (canEdit) {
+    return `
+      <input 
+        type="number" 
+        id="${fieldId}"
+        class="editable-grade-input ${isEmpty ? "empty" : ""}" 
+        value="${isEmpty ? "" : currentValue}"
+        min="0" 
+        max="10" 
+        step="0.1"
+        placeholder="0.0"
+        onchange="updateGrade('${studentId}', '${subject}', '${bimester}', this.value)"
+        onblur="updateGrade('${studentId}', '${subject}', '${bimester}', this.value)"
+      />
+    `;
+  } else {
+    return `
+      <span class="detailed-grade-value ${isEmpty ? "empty" : ""}">${
+      isEmpty ? "-" : currentValue
+    }</span>
+    `;
+  }
+}
+
 // Limpeza automática do cache a cada 2 minutos
 setInterval(() => {
   invalidarCacheSeNecessario();
@@ -3714,6 +3771,35 @@ function exibirResultadosComoCards(alunos) {
   studentsGrid.appendChild(fragment);
 }
 
+// Função auxiliar para buscar coluna por padrões
+function buscarColuna(aluno, padroes) {
+  // PRIORIDADE 1: Buscar nos campos diretos que vêm do App Script
+  for (const padrao of padroes) {
+    if (
+      aluno[padrao] !== undefined &&
+      aluno[padrao] !== null &&
+      aluno[padrao] !== ""
+    ) {
+      return aluno[padrao];
+    }
+  }
+
+  // PRIORIDADE 2: Buscar nas propriedades case-insensitive
+  const alunoKeys = Object.keys(aluno);
+  for (const padrao of padroes) {
+    for (const key of alunoKeys) {
+      if (key.toLowerCase().includes(padrao.toLowerCase())) {
+        const valor = aluno[key];
+        if (valor !== undefined && valor !== null && valor !== "") {
+          return valor;
+        }
+      }
+    }
+  }
+
+  return "-";
+}
+
 function createStudentCardHTML(aluno, media, situacao, faltas = null) {
   const iniciais = aluno.Nome.split(" ")
     .map((n) => n[0])
@@ -3725,6 +3811,11 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
   const nota2 = aluno.Nota2 || "";
   const nota3 = aluno.Nota3 || "";
   const faltasExibir = faltas !== null ? faltas : aluno.Faltas || 0;
+
+  // Usar a média da tabela diretamente
+  const mediaTabela = aluno.Media || media || 0;
+  const mediaExibir =
+    typeof mediaTabela === "number" ? mediaTabela.toFixed(1) : mediaTabela;
 
   // Verificar se é reprovado por falta
   const reprovadoPorFalta = situacao === "Reprovado" && faltasExibir > 15;
@@ -3793,161 +3884,481 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
     </div>`
       : "";
 
+  // Calcular notas por matéria usando dados reais da tabela
+  const notasCurso = {
+    bim1: aluno.Nota1 || "-",
+    bim2: aluno.Nota2 || "-",
+    bim3: aluno.Nota3 || "-",
+  };
+
+  // Padrões para buscar colunas de Mundo do Trabalho
+  const padroesMT1 = [
+    "MundoTrabalho1", // Campo direto do App Script
+    "MundoTrabalho_1Bim",
+    "Mundo do Trabalho - 1º Bim",
+    "MundoTrabalho1Bim",
+    "Mundo_Trabalho_1Bim",
+    "MT_1Bim",
+    "MT1",
+    "Mundo Trabalho 1",
+    "MT 1º Bim",
+  ];
+  const padroesMT2 = [
+    "MundoTrabalho2", // Campo direto do App Script
+    "MundoTrabalho_2Bim",
+    "Mundo do Trabalho - 2º Bim",
+    "MundoTrabalho2Bim",
+    "Mundo_Trabalho_2Bim",
+    "MT_2Bim",
+    "MT2",
+    "Mundo Trabalho 2",
+    "MT 2º Bim",
+  ];
+  const padroesMT3 = [
+    "MundoTrabalho3", // Campo direto do App Script
+    "MundoTrabalho_3Bim",
+    "Mundo do Trabalho - 3º Bim",
+    "MundoTrabalho3Bim",
+    "Mundo_Trabalho_3Bim",
+    "MT_3Bim",
+    "MT3",
+    "Mundo Trabalho 3",
+    "MT 3º Bim",
+  ];
+
+  // Padrões para buscar colunas de Convívio
+  const padroesConv1 = [
+    "Convivio1", // Campo direto do App Script
+    "Convivio_1Bim",
+    "Convívio - 1º Bim",
+    "Convivio1Bim",
+    "Conv_1Bim",
+    "Conv1",
+    "Convivio 1",
+    "Convívio 1º Bim",
+  ];
+  const padroesConv2 = [
+    "Convivio2", // Campo direto do App Script
+    "Convivio_2Bim",
+    "Convívio - 2º Bim",
+    "Convivio2Bim",
+    "Conv_2Bim",
+    "Conv2",
+    "Convivio 2",
+    "Convívio 2º Bim",
+  ];
+  const padroesConv3 = [
+    "Convivio3", // Campo direto do App Script
+    "Convivio_3Bim",
+    "Convívio - 3º Bim",
+    "Convivio3Bim",
+    "Conv_3Bim",
+    "Conv3",
+    "Convivio 3",
+    "Convívio 3º Bim",
+  ];
+
+  const notasMundoTrabalho = {
+    bim1: buscarColuna(aluno, padroesMT1),
+    bim2: buscarColuna(aluno, padroesMT2),
+    bim3: buscarColuna(aluno, padroesMT3),
+  };
+
+  const notasConvivio = {
+    bim1: buscarColuna(aluno, padroesConv1),
+    bim2: buscarColuna(aluno, padroesConv2),
+    bim3: buscarColuna(aluno, padroesConv3),
+  };
+
+  // Usar a média da tabela em vez de calcular
+  const mediaGeral = mediaExibir;
+
+  // Log temporário para verificar se as colunas estão sendo detectadas
+  if (aluno.Nome === "ARTHUR MATIAS DA SILVA") {
+    console.log("🔍 Teste de detecção de colunas:", {
+      todasColunas: Object.keys(aluno),
+      valoresAluno: aluno,
+      mundoTrabalho: {
+        bim1: notasMundoTrabalho.bim1,
+        bim2: notasMundoTrabalho.bim2,
+        bim3: notasMundoTrabalho.bim3,
+      },
+      convivio: {
+        bim1: notasConvivio.bim1,
+        bim2: notasConvivio.bim2,
+        bim3: notasConvivio.bim3,
+      },
+    });
+  }
+
   return `
-    <div class="card-header">
-      <div class="student-avatar">${iniciais}</div>
-      <div class="student-info">
-        <h3>${aluno.Nome}</h3>
-        <div class="student-meta">
-          <div class="meta-item">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
-            </svg>
-            ID: ${aluno.ID_Unico}
+    <div class="flip-card-container">
+      <!-- Botão de Flip -->
+      <button class="flip-card-btn" onclick="toggleCardFlip('${
+        aluno.ID_Unico
+      }')" title="Ver notas detalhadas">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3zm0 3v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6H2zm3 2h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
+        </svg>
+      </button>
+
+      <div class="flip-card" id="flipCard-${aluno.ID_Unico}">
+        <!-- FRENTE DO CARD -->
+        <div class="flip-card-front">
+          <div class="card-header">
+            <div class="student-avatar">${iniciais}</div>
+            <div class="student-info">
+              <h3>${aluno.Nome}</h3>
+              <div class="student-meta">
+                <div class="meta-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                  </svg>
+                  ID: ${aluno.ID_Unico}
+                </div>
+                <div class="meta-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3zm0 3v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6H2zm3 2h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
+                  </svg>
+                  ${aluno.Origem} - ${aluno.Periodo}
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="meta-item">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3zm0 3v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6H2zm3 2h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
-            </svg>
-            ${aluno.Origem} - ${aluno.Periodo}
-          </div>
-        </div>
-      </div>
-    </div>
 
-    ${alertaFalta}
-    
-    ${lastAttendanceDisplay}
+          ${alertaFalta}
+          
+          ${lastAttendanceDisplay}
 
-    <div class="card-grades">
-      <div class="grades-grid">
-        <div class="grade-item">
-          <div class="grade-label">1º Bim</div>
-          <div class="grade-value ${!nota1 ? "empty" : ""}">${
-    nota1 || "-"
-  }</div>
-        </div>
-        <div class="grade-item">
-          <div class="grade-label">2º Bim</div>
-          <div class="grade-value ${!nota2 ? "empty" : ""}">${
-    nota2 || "-"
-  }</div>
-        </div>
-        <div class="grade-item">
-          <div class="grade-label">3º Bim</div>
-          <div class="grade-value ${!nota3 ? "empty" : ""}">${
-    nota3 || "-"
-  }</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card-performance">
-      <div class="performance-item">
-        <div class="performance-label">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M4 2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2zm2-1a1 1 0 0 0-1 1v12h6V2a1 1 0 0 0-1-1H6z"/>
-            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-          </svg>
-          Média
-        </div>
-        <div class="performance-value media">${
-          typeof media === "number" ? media.toFixed(1) : media || "-"
-        }</div>
-      </div>
-      <div class="performance-item">
-        <div class="performance-label">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-          </svg>
-          Faltas ${faltasExibir > 15 ? "⚠️" : ""}
-        </div>
-        <div class="performance-value faltas ${
-          faltasExibir > 15 ? "excesso" : ""
-        }">${faltasExibir}</div>
-      </div>
-    </div>
-
-    <div style="text-align: center; margin: 1rem 0;">
-      <div class="situation-badge ${situacaoDisplay
-        .toLowerCase()
-        .replace(/\s/g, "-")} ${
+          <div style="text-align: center; margin: 1.5rem 0;">
+            <div class="situation-badge ${situacaoDisplay
+              .toLowerCase()
+              .replace(/\s/g, "-")} ${
     reprovadoPorFalta ? "reprovado-por-falta" : ""
   }">
-        ${getSituationIcon(situacao)}
-        ${situacaoDisplay}
-      </div>
-    </div>
+              ${getSituationIcon(situacao)}
+              ${situacaoDisplay}
+            </div>
+          </div>
 
-    <!-- Seção de Presença no Card -->
-    <div class="card-attendance-section" id="attendanceSection-${
-      aluno.ID_Unico
-    }">
-      <div class="attendance-toggle">
-        <label class="attendance-checkbox-label">
-          <input 
-            type="checkbox" 
-            class="attendance-checkbox" 
-            id="attendanceCheck-${aluno.ID_Unico}"
-            data-student-id="${aluno.ID_Unico}"
-            data-student-name="${aluno.Nome}"
-            data-student-course="${aluno.Origem}"
-          />
-          <span class="checkmark"></span>
-          <span class="checkbox-text">Registrar Presença</span>
-        </label>
-      </div>
-      
-      <div class="attendance-controls hidden" id="attendanceControls-${
-        aluno.ID_Unico
-      }">
-        <div class="attendance-date-group">
-          <label for="attendanceDate-${aluno.ID_Unico}">Data:</label>
-          <input 
-            type="date" 
-            id="attendanceDate-${aluno.ID_Unico}" 
-            class="attendance-date-input"
-            value="${getLocalDateString()}"
-          />
+          <div class="card-performance">
+            <div class="performance-item">
+              <div class="performance-label">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M4 2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2zm2-1a1 1 0 0 0-1 1v12h6V2a1 1 0 0 0-1-1H6z"/>
+                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                </svg>
+                Média
+              </div>
+              <div class="performance-value media">${mediaExibir || "-"}</div>
+            </div>
+            <div class="performance-item">
+              <div class="performance-label">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                </svg>
+                Faltas ${faltasExibir > 15 ? "⚠️" : ""}
+              </div>
+              <div class="performance-value faltas ${
+                faltasExibir > 15 ? "excesso" : ""
+              }">${faltasExibir}</div>
+            </div>
+          </div>
+
+          <!-- Seção de Presença no Card -->
+          <div class="card-attendance-section" id="attendanceSection-${
+            aluno.ID_Unico
+          }">
+            <div class="attendance-toggle">
+              <label class="attendance-checkbox-label">
+                <input 
+                  type="checkbox" 
+                  class="attendance-checkbox" 
+                  id="attendanceCheck-${aluno.ID_Unico}"
+                  data-student-id="${aluno.ID_Unico}"
+                  data-student-name="${aluno.Nome}"
+                  data-student-course="${aluno.Origem}"
+                />
+                <span class="checkmark"></span>
+                <span class="checkbox-text">Registrar Presença</span>
+              </label>
+            </div>
+            
+            <div class="attendance-controls hidden" id="attendanceControls-${
+              aluno.ID_Unico
+            }">
+              <div class="attendance-date-group">
+                <label for="attendanceDate-${aluno.ID_Unico}">Data:</label>
+                <input 
+                  type="date" 
+                  id="attendanceDate-${aluno.ID_Unico}" 
+                  class="attendance-date-input"
+                  value="${getLocalDateString()}"
+                />
+              </div>
+              
+              <div class="attendance-status-group">
+                <label class="status-radio">
+                  <input 
+                    type="radio" 
+                    name="status-${aluno.ID_Unico}" 
+                    value="P" 
+                    checked
+                    ${currentUser.role === "admin" ? "disabled" : ""}
+                  />
+                  <span class="radio-text">✅ Presente</span>
+                </label>
+                <label class="status-radio">
+                  <input 
+                    type="radio" 
+                    name="status-${aluno.ID_Unico}" 
+                    value="F"
+                    ${currentUser.role === "admin" ? "disabled" : ""}
+                  />
+                  <span class="radio-text">❌ Ausente</span>
+                </label>
+              </div>
+              
+              ${
+                currentUser.role === "admin"
+                  ? `<div class="admin-readonly-notice">
+                <span>👁️ Visualização apenas</span>
+              </div>`
+                  : `<button 
+                class="register-attendance-btn" 
+                onclick="registrarPresencaCard('${aluno.ID_Unico}')"
+              >
+                📝 Registrar
+              </button>`
+              }
+            </div>
+          </div>
         </div>
-        
-        <div class="attendance-status-group">
-          <label class="status-radio">
-            <input 
-              type="radio" 
-              name="status-${aluno.ID_Unico}" 
-              value="P" 
-              checked
-              ${currentUser.role === "admin" ? "disabled" : ""}
-            />
-            <span class="radio-text">✅ Presente</span>
-          </label>
-          <label class="status-radio">
-            <input 
-              type="radio" 
-              name="status-${aluno.ID_Unico}" 
-              value="F"
-              ${currentUser.role === "admin" ? "disabled" : ""}
-            />
-            <span class="radio-text">❌ Ausente</span>
-          </label>
+
+        <!-- VERSO DO CARD - NOTAS DETALHADAS -->
+        <div class="flip-card-back">
+          <div class="card-back-header">
+            <h3>${aluno.Nome}</h3>
+            <span class="card-back-subtitle">Notas Detalhadas por Matéria</span>
+          </div>
+
+          <div class="detailed-grades">
+            <!-- Curso Principal -->
+            <div class="grade-section">
+              <div class="grade-section-title">
+                <span class="grade-section-icon">📚</span>
+                ${aluno.Origem}
+                ${
+                  getProfessorPermissions().subjects.includes("curso")
+                    ? '<span class="editable-indicator">✏️ Editável</span>'
+                    : ""
+                }
+              </div>
+              <div class="grade-section-grid">
+                <div class="detailed-grade-item">
+                  <span class="detailed-grade-label">1º Bim</span>
+                  ${renderGradeField(
+                    aluno.ID_Unico,
+                    "curso",
+                    "1",
+                    notasCurso.bim1,
+                    getProfessorPermissions().subjects.includes("curso")
+                  )}
+                </div>
+                <div class="detailed-grade-item">
+                  <span class="detailed-grade-label">2º Bim</span>
+                  ${renderGradeField(
+                    aluno.ID_Unico,
+                    "curso",
+                    "2",
+                    notasCurso.bim2,
+                    getProfessorPermissions().subjects.includes("curso")
+                  )}
+                </div>
+                <div class="detailed-grade-item">
+                  <span class="detailed-grade-label">3º Bim</span>
+                  ${renderGradeField(
+                    aluno.ID_Unico,
+                    "curso",
+                    "3",
+                    notasCurso.bim3,
+                    getProfessorPermissions().subjects.includes("curso")
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <!-- Mundo do Trabalho -->
+            <div class="grade-section">
+              <div class="grade-section-title">
+                <span class="grade-section-icon">🌍</span>
+                Mundo do Trabalho
+                ${
+                  getProfessorPermissions().subjects.includes("mundoTrabalho")
+                    ? '<span class="editable-indicator">✏️ Editável</span>'
+                    : ""
+                }
+              </div>
+              ${
+                notasMundoTrabalho.bim1 === "-" &&
+                notasMundoTrabalho.bim2 === "-" &&
+                notasMundoTrabalho.bim3 === "-" &&
+                !getProfessorPermissions().subjects.includes("mundoTrabalho")
+                  ? `<div class="grade-section-unavailable">
+                  <span class="unavailable-message">📋 Dados não disponíveis na tabela atual</span>
+                  <span class="unavailable-note">Para incluir essas notas, adicione as colunas correspondentes na planilha</span>
+                </div>`
+                  : `<div class="grade-section-grid">
+                  <div class="detailed-grade-item">
+                    <span class="detailed-grade-label">1º Bim</span>
+                    ${renderGradeField(
+                      aluno.ID_Unico,
+                      "mundoTrabalho",
+                      "1",
+                      notasMundoTrabalho.bim1,
+                      getProfessorPermissions().subjects.includes(
+                        "mundoTrabalho"
+                      )
+                    )}
+                  </div>
+                  <div class="detailed-grade-item">
+                    <span class="detailed-grade-label">2º Bim</span>
+                    ${renderGradeField(
+                      aluno.ID_Unico,
+                      "mundoTrabalho",
+                      "2",
+                      notasMundoTrabalho.bim2,
+                      getProfessorPermissions().subjects.includes(
+                        "mundoTrabalho"
+                      )
+                    )}
+                  </div>
+                  <div class="detailed-grade-item">
+                    <span class="detailed-grade-label">3º Bim</span>
+                    ${renderGradeField(
+                      aluno.ID_Unico,
+                      "mundoTrabalho",
+                      "3",
+                      notasMundoTrabalho.bim3,
+                      getProfessorPermissions().subjects.includes(
+                        "mundoTrabalho"
+                      )
+                    )}
+                  </div>
+                </div>`
+              }
+            </div>
+
+            <!-- Convívio -->
+            <div class="grade-section">
+              <div class="grade-section-title">
+                <span class="grade-section-icon">🤝</span>
+                Convívio
+                ${
+                  getProfessorPermissions().subjects.includes("convivio")
+                    ? '<span class="editable-indicator">✏️ Editável</span>'
+                    : ""
+                }
+              </div>
+              ${
+                notasConvivio.bim1 === "-" &&
+                notasConvivio.bim2 === "-" &&
+                notasConvivio.bim3 === "-" &&
+                !getProfessorPermissions().subjects.includes("convivio")
+                  ? `<div class="grade-section-unavailable">
+                  <span class="unavailable-message">📋 Dados não disponíveis na tabela atual</span>
+                  <span class="unavailable-note">Para incluir essas notas, adicione as colunas correspondentes na planilha</span>
+                </div>`
+                  : `<div class="grade-section-grid">
+                  <div class="detailed-grade-item">
+                    <span class="detailed-grade-label">1º Bim</span>
+                    ${renderGradeField(
+                      aluno.ID_Unico,
+                      "convivio",
+                      "1",
+                      notasConvivio.bim1,
+                      getProfessorPermissions().subjects.includes("convivio")
+                    )}
+                  </div>
+                  <div class="detailed-grade-item">
+                    <span class="detailed-grade-label">2º Bim</span>
+                    ${renderGradeField(
+                      aluno.ID_Unico,
+                      "convivio",
+                      "2",
+                      notasConvivio.bim2,
+                      getProfessorPermissions().subjects.includes("convivio")
+                    )}
+                  </div>
+                  <div class="detailed-grade-item">
+                    <span class="detailed-grade-label">3º Bim</span>
+                    ${renderGradeField(
+                      aluno.ID_Unico,
+                      "convivio",
+                      "3",
+                      notasConvivio.bim3,
+                      getProfessorPermissions().subjects.includes("convivio")
+                    )}
+                  </div>
+                </div>`
+              }
+            </div>
+
+            <!-- Média Geral -->
+            <div class="overall-average">
+              <div class="overall-average-label">Média Geral do Curso</div>
+              <div class="overall-average-value ${
+                mediaGeral === "-" ? "empty" : ""
+              }">${mediaGeral}</div>
+            </div>
+          </div>
         </div>
-        
-        ${
-          currentUser.role === "admin"
-            ? `<div class="admin-readonly-notice">
-            <span>👁️ Visualização apenas</span>
-          </div>`
-            : `<button 
-            class="register-attendance-btn" 
-            onclick="registrarPresencaCard('${aluno.ID_Unico}')"
-          >
-            📝 Registrar
-          </button>`
-        }
       </div>
     </div>
   `;
+}
+
+// Função para alternar flip do card
+function toggleCardFlip(studentId) {
+  const flipCard = document.getElementById(`flipCard-${studentId}`);
+  const container = flipCard?.closest(".student-card");
+
+  if (flipCard && container) {
+    const isFlipping = !flipCard.classList.contains("flipped");
+
+    if (isFlipping) {
+      // Virar para o verso - ajustar altura
+      flipCard.classList.add("flipped");
+
+      // Aguardar um pouco para que o DOM se atualize e medir a altura real
+      setTimeout(() => {
+        const backCard = flipCard.querySelector(".flip-card-back");
+        if (backCard) {
+          // Forçar reflow para obter altura real
+          backCard.style.position = "relative";
+          const backHeight = backCard.offsetHeight;
+          backCard.style.position = "absolute";
+
+          // Aplicar altura mínima com margem de segurança
+          container.style.minHeight = `${backHeight + 40}px`;
+          container.style.transition = "min-height 0.4s ease-out";
+
+          // Garantir que o container seja visível
+          container.style.overflow = "visible";
+        }
+      }, 100);
+    } else {
+      // Virar para a frente - restaurar altura original
+      flipCard.classList.remove("flipped");
+
+      setTimeout(() => {
+        // Restaurar altura automática
+        container.style.minHeight = "";
+        container.style.transition = "";
+        container.style.overflow = "";
+      }, 350); // Aguardar animação completa
+    }
+  }
 }
 
 function getSituationIcon(situacao) {
@@ -4178,8 +4589,195 @@ function selectAutocompleteItem(index) {
   buscarAlunos(); // Executar busca automaticamente
 }
 
+// === FUNÇÃO PARA ATUALIZAR NOTA DIRETAMENTE NO CARD ===
+async function updateGrade(studentId, subject, bimester, newValue) {
+  try {
+    // Validação de permissão
+    const permissions = getProfessorPermissions();
+    if (!permissions.canEdit || !permissions.subjects.includes(subject)) {
+      mostrarErroCard(
+        studentId,
+        "Você não tem permissão para editar esta disciplina",
+        "Acesso Negado"
+      );
+      return;
+    }
+
+    // Validação do valor
+    const grade = parseFloat(newValue);
+    if (isNaN(grade) || grade < 0 || grade > 10) {
+      mostrarErroCard(
+        studentId,
+        "Nota deve ser entre 0 e 10",
+        "Valor Inválido"
+      );
+      return;
+    }
+
+    // Mostrar loading no card
+    mostrarLoadingCard(
+      studentId,
+      `Atualizando nota ${subject} ${bimester}º bim...`
+    );
+
+    // Determinar qual campo da planilha atualizar
+    let campo;
+    switch (subject) {
+      case "curso":
+        campo = `Nota${bimester}`;
+        break;
+      case "mundoTrabalho":
+        campo = `MundoTrabalho${bimester}`;
+        break;
+      case "convivio":
+        campo = `Convivio${bimester}`;
+        break;
+      default:
+        throw new Error("Disciplina não reconhecida");
+    }
+
+    // Preparar dados para envio
+    const dadosAtualizacao = {
+      action: "atualizarNotaEspecifica",
+      alunoId: studentId,
+      campo: campo,
+      valor: grade,
+      professor: currentUser.name,
+      disciplina: subject,
+      bimestre: bimester,
+    };
+
+    console.log("📝 Enviando atualização de nota:", dadosAtualizacao);
+
+    // Enviar para o App Script
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(dadosAtualizacao),
+    });
+
+    const resultado = await response.json();
+
+    if (resultado.success) {
+      mostrarSucessoCard(
+        studentId,
+        `Nota ${subject} ${bimester}º bim atualizada para ${grade}`,
+        "Nota Atualizada"
+      );
+
+      // Atualizar a média exibida no card
+      setTimeout(() => {
+        atualizarMediaNoCard(studentId);
+      }, 1000);
+    } else {
+      throw new Error(resultado.error || "Erro desconhecido");
+    }
+  } catch (error) {
+    console.error("Erro ao atualizar nota:", error);
+    mostrarErroCard(
+      studentId,
+      `Erro: ${error.message}`,
+      "Falha na Atualização"
+    );
+  } finally {
+    removerLoadingCard(studentId);
+  }
+}
+
+// === FUNÇÃO PARA ATUALIZAR A MÉDIA NO CARD APÓS MUDANÇA DE NOTA ===
+async function atualizarMediaNoCard(studentId) {
+  try {
+    // Buscar dados atualizados do aluno
+    const response = await fetch(
+      `${API_URL}?nomeAluno=${encodeURIComponent(studentId)}`
+    );
+    const data = await response.json();
+
+    if (data.saida && data.saida.length > 0) {
+      const alunoAtualizado = data.saida.find((a) => a.ID_Unico === studentId);
+      if (alunoAtualizado) {
+        // Recalcular média
+        const calculado = calcularMediaESituacao(alunoAtualizado);
+
+        // Atualizar elementos da média no card
+        const mediaElement = document.querySelector(
+          `[data-student-id="${studentId}"] .media-value`
+        );
+        const situacaoElement = document.querySelector(
+          `[data-student-id="${studentId}"] .situacao`
+        );
+
+        if (mediaElement) {
+          mediaElement.textContent = calculado.media;
+        }
+
+        if (situacaoElement) {
+          situacaoElement.textContent = calculado.situacao;
+          situacaoElement.className = `situacao ${obterClasseSituacao(
+            calculado.situacao
+          )}`;
+        }
+
+        console.log(
+          `✅ Média atualizada no card ${studentId}: ${calculado.media}`
+        );
+      }
+    }
+  } catch (error) {
+    console.error("Erro ao atualizar média no card:", error);
+  }
+}
+
 // Tornar a função global para onClick
 window.selectAutocompleteItem = selectAutocompleteItem;
+window.updateGrade = updateGrade;
+
+// === FUNÇÃO DE TESTE CORS ===
+async function testarCORS() {
+  console.log("🧪 Testando conectividade CORS...");
+
+  try {
+    // Teste 1: Requisição GET simples
+    console.log("1️⃣ Testando GET...");
+    const responseGet = await fetch(`${API_URL}?teste=1`);
+    const dataGet = await responseGet.json();
+    console.log("✅ GET funcionou:", dataGet);
+
+    // Teste 2: Requisição POST simples
+    console.log("2️⃣ Testando POST...");
+    const responsePost = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "testarConectividade",
+        timestamp: new Date().toISOString(),
+      }),
+    });
+    const dataPost = await responsePost.json();
+    console.log("✅ POST funcionou:", dataPost);
+
+    console.log("🎉 CORS está funcionando corretamente!");
+    return true;
+  } catch (error) {
+    console.error("❌ Erro CORS:", error);
+    console.log("🔧 Possíveis soluções:");
+    console.log(
+      "1. Republique o App Script com permissões 'Anyone can access'"
+    );
+    console.log("2. Use HTTPS em vez de HTTP");
+    console.log(
+      "3. Abra o HTML diretamente (file://) em vez de servidor local"
+    );
+    return false;
+  }
+}
+
+// Tornar função global para teste manual
+window.testarCORS = testarCORS;
 
 function handleAutocompleteNavigation(e) {
   const dropdown = domCache.get("autocompleteDropdown");
@@ -4687,16 +5285,140 @@ function calcularMediaESituacao(aluno) {
   const nota2 = parseFloat(String(aluno.Nota2 || 0).replace(",", ".")) || 0;
   const nota3 = parseFloat(String(aluno.Nota3 || 0).replace(",", ".")) || 0;
 
-  const notas = [nota1, nota2, nota3].filter((n) => n > 0);
+  // Padrões para buscar colunas de Mundo do Trabalho
+  const padroesMT1 = [
+    "MundoTrabalho1", // Campo direto do App Script
+    "MundoTrabalho_1Bim",
+    "Mundo do Trabalho - 1º Bim",
+    "MundoTrabalho1Bim",
+    "Mundo_Trabalho_1Bim",
+    "MT_1Bim",
+    "MT1",
+    "Mundo Trabalho 1",
+    "MT 1º Bim",
+  ];
+  const padroesMT2 = [
+    "MundoTrabalho2", // Campo direto do App Script
+    "MundoTrabalho_2Bim",
+    "Mundo do Trabalho - 2º Bim",
+    "MundoTrabalho2Bim",
+    "Mundo_Trabalho_2Bim",
+    "MT_2Bim",
+    "MT2",
+    "Mundo Trabalho 2",
+    "MT 2º Bim",
+  ];
+  const padroesMT3 = [
+    "MundoTrabalho3", // Campo direto do App Script
+    "MundoTrabalho_3Bim",
+    "Mundo do Trabalho - 3º Bim",
+    "MundoTrabalho3Bim",
+    "Mundo_Trabalho_3Bim",
+    "MT_3Bim",
+    "MT3",
+    "Mundo Trabalho 3",
+    "MT 3º Bim",
+  ];
+
+  // Padrões para buscar colunas de Convívio
+  const padroesConv1 = [
+    "Convivio1", // Campo direto do App Script
+    "Convivio_1Bim",
+    "Convívio - 1º Bim",
+    "Convivio1Bim",
+    "Conv_1Bim",
+    "Conv1",
+    "Convivio 1",
+    "Convívio 1º Bim",
+  ];
+  const padroesConv2 = [
+    "Convivio2", // Campo direto do App Script
+    "Convivio_2Bim",
+    "Convívio - 2º Bim",
+    "Convivio2Bim",
+    "Conv_2Bim",
+    "Conv2",
+    "Convivio 2",
+    "Convívio 2º Bim",
+  ];
+  const padroesConv3 = [
+    "Convivio3", // Campo direto do App Script
+    "Convivio_3Bim",
+    "Convívio - 3º Bim",
+    "Convivio3Bim",
+    "Conv_3Bim",
+    "Conv3",
+    "Convivio 3",
+    "Convívio 3º Bim",
+  ];
+
+  // Buscar notas do Mundo do Trabalho
+  const mundoTrabalho1 =
+    parseFloat(
+      String(buscarColuna(aluno, padroesMT1) || 0).replace(",", ".")
+    ) || 0;
+  const mundoTrabalho2 =
+    parseFloat(
+      String(buscarColuna(aluno, padroesMT2) || 0).replace(",", ".")
+    ) || 0;
+  const mundoTrabalho3 =
+    parseFloat(
+      String(buscarColuna(aluno, padroesMT3) || 0).replace(",", ".")
+    ) || 0;
+
+  // Buscar notas do Convívio
+  const convivio1 =
+    parseFloat(
+      String(buscarColuna(aluno, padroesConv1) || 0).replace(",", ".")
+    ) || 0;
+  const convivio2 =
+    parseFloat(
+      String(buscarColuna(aluno, padroesConv2) || 0).replace(",", ".")
+    ) || 0;
+  const convivio3 =
+    parseFloat(
+      String(buscarColuna(aluno, padroesConv3) || 0).replace(",", ".")
+    ) || 0;
+
+  // Todas as notas disponíveis
+  const todasAsNotas = [
+    nota1,
+    nota2,
+    nota3,
+    mundoTrabalho1,
+    mundoTrabalho2,
+    mundoTrabalho3,
+    convivio1,
+    convivio2,
+    convivio3,
+  ].filter((n) => n > 0);
 
   // Usar faltas diretamente da planilha (que já inclui o sistema automático)
   const totalFaltas = parseInt(aluno.Faltas) || 0;
 
-  console.log(`📊 Situação ${aluno.Nome}:`, {
-    faltasNaPlanilha: totalFaltas,
+  // Usar média da tabela se disponível, senão calcular com todas as notas
+  let media;
+  if (aluno.Media !== undefined && aluno.Media !== null && aluno.Media !== "") {
+    media = parseFloat(String(aluno.Media).replace(",", ".")) || 0;
+  } else if (todasAsNotas.length > 0) {
+    media = todasAsNotas.reduce((a, b) => a + b) / todasAsNotas.length;
+  } else {
+    media = 0;
+  }
+
+  console.log(`📊 Média calculada para ${aluno.Nome}:`, {
+    mediaTabela: aluno.Media,
+    mediaCalculada: media,
+    notasCurso: [nota1, nota2, nota3].filter((n) => n > 0),
+    notasMundoTrabalho: [mundoTrabalho1, mundoTrabalho2, mundoTrabalho3].filter(
+      (n) => n > 0
+    ),
+    notasConvivio: [convivio1, convivio2, convivio3].filter((n) => n > 0),
+    totalNotas: todasAsNotas.length,
+    todasAsNotas: todasAsNotas,
   });
 
-  if (notas.length === 0) {
+  if (media === 0 && todasAsNotas.length === 0) {
     return {
       media: 0,
       situacao: totalFaltas > 15 ? "Reprovado por Falta" : "Em Curso",
@@ -4704,12 +5426,10 @@ function calcularMediaESituacao(aluno) {
     };
   }
 
-  const media = notas.reduce((a, b) => a + b) / notas.length;
-
   // Verificar reprovação por falta primeiro
   if (totalFaltas > 15) {
     return {
-      media: media.toFixed(2),
+      media: typeof media === "number" ? media.toFixed(1) : media,
       situacao: "Reprovado por Falta",
       faltas: totalFaltas,
     };
@@ -4719,7 +5439,7 @@ function calcularMediaESituacao(aluno) {
   const situacao = media >= 6.0 ? "Aprovado" : "Reprovado";
 
   return {
-    media: media.toFixed(2),
+    media: typeof media === "number" ? media.toFixed(1) : media,
     situacao: situacao,
     faltas: totalFaltas,
   };
@@ -6125,3 +6845,4 @@ window.fecharControlePresencas = fecharControlePresencas;
 window.atualizarCardImediatamente = atualizarCardImediatamente;
 window.invalidarCacheSeNecessario = invalidarCacheSeNecessario;
 window.removerNotificacaoCard = removerNotificacaoCard;
+window.toggleCardFlip = toggleCardFlip;
