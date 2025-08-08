@@ -3993,14 +3993,24 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
 
   return `
     <div class="flip-card-container">
-      <!-- Botão de Flip -->
-      <button class="flip-card-btn" onclick="toggleCardFlip('${
-        aluno.ID_Unico
-      }')" title="Ver notas detalhadas">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3zm0 3v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6H2zm3 2h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
-        </svg>
-      </button>
+      <!-- Botões de Ação -->
+      <div class="card-action-buttons">
+        <button class="flip-card-btn" onclick="toggleCardFlip('${
+          aluno.ID_Unico
+        }')" title="Ver notas detalhadas">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/>
+          </svg>
+        </button>
+        <button class="attendance-history-btn" onclick="mostrarHistoricoFaltas('${
+          aluno.ID_Unico
+        }', '${aluno.Nome}')" title="Ver histórico de faltas">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+          </svg>
+        </button>
+      </div>
 
       <div class="flip-card" id="flipCard-${aluno.ID_Unico}">
         <!-- FRENTE DO CARD -->
@@ -6835,6 +6845,160 @@ async function registrarPresencaCard(studentId) {
     registerBtn.innerHTML = originalText;
     registerBtn.disabled = false;
     removerLoadingCard(studentId);
+  }
+}
+
+/**
+ * 📅 FUNÇÃO PARA MOSTRAR HISTÓRICO DE FALTAS DE UM ALUNO
+ */
+async function mostrarHistoricoFaltas(alunoId, nomeAluno) {
+  console.log(
+    `📅 Carregando histórico de faltas para ${nomeAluno} (${alunoId})`
+  );
+
+  try {
+    // Mostrar loading
+    mostrarLoadingOverlay("Carregando histórico de faltas...");
+
+    const response = await fetch(
+      `${API_URL}?action=obterHistoricoFaltas&alunoId=${encodeURIComponent(
+        alunoId
+      )}`
+    );
+    const data = await response.json();
+
+    removerLoadingOverlay();
+
+    if (!data.success) {
+      throw new Error(data.error || "Erro ao carregar histórico");
+    }
+
+    const historico = data.historico;
+
+    // Criar modal com histórico
+    mostrarModalHistoricoFaltas(alunoId, nomeAluno, historico);
+  } catch (error) {
+    removerLoadingOverlay();
+    console.error("❌ Erro ao carregar histórico de faltas:", error);
+    alert("Erro ao carregar histórico de faltas: " + error.message);
+  }
+}
+
+/**
+ * 📅 FUNÇÃO PARA MOSTRAR MODAL COM HISTÓRICO DE FALTAS
+ */
+function mostrarModalHistoricoFaltas(alunoId, nomeAluno, historico) {
+  // Remover modal existente se houver
+  const modalExistente = document.getElementById("historicoFaltasModal");
+  if (modalExistente) {
+    modalExistente.remove();
+  }
+
+  // Criar lista de faltas detalhadas
+  let faltasHTML = "";
+  if (historico.faltasDetalhadas && historico.faltasDetalhadas.length > 0) {
+    historico.faltasDetalhadas.forEach((falta) => {
+      faltasHTML += `
+        <div class="falta-item">
+          <div class="falta-data">${falta.data}</div>
+          <div class="falta-curso">${falta.curso}</div>
+          <div class="falta-status">${falta.status}</div>
+        </div>
+      `;
+    });
+  } else {
+    faltasHTML =
+      '<div class="no-faltas">Nenhuma falta registrada nas colunas de datas</div>';
+  }
+
+  // Criar lista de registros de presença online
+  let registrosHTML = "";
+  if (historico.registrosPresenca && historico.registrosPresenca.length > 0) {
+    historico.registrosPresenca.forEach((registro) => {
+      const statusClass =
+        registro.status === "Falta"
+          ? "status-falta"
+          : registro.status === "Presente"
+          ? "status-presente"
+          : "";
+      registrosHTML += `
+        <div class="registro-item ${statusClass}">
+          <div class="registro-data">${registro.data} ${registro.horario}</div>
+          <div class="registro-curso">${registro.curso}</div>
+          <div class="registro-professor">${registro.professor}</div>
+          <div class="registro-status">${registro.status}</div>
+        </div>
+      `;
+    });
+  } else {
+    registrosHTML =
+      '<div class="no-registros">Nenhum registro online encontrado</div>';
+  }
+
+  // Criar modal
+  const modal = document.createElement("div");
+  modal.id = "historicoFaltasModal";
+  modal.className = "modal-overlay";
+  modal.innerHTML = `
+    <div class="modal-content historico-faltas-modal">
+      <div class="modal-header">
+        <h2>📅 Histórico de Faltas - ${nomeAluno}</h2>
+        <button class="modal-close" onclick="fecharModalHistorico()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="aluno-info">
+          <h3>${historico.nomeAluno}</h3>
+          <p><strong>Curso:</strong> ${historico.cursoAluno}</p>
+          <p><strong>Total de Faltas:</strong> 
+            <span class="total-faltas ${
+              historico.totalFaltas > 15 ? "excesso" : ""
+            }">${historico.totalFaltas}</span>
+            ${historico.totalFaltas > 15 ? " ⚠️ (Excede o limite)" : ""}
+          </p>
+        </div>
+        
+        <div class="historico-sections">
+          <div class="historico-section">
+            <h4>📊 Faltas por Data (Planilha)</h4>
+            <div class="faltas-lista">
+              ${faltasHTML}
+            </div>
+          </div>
+          
+          <div class="historico-section">
+            <h4>📝 Registros Online</h4>
+            <div class="registros-lista">
+              ${registrosHTML}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="fecharModalHistorico()">Fechar</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Mostrar modal com animação
+  setTimeout(() => {
+    modal.classList.add("show");
+  }, 10);
+}
+
+/**
+ * 📅 FUNÇÃO PARA FECHAR MODAL DE HISTÓRICO
+ */
+function fecharModalHistorico() {
+  const modal = document.getElementById("historicoFaltasModal");
+  if (modal) {
+    modal.classList.remove("show");
+    setTimeout(() => {
+      modal.remove();
+    }, 300);
   }
 }
 

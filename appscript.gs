@@ -96,6 +96,13 @@ function detectarColunasUniversal(sheet) {
   const lastCol = sheet.getLastColumn();
   const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
 
+  return detectarColunasUniversalPorArray(headers);
+}
+
+/**
+ * Versão que funciona diretamente com array de cabeçalhos
+ */
+function detectarColunasUniversalPorArray(headers) {
   const indices = {};
 
   for (let i = 0; i < headers.length; i++) {
@@ -419,21 +426,20 @@ function criarRespostaJson(data) {
 
     // Headers CORS obrigatórios para funcionar com localhost
     try {
-      output.setHeader("Access-Control-Allow-Origin", "*");
-      output.setHeader(
-        "Access-Control-Allow-Methods",
-        "GET, POST, OPTIONS, PUT, DELETE"
-      );
-      output.setHeader(
-        "Access-Control-Allow-Headers",
-        "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control"
-      );
-      output.setHeader("Access-Control-Max-Age", "86400");
-      output.setHeader("Access-Control-Allow-Credentials", "false");
+      // Google Apps Script usa setHeaders (plural) com objeto
+      output.setHeaders({
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, DELETE",
+        "Access-Control-Allow-Headers":
+          "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control",
+        "Access-Control-Max-Age": "86400",
+        "Access-Control-Allow-Credentials": "false",
+      });
 
       console.log("✅ Headers CORS completos definidos");
     } catch (corsError) {
       console.error("❌ Erro ao definir headers CORS:", corsError.message);
+      console.log("🔧 Criando resposta JSON simples (sem CORS)");
       return criarRespostaJsonSimples(data);
     }
 
@@ -1976,6 +1982,22 @@ function doGet(e) {
 
         const resultado = registrarPresencaLote(registros);
         return criarRespostaJson(resultado);
+      } else if (acao === "obterEstatisticas") {
+        // NOVA FUNCIONALIDADE: Carregar estatísticas do dashboard admin
+        console.log("📊 Carregando estatísticas do dashboard...");
+        const resultado = obterEstatisticasCompletas();
+        return criarRespostaJson(resultado);
+      } else if (acao === "obterHistoricoFaltas") {
+        // NOVA FUNCIONALIDADE: Obter histórico de faltas de um aluno
+        const alunoId = e.parameter.alunoId;
+        if (!alunoId) {
+          return criarRespostaJson({
+            success: false,
+            error: "Parâmetro alunoId é obrigatório",
+          });
+        }
+        const resultado = obterHistoricoFaltas(alunoId);
+        return criarRespostaJson(resultado);
       } else if (acao === "registrarPresencaOnline") {
         // NOVA FUNCIONALIDADE: Registrar presença na aba "Presenças"
         const nome = e.parameter.nome;
@@ -2873,17 +2895,14 @@ function doOptions(e) {
   const output = ContentService.createTextOutput("");
   output.setMimeType(ContentService.MimeType.TEXT);
 
-  // Cabeçalhos CORS completos para preflight (definidos individualmente)
-  output.setHeader("Access-Control-Allow-Origin", "*");
-  output.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, OPTIONS, PUT, DELETE"
-  );
-  output.setHeader(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control"
-  );
-  output.setHeader("Access-Control-Max-Age", "86400");
+  // Cabeçalhos CORS completos para preflight (usando setHeaders)
+  output.setHeaders({
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, DELETE",
+    "Access-Control-Allow-Headers":
+      "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control",
+    "Access-Control-Max-Age": "86400",
+  });
 
   return output;
 }
@@ -2892,7 +2911,7 @@ function doOptions(e) {
  * FUNÇÃO DE TESTE CRÍTICA - Execute esta função para verificar se o CORS foi corrigido
  */
 function testarCORSCorrigido() {
-  console.log("🧪 === TESTANDO CORREÇÃO CORS ===");
+  console.log("🧪 === TESTANDO CORREÇÃO CORS (VERSÃO 2) ===");
 
   try {
     // Teste 1: Função criarRespostaJson
@@ -2915,28 +2934,18 @@ function testarCORSCorrigido() {
     const resposta3 = doGet(fakeGetEvent);
     console.log("✅ doGet funcionou");
 
-    // Teste 4: Simular requisição POST
-    console.log("4️⃣ Testando doPost...");
-    const fakePostEvent = {
-      postData: {
-        contents: JSON.stringify({
-          action: "atualizarNotaEspecifica",
-          alunoId: "TEST123",
-          campo: "Nota1",
-          valor: 8.5,
-          professor: "Prof. Teste",
-        }),
-      },
-    };
-    // Note: Não vamos executar realmente para não alterar dados
-
-    console.log("🎉 === TODOS OS TESTES PASSARAM ===");
+    console.log("🎉 === TODOS OS TESTES PASSARAM (VERSÃO 2) ===");
+    console.log("📋 CORREÇÃO APLICADA:");
+    console.log("- Mudança de output.setHeader() para output.setHeaders()");
+    console.log(
+      "- Google Apps Script usa setHeaders com objeto, não setHeader individual"
+    );
     console.log("📋 PRÓXIMOS PASSOS:");
     console.log("1. Republique o Web App como 'Anyone can access'");
     console.log("2. Use a nova URL de deployment");
     console.log("3. Teste em HTTPS ou abra o HTML diretamente");
 
-    return "CORS configurado corretamente!";
+    return "CORS configurado corretamente! (Versão 2 - setHeaders)";
   } catch (error) {
     console.error("❌ Erro nos testes CORS:", error);
     return "Erro: " + error.message;
@@ -4802,5 +4811,403 @@ function testeFormatacaoCorreta() {
   } catch (error) {
     console.log("❌ ERRO no teste:", error.toString());
     return { success: false, error: error.toString() };
+  }
+}
+
+/**
+ * 📊 FUNÇÃO PARA OBTER ESTATÍSTICAS COMPLETAS DO DASHBOARD ADMIN
+ * Processa dados reais da planilha para gerar estatísticas
+ */
+function obterEstatisticasCompletas() {
+  console.log("📊 === INICIANDO CÁLCULO DE ESTATÍSTICAS ===");
+
+  try {
+    const todosAlunos = [];
+
+    // Processa todas as abas/cursos
+    for (const nomeAba of SHEET_NAMES) {
+      console.log(`📚 Processando aba: ${nomeAba}`);
+
+      try {
+        const planilha =
+          SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nomeAba);
+        if (!planilha) {
+          console.log(`⚠️ Aba não encontrada: ${nomeAba}`);
+          continue;
+        }
+
+        const dados = planilha.getDataRange().getValues();
+        if (dados.length <= 1) {
+          console.log(`⚠️ Aba vazia: ${nomeAba}`);
+          continue;
+        }
+
+        const indices = detectarColunasUniversalPorArray(dados[0]);
+
+        // Processa cada aluno da aba
+        for (let i = 1; i < dados.length; i++) {
+          const linha = dados[i];
+          const id = String(linha[indices.ID_Unico] || "").trim();
+          const nome = String(linha[indices.Nome] || "").trim();
+
+          if (!id || !nome) continue;
+
+          const aluno = {
+            ID_Unico: id,
+            Nome: nome,
+            Curso: nomeAba,
+            Periodo: CURSO_PARA_PERIODO[nomeAba] || "Não definido",
+            Faltas: parseInt(linha[indices.Faltas]) || 0,
+
+            // Notas do curso
+            Nota1:
+              parseFloat(
+                String(linha[indices.Nota1] || "").replace(",", ".")
+              ) || 0,
+            Nota2:
+              parseFloat(
+                String(linha[indices.Nota2] || "").replace(",", ".")
+              ) || 0,
+            Nota3:
+              parseFloat(
+                String(linha[indices.Nota3] || "").replace(",", ".")
+              ) || 0,
+
+            // Notas Mundo do Trabalho
+            MundoTrabalho1:
+              parseFloat(
+                String(linha[indices.MundoTrabalho1] || "").replace(",", ".")
+              ) || 0,
+            MundoTrabalho2:
+              parseFloat(
+                String(linha[indices.MundoTrabalho2] || "").replace(",", ".")
+              ) || 0,
+            MundoTrabalho3:
+              parseFloat(
+                String(linha[indices.MundoTrabalho3] || "").replace(",", ".")
+              ) || 0,
+
+            // Notas Convívio
+            Convivio1:
+              parseFloat(
+                String(linha[indices.Convivio1] || "").replace(",", ".")
+              ) || 0,
+            Convivio2:
+              parseFloat(
+                String(linha[indices.Convivio2] || "").replace(",", ".")
+              ) || 0,
+            Convivio3:
+              parseFloat(
+                String(linha[indices.Convivio3] || "").replace(",", ".")
+              ) || 0,
+          };
+
+          // Calcula média geral incluindo todas as matérias
+          const todasAsNotas = [
+            aluno.Nota1,
+            aluno.Nota2,
+            aluno.Nota3,
+            aluno.MundoTrabalho1,
+            aluno.MundoTrabalho2,
+            aluno.MundoTrabalho3,
+            aluno.Convivio1,
+            aluno.Convivio2,
+            aluno.Convivio3,
+          ].filter((nota) => nota > 0);
+
+          aluno.Media =
+            todasAsNotas.length > 0
+              ? todasAsNotas.reduce((a, b) => a + b) / todasAsNotas.length
+              : 0;
+
+          // Determina situação
+          if (aluno.Media === 0) {
+            aluno.Situacao = "Em Curso";
+          } else if (aluno.Faltas > 15) {
+            aluno.Situacao = "Reprovado por Faltas";
+          } else if (aluno.Media >= 6.0) {
+            aluno.Situacao = "Aprovado";
+          } else {
+            aluno.Situacao = "Reprovado";
+          }
+
+          todosAlunos.push(aluno);
+        }
+      } catch (abaError) {
+        console.error(`❌ Erro ao processar aba ${nomeAba}:`, abaError);
+      }
+    }
+
+    console.log(`📊 Total de alunos processados: ${todosAlunos.length}`);
+
+    // Gera estatísticas consolidadas
+    const estatisticas = calcularEstatisticas(todosAlunos);
+
+    return {
+      success: true,
+      alunos: todosAlunos,
+      estatisticas: estatisticas,
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error("❌ Erro ao obter estatísticas:", error);
+    return {
+      success: false,
+      error: error.toString(),
+    };
+  }
+}
+
+/**
+ * 📈 FUNÇÃO PARA CALCULAR ESTATÍSTICAS CONSOLIDADAS
+ */
+function calcularEstatisticas(alunos) {
+  console.log("📈 Calculando estatísticas consolidadas...");
+
+  const stats = {
+    // Estatísticas gerais
+    totalAlunos: alunos.length,
+    aprovados: 0,
+    reprovados: 0,
+    emCurso: 0,
+    reprovadosPorFaltas: 0,
+
+    // Por curso
+    porCurso: {},
+
+    // Por período
+    porPeriodo: {},
+
+    // Estatísticas de notas
+    mediaGeral: 0,
+    notasDistribuicao: {
+      excelente: 0, // 9-10
+      bom: 0, // 7-8.9
+      regular: 0, // 5-6.9
+      insuficiente: 0, // 0-4.9
+    },
+
+    // Estatísticas de faltas
+    faltasDistribuicao: {
+      baixa: 0, // 0-5
+      media: 0, // 6-10
+      alta: 0, // 11-15
+      critica: 0, // >15
+    },
+  };
+
+  let somaMedias = 0;
+  let alunosComMedia = 0;
+
+  alunos.forEach((aluno) => {
+    // Contadores gerais
+    switch (aluno.Situacao) {
+      case "Aprovado":
+        stats.aprovados++;
+        break;
+      case "Reprovado":
+        stats.reprovados++;
+        break;
+      case "Reprovado por Faltas":
+        stats.reprovadosPorFaltas++;
+        break;
+      default:
+        stats.emCurso++;
+    }
+
+    // Por curso
+    if (!stats.porCurso[aluno.Curso]) {
+      stats.porCurso[aluno.Curso] = {
+        total: 0,
+        aprovados: 0,
+        reprovados: 0,
+        emCurso: 0,
+        mediaGeral: 0,
+      };
+    }
+    stats.porCurso[aluno.Curso].total++;
+    if (aluno.Situacao === "Aprovado") stats.porCurso[aluno.Curso].aprovados++;
+    else if (aluno.Situacao.includes("Reprovado"))
+      stats.porCurso[aluno.Curso].reprovados++;
+    else stats.porCurso[aluno.Curso].emCurso++;
+
+    // Por período
+    if (!stats.porPeriodo[aluno.Periodo]) {
+      stats.porPeriodo[aluno.Periodo] = {
+        total: 0,
+        aprovados: 0,
+        reprovados: 0,
+        emCurso: 0,
+      };
+    }
+    stats.porPeriodo[aluno.Periodo].total++;
+    if (aluno.Situacao === "Aprovado")
+      stats.porPeriodo[aluno.Periodo].aprovados++;
+    else if (aluno.Situacao.includes("Reprovado"))
+      stats.porPeriodo[aluno.Periodo].reprovados++;
+    else stats.porPeriodo[aluno.Periodo].emCurso++;
+
+    // Distribuição de notas
+    if (aluno.Media > 0) {
+      somaMedias += aluno.Media;
+      alunosComMedia++;
+
+      if (aluno.Media >= 9) stats.notasDistribuicao.excelente++;
+      else if (aluno.Media >= 7) stats.notasDistribuicao.bom++;
+      else if (aluno.Media >= 5) stats.notasDistribuicao.regular++;
+      else stats.notasDistribuicao.insuficiente++;
+    }
+
+    // Distribuição de faltas
+    if (aluno.Faltas <= 5) stats.faltasDistribuicao.baixa++;
+    else if (aluno.Faltas <= 10) stats.faltasDistribuicao.media++;
+    else if (aluno.Faltas <= 15) stats.faltasDistribuicao.alta++;
+    else stats.faltasDistribuicao.critica++;
+  });
+
+  // Calcula média geral
+  stats.mediaGeral =
+    alunosComMedia > 0 ? (somaMedias / alunosComMedia).toFixed(2) : 0;
+
+  // Calcula média por curso
+  Object.keys(stats.porCurso).forEach((curso) => {
+    const alunosCurso = alunos.filter((a) => a.Curso === curso && a.Media > 0);
+    if (alunosCurso.length > 0) {
+      const mediasCurso = alunosCurso.map((a) => a.Media);
+      stats.porCurso[curso].mediaGeral = (
+        mediasCurso.reduce((a, b) => a + b) / mediasCurso.length
+      ).toFixed(2);
+    }
+  });
+
+  console.log("📈 Estatísticas calculadas:", stats);
+  return stats;
+}
+
+/**
+ * 📅 FUNÇÃO PARA OBTER HISTÓRICO DE FALTAS DE UM ALUNO
+ * Busca todas as faltas registradas para um aluno específico
+ */
+function obterHistoricoFaltas(alunoId) {
+  console.log(`📅 === OBTENDO HISTÓRICO DE FALTAS PARA ${alunoId} ===`);
+
+  try {
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const historicoFaltas = {
+      alunoId: alunoId,
+      totalFaltas: 0,
+      faltasDetalhadas: [],
+      registrosPresenca: [],
+    };
+
+    // 1. Buscar informações básicas do aluno
+    let nomeAluno = "";
+    let cursoAluno = "";
+    let faltasContador = 0;
+
+    for (const nomeAba of SHEET_NAMES) {
+      const aba = spreadsheet.getSheetByName(nomeAba);
+      if (!aba) continue;
+
+      const dados = aba.getDataRange().getValues();
+      const indices = detectarColunasUniversalPorArray(dados[0]);
+      if (indices.ID_Unico === undefined) continue;
+
+      for (let i = 1; i < dados.length; i++) {
+        const linha = dados[i];
+        if (String(linha[indices.ID_Unico]).trim() === String(alunoId).trim()) {
+          nomeAluno = linha[indices.Nome] || "";
+          cursoAluno = nomeAba;
+          faltasContador = parseInt(linha[indices.Faltas]) || 0;
+
+          // Buscar faltas registradas nas colunas de datas
+          for (let j = 0; j < linha.length; j++) {
+            const cabecalho = dados[0][j];
+            const valor = String(linha[j]).trim().toUpperCase();
+
+            // Verificar se é uma coluna de data e se está marcada como falta
+            if (cabecalho && cabecalho.includes("/") && valor === "F") {
+              historicoFaltas.faltasDetalhadas.push({
+                data: cabecalho,
+                status: "Falta",
+                curso: nomeAba,
+              });
+            }
+          }
+          break;
+        }
+      }
+
+      if (nomeAluno) break;
+    }
+
+    // 2. Buscar registros na aba "Presenças" (se existir)
+    const abaPresencas = spreadsheet.getSheetByName("Presenças");
+    if (abaPresencas) {
+      const dadosPresencas = abaPresencas.getDataRange().getValues();
+
+      if (dadosPresencas.length > 1) {
+        const cabecalhos = dadosPresencas[0];
+        const indiceNome = cabecalhos.findIndex((h) =>
+          h.toLowerCase().includes("nome")
+        );
+        const indiceData = cabecalhos.findIndex((h) =>
+          h.toLowerCase().includes("data")
+        );
+        const indiceHorario = cabecalhos.findIndex(
+          (h) =>
+            h.toLowerCase().includes("horário") ||
+            h.toLowerCase().includes("horario")
+        );
+        const indiceCurso = cabecalhos.findIndex((h) =>
+          h.toLowerCase().includes("curso")
+        );
+        const indiceProfessor = cabecalhos.findIndex((h) =>
+          h.toLowerCase().includes("professor")
+        );
+        const indiceStatus = cabecalhos.findIndex((h) =>
+          h.toLowerCase().includes("status")
+        );
+
+        for (let i = 1; i < dadosPresencas.length; i++) {
+          const linha = dadosPresencas[i];
+          const nome = linha[indiceNome] || "";
+          const status = String(linha[indiceStatus]).trim().toUpperCase();
+
+          // Verificar se é o aluno correto (por nome ou ID)
+          if (
+            nome.toLowerCase().includes(nomeAluno.toLowerCase()) ||
+            nomeAluno.toLowerCase().includes(nome.toLowerCase())
+          ) {
+            historicoFaltas.registrosPresenca.push({
+              data: linha[indiceData] || "",
+              horario: linha[indiceHorario] || "",
+              curso: linha[indiceCurso] || "",
+              professor: linha[indiceProfessor] || "",
+              status:
+                status === "F" ? "Falta" : status === "P" ? "Presente" : status,
+              tipo: "Registro Online",
+            });
+          }
+        }
+      }
+    }
+
+    historicoFaltas.nomeAluno = nomeAluno;
+    historicoFaltas.cursoAluno = cursoAluno;
+    historicoFaltas.totalFaltas = faltasContador;
+
+    console.log(`📅 Histórico encontrado:`, historicoFaltas);
+
+    return {
+      success: true,
+      historico: historicoFaltas,
+    };
+  } catch (error) {
+    console.error("❌ Erro ao obter histórico de faltas:", error);
+    return {
+      success: false,
+      error: error.toString(),
+    };
   }
 }

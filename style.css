@@ -2850,6 +2850,58 @@ select.full-width-input option {
   }
 }
 
+/* === ESTILOS PARA REGISTROS DE PRESENÇA RECENTES === */
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-present {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.status-absent {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.professor-info {
+  text-align: left;
+}
+
+.professor-name {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.professor-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.125rem 0.375rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.error-message,
+.no-data {
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  padding: 1rem;
+}
+
+.error-message {
+  color: #dc3545;
+}
+
 /* === MODAL DE CONTROLE DE PRESENÇAS (ADMIN) === */
 .attendance-modal .modal-content {
   max-width: 1200px;
@@ -5636,4 +5688,283 @@ button:disabled {
 .editable-grade-input[data-changed="true"] {
   border-color: var(--color-success);
   background: rgba(40, 167, 69, 0.1);
+}
+
+/* === ESTILOS PARA BOTÕES DE AÇÃO DO CARD === */
+.card-action-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.attendance-history-btn {
+  background: rgba(244, 196, 48, 0.1);
+  border: 1px solid var(--color-secondary);
+  border-radius: 8px;
+  padding: 8px;
+  color: var(--color-secondary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+}
+
+.attendance-history-btn:hover {
+  background: rgba(244, 196, 48, 0.2);
+  transform: translateY(-2px);
+}
+
+.attendance-history-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* === MODAL DE HISTÓRICO DE FALTAS === */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(26, 41, 81, 0.8);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  padding: 20px;
+}
+
+.modal-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.historico-faltas-modal {
+  background: var(--color-bg-modal);
+  border-radius: 16px;
+  border: 1px solid rgba(244, 196, 48, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 700px;
+  max-height: 80vh;
+  overflow-y: auto;
+  transform: scale(0.9) translateY(20px);
+  transition: all 0.3s ease;
+}
+
+.modal-overlay.show .historico-faltas-modal {
+  transform: scale(1) translateY(0);
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(244, 196, 48, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h2 {
+  color: var(--color-text-secondary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  background: rgba(220, 53, 69, 0.1);
+  color: var(--color-error);
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.aluno-info {
+  background: rgba(244, 196, 48, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(244, 196, 48, 0.2);
+}
+
+.aluno-info h3 {
+  color: var(--color-text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.aluno-info p {
+  margin: 8px 0;
+  color: var(--color-text-muted);
+}
+
+.total-faltas {
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(40, 167, 69, 0.2);
+  color: var(--color-success);
+}
+
+.total-faltas.excesso {
+  background: rgba(220, 53, 69, 0.2);
+  color: var(--color-error);
+}
+
+.historico-sections {
+  display: grid;
+  gap: 24px;
+}
+
+.historico-section h4 {
+  color: var(--color-text-secondary);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.faltas-lista,
+.registros-lista {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.falta-item,
+.registro-item {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  margin-bottom: 8px;
+  border-left: 3px solid var(--color-error);
+}
+
+.registro-item {
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  border-left: 3px solid var(--color-primary);
+}
+
+.registro-item.status-presente {
+  border-left-color: var(--color-success);
+}
+
+.registro-item.status-falta {
+  border-left-color: var(--color-error);
+}
+
+.falta-data,
+.registro-data {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.falta-curso,
+.registro-curso {
+  color: var(--color-text-muted);
+}
+
+.falta-status,
+.registro-status {
+  font-weight: 500;
+}
+
+.registro-professor {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.no-faltas,
+.no-registros {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-style: italic;
+  padding: 20px;
+}
+
+.modal-footer {
+  padding: 20px 24px;
+  border-top: 1px solid rgba(244, 196, 48, 0.2);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--color-text-primary);
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Responsividade para o modal */
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 10px;
+  }
+
+  .historico-faltas-modal {
+    max-height: 85vh;
+  }
+
+  .falta-item,
+  .registro-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .registro-item {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-header {
+    padding: 16px 20px;
+  }
+
+  .modal-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .modal-body {
+    padding: 20px;
+  }
+
+  .aluno-info {
+    padding: 16px;
+  }
 }

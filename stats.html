@@ -3,7 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="shortcut icon" href="https://colegiorealengo.br/novo-portal/assets/images/icons/online_course.png" type="image/x-icon">
+    <link
+      rel="shortcut icon"
+      href="https://colegiorealengo.br/novo-portal/assets/images/icons/online_course.png"
+      type="image/x-icon"
+    />
     <title>CEDESP - Estatísticas Administrativas</title>
     <link rel="stylesheet" href="style.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -137,6 +141,25 @@
                   </tr>
                 </thead>
                 <tbody id="topStudentsBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Registros Recentes -->
+          <div class="table-container">
+            <h3>📝 Registros de Presença Recentes</h3>
+            <div class="table-wrapper">
+              <table id="recentAttendanceTable">
+                <thead>
+                  <tr>
+                    <th>Data/Hora</th>
+                    <th>Aluno</th>
+                    <th>Curso</th>
+                    <th>Status</th>
+                    <th>Professor</th>
+                  </tr>
+                </thead>
+                <tbody id="recentAttendanceBody"></tbody>
               </table>
             </div>
           </div>
