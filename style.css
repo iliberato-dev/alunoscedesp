@@ -5600,6 +5600,7 @@ button:disabled {
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--spacing-xs);
+  width: 37rem;
 }
 
 .registro-info strong {
@@ -6125,3 +6126,4 @@ button:disabled {
     padding: 16px;
   }
 }
+
