@@ -1,9 +1,7 @@
 // === CONFIGURAÇÃO DO SISTEMA CEDESP ===
-const WEB_APP_URL =
-  "https://script.google.com/macros/s/AKfycbzNq3Hz1Pvlx3Ty4YGJvj0UM4jQNe2adOEQWyomzpTnBHooEzgHa1TGMWfcd8mpzTDe/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzNq3Hz1Pvlx3Ty4YGJvj0UM4jQNe2adOEQWyomzpTnBHooEzgHa1TGMWfcd8mpzTDe/exec";
 
-const IS_LOCAL =
-  location.hostname === "localhost" || location.hostname === "127.0.0.1";
+const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1";
 const API_URL = IS_LOCAL ? WEB_APP_URL : "/api/appsscript";
 
 // === CACHE LOCAL DE STATUS ===
@@ -7286,3 +7284,4 @@ window.atualizarCardImediatamente = atualizarCardImediatamente;
 window.invalidarCacheSeNecessario = invalidarCacheSeNecessario;
 window.removerNotificacaoCard = removerNotificacaoCard;
 window.toggleCardFlip = toggleCardFlip;
+
