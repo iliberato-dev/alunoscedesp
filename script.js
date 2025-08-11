@@ -49,6 +49,201 @@ class StatusCache {
 
 const statusCache = new StatusCache();
 
+// === SISTEMA DE FILA SEQUENCIAL PARA REQUISIÇÕES ===
+class RequestQueue {
+  constructor() {
+    this.queue = [];
+    this.isProcessing = false;
+    this.maxRetries = 3;
+    this.baseDelay = 1000; // 1 segundo entre requisições
+  }
+
+  // Adicionar requisição à fila
+  async addRequest(requestFunction, priority = 0) {
+    return new Promise((resolve, reject) => {
+      this.queue.push({
+        requestFunction,
+        priority,
+        resolve,
+        reject,
+        retries: 0,
+        id: Date.now() + Math.random()
+      });
+
+      // Ordenar por prioridade (maior prioridade primeiro)
+      this.queue.sort((a, b) => b.priority - a.priority);
+
+      console.log(`📋 Requisição adicionada à fila. Total: ${this.queue.length}`);
+      
+      this.processQueue();
+    });
+  }
+
+  // Processar fila sequencialmente
+  async processQueue() {
+    if (this.isProcessing || this.queue.length === 0) {
+      return;
+    }
+
+    this.isProcessing = true;
+    console.log(`🔄 Iniciando processamento da fila com ${this.queue.length} requisições`);
+
+    while (this.queue.length > 0) {
+      const request = this.queue.shift();
+      
+      try {
+        console.log(`📤 Processando requisição ID: ${request.id}`);
+        const result = await request.requestFunction();
+        request.resolve(result);
+        console.log(`✅ Requisição ${request.id} concluída com sucesso`);
+        
+        // Delay entre requisições para evitar sobrecarga
+        if (this.queue.length > 0) {
+          await this.delay(this.baseDelay);
+        }
+        
+      } catch (error) {
+        console.error(`❌ Erro na requisição ${request.id}:`, error);
+        
+        // Tentar novamente se ainda houver tentativas
+        if (request.retries < this.maxRetries) {
+          request.retries++;
+          console.log(`🔄 Tentativa ${request.retries}/${this.maxRetries} para requisição ${request.id}`);
+          
+          // Adicionar de volta à fila com prioridade menor
+          this.queue.unshift({
+            ...request,
+            priority: request.priority - 1
+          });
+          
+          // Delay maior para retry
+          await this.delay(this.baseDelay * request.retries);
+        } else {
+          console.error(`💥 Requisição ${request.id} falhou após ${this.maxRetries} tentativas`);
+          request.reject(error);
+        }
+      }
+    }
+
+    this.isProcessing = false;
+    console.log(`✅ Fila de requisições processada completamente`);
+  }
+
+  // Função auxiliar para delay
+  delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // Limpar fila
+  clearQueue() {
+    this.queue.forEach(request => {
+      request.reject(new Error('Fila cancelada'));
+    });
+    this.queue = [];
+    this.isProcessing = false;
+    console.log('🗑️ Fila de requisições limpa');
+  }
+
+  // Obter status da fila
+  getQueueStatus() {
+    return {
+      queueLength: this.queue.length,
+      isProcessing: this.isProcessing
+    };
+  }
+}
+
+// Instância global da fila de requisições
+const requestQueue = new RequestQueue();
+
+// === SISTEMA DE MONITORAMENTO DA FILA ===
+function initializeQueueMonitoring() {
+  // Monitorar status da fila a cada 5 segundos
+  setInterval(() => {
+    const status = requestQueue.getQueueStatus();
+    if (status.queueLength > 0 || status.isProcessing) {
+      console.log(`📊 Status da fila: ${status.queueLength} pendentes, processando: ${status.isProcessing}`);
+    }
+  }, 5000);
+
+  // Mostrar indicador visual quando há muitas requisições na fila
+  setInterval(() => {
+    const status = requestQueue.getQueueStatus();
+    const indicator = document.getElementById('queue-indicator');
+    
+    if (status.queueLength > 5) {
+      if (!indicator) {
+        const queueIndicator = document.createElement('div');
+        queueIndicator.id = 'queue-indicator';
+        queueIndicator.innerHTML = `
+          <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(244, 196, 48, 0.9);
+            color: #1a2951;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+          ">
+            🔄 Carregando registros... ${status.queueLength} pendentes
+          </div>
+        `;
+        document.body.appendChild(queueIndicator);
+      } else {
+        indicator.innerHTML = `
+          <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(244, 196, 48, 0.9);
+            color: #1a2951;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+          ">
+            🔄 Carregando registros... ${status.queueLength} pendentes
+          </div>
+        `;
+      }
+    } else if (indicator) {
+      indicator.remove();
+    }
+  }, 1000);
+}
+
+// === SISTEMA DE GERENCIAMENTO DE REQUISIÇÕES ===
+function cancelarRequisicoesCards() {
+  console.log('🛑 Cancelando requisições pendentes dos cards...');
+  requestQueue.clearQueue();
+  
+  // Limpar cache se necessário
+  statusCache.clear();
+  
+  // Remover indicador visual se existir
+  const indicator = document.getElementById('queue-indicator');
+  if (indicator) {
+    indicator.remove();
+  }
+}
+
+// Cancelar requisições quando usuário sai da página
+window.addEventListener('beforeunload', () => {
+  cancelarRequisicoesCards();
+});
+
+// Cancelar requisições quando usuário muda de filtro/busca
+function onFilterChange() {
+  console.log('🔄 Filtro alterado, cancelando requisições pendentes...');
+  cancelarRequisicoesCards();
+}
+
 // === SISTEMA DE PERMISSÕES DE EDIÇÃO DE NOTAS ===
 function getProfessorPermissions() {
   if (!currentUser || currentUser.role !== "professor") {
@@ -541,68 +736,182 @@ class OnlineAttendanceManager {
     professor,
     status = "P"
   ) {
-    try {
-      // GARANTIR FORMATAÇÃO CORRETA usando as funções utilitárias
-      const dataFormatada = formatarDataBrasileira(data);
-      const horarioFormatado = formatarHorarioBrasileiro(horario);
+    // Usar fila para registro de presença com prioridade alta
+    return await requestQueue.addRequest(async () => {
+      try {
+        // GARANTIR FORMATAÇÃO CORRETA usando as funções utilitárias
+        const dataFormatada = formatarDataBrasileira(data);
+        const horarioFormatado = formatarHorarioBrasileiro(horario);
 
-      console.log("📝 Registrando presença online:", {
-        nome,
-        data: dataFormatada,
-        horario: horarioFormatado,
-        curso,
-        professor,
-        status,
-      });
-      console.log("🔗 URL da API:", this.apiUrl);
+        console.log("📝 Registrando presença online:", {
+          nome,
+          data: dataFormatada,
+          horario: horarioFormatado,
+          curso,
+          professor,
+          status,
+        });
+        console.log("🔗 URL da API:", this.apiUrl);
 
-      const params = new URLSearchParams({
-        action: "registrarPresencaOnline",
-        nome: nome.toString(),
-        data: dataFormatada,
-        horario: horarioFormatado,
-        curso: curso.toString(),
-        professor: professor.toString(),
-        status: status.toString(),
-      });
+        const params = new URLSearchParams({
+          action: "registrarPresencaOnline",
+          nome: nome.toString(),
+          data: dataFormatada,
+          horario: horarioFormatado,
+          curso: curso.toString(),
+          professor: professor.toString(),
+          status: status.toString(),
+        });
 
-      console.log("📤 Parâmetros da requisição:", params.toString());
-      console.log("🌐 URL completa:", `${this.apiUrl}?${params.toString()}`);
+        console.log("📤 Parâmetros da requisição:", params.toString());
+        console.log("🌐 URL completa:", `${this.apiUrl}?${params.toString()}`);
 
-      const response = await withTimeout(
-        fetchWithRetry(`${this.apiUrl}?${params.toString()}`, {}, 2),
-        10000
-      );
+        const response = await withTimeout(
+          fetchWithRetry(`${this.apiUrl}?${params.toString()}`, {}, 2),
+          15000 // Timeout de 15 segundos
+        );
 
-      console.log("📨 Status da resposta:", response.status);
-      console.log("📨 Headers da resposta:", response.headers);
+        console.log("📨 Status da resposta:", response.status);
+        console.log("📨 Headers da resposta:", response.headers);
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const resultado = await response.json();
+        console.log("📊 Resultado completo:", resultado);
+
+        if (resultado.success) {
+          console.log("✅ Presença registrada online com sucesso");
+          
+          // Atualizar cache local
+          const registroCache = {
+            data: dataFormatada,
+            horario: horarioFormatado,
+            curso,
+            professor,
+            status,
+            displayTime: `${dataFormatada} às ${horarioFormatado}`,
+            timestamp: Date.now(),
+          };
+          statusCache.setStatus(nome, registroCache);
+          
+          return resultado;
+        } else {
+          console.error("❌ Erro ao registrar presença online:", resultado.error);
+          throw new Error(resultado.error || "Erro desconhecido");
+        }
+      } catch (error) {
+        console.error("❌ Erro na requisição de presença online:", error);
+        throw error;
       }
-
-      const resultado = await response.json();
-      console.log("📊 Resultado completo:", resultado);
-
-      if (resultado.success) {
-        console.log("✅ Presença registrada online com sucesso");
-        return resultado;
-      } else {
-        console.error("❌ Erro ao registrar presença online:", resultado.error);
-        return resultado;
-      }
-    } catch (error) {
-      console.error("❌ Erro na requisição de presença online:", error);
-      return {
-        success: false,
-        error: error.message,
-        message: "Erro ao conectar com o servidor",
-      };
-    }
+    }, 5); // Prioridade alta para registros
   }
 
   // Buscar últimos registros de presença online
   async buscarUltimosRegistros(limite = 10) {
+    // Usar método direto, mas não adicionar à fila para busca geral
+    return await this.buscarUltimosRegistrosDirecto(limite);
+  }
+
+  // Buscar último registro de um aluno específico na aba "Presenças"
+  async buscarUltimoRegistroAluno(nomeAluno) {
+    // Usar a fila de requisições para evitar sobrecarga
+    return await requestQueue.addRequest(async () => {
+      try {
+        console.log(
+          `🔍 BUSCA INDIVIDUAL - Procurando último registro para: "${nomeAluno}"`
+        );
+
+        // ✅ OTIMIZAÇÃO: Verificar cache primeiro
+        const cachedStatus = statusCache.getStatus(nomeAluno);
+        if (cachedStatus && !statusCache.isExpired()) {
+          console.log(`📋 Cache hit para ${nomeAluno}:`, cachedStatus);
+          return {
+            success: true,
+            registro: cachedStatus,
+          };
+        }
+
+        // Buscar todos os registros recentes e filtrar pelo nome
+        console.log("📋 Buscando registros gerais...");
+        const resultado = await this.buscarUltimosRegistrosDirecto(50); // Método direto sem fila
+
+        console.log("📊 Resultado da busca geral:", resultado);
+
+        if (resultado.success && resultado.registros.length > 0) {
+          console.log(
+            `📋 Total de registros encontrados: ${resultado.registros.length}`
+          );
+
+          // Log de todos os nomes encontrados para debug
+          const nomesEncontrados = resultado.registros.map((r) => r.nome);
+          console.log("👥 Nomes nos registros:", nomesEncontrados);
+
+          // Filtrar registros pelo nome do aluno
+          const registrosDoAluno = resultado.registros.filter((registro) => {
+            const nomeRegistro = registro.nome.toLowerCase();
+            const nomeAluno_lower = nomeAluno.toLowerCase();
+
+            const match =
+              nomeRegistro.includes(nomeAluno_lower) ||
+              nomeAluno_lower.includes(nomeRegistro);
+
+            if (match) {
+              console.log(
+                `✅ MATCH encontrado: "${registro.nome}" ↔ "${nomeAluno}"`
+              );
+            }
+
+            return match;
+          });
+
+          console.log(
+            `🎯 Registros filtrados para "${nomeAluno}": ${registrosDoAluno.length}`
+          );
+
+          if (registrosDoAluno.length > 0) {
+            const ultimoRegistro = registrosDoAluno[0]; // Já vem ordenado por mais recente
+            console.log(
+              `✅ SUCESSO - Último registro encontrado para ${nomeAluno}:`,
+              ultimoRegistro
+            );
+
+            const registroFormatado = {
+              data: ultimoRegistro.data,
+              horario: ultimoRegistro.horario,
+              curso: ultimoRegistro.curso,
+              professor: ultimoRegistro.professor,
+              status: ultimoRegistro.status || "P", // Usar status real ou P como fallback
+              displayTime: `${ultimoRegistro.data} às ${ultimoRegistro.horario}`,
+              timestamp: new Date().toISOString(), // Para compatibilidade
+            };
+
+            // Salvar no cache
+            statusCache.setStatus(nomeAluno, registroFormatado);
+
+            return {
+              success: true,
+              registro: registroFormatado,
+            };
+          }
+        } else {
+          console.log("❌ ERRO ou nenhum registro retornado da busca geral");
+        }
+
+        console.log(
+          `⚠️ RESULTADO VAZIO - Nenhum registro encontrado para: "${nomeAluno}"`
+        );
+        return { success: false, registro: null };
+      } catch (error) {
+        console.error(`❌ Erro ao buscar registro de ${nomeAluno}:`, error);
+        throw error; // Permitir retry através da fila
+      }
+    }, 1); // Prioridade média
+  }
+
+  // Método direto para buscar registros (usado internamente pela fila)
+  async buscarUltimosRegistrosDirecto(limite = 10) {
     try {
       console.log("🔍 Buscando últimos registros de presença online...");
 
@@ -615,7 +924,7 @@ class OnlineAttendanceManager {
 
       const response = await withTimeout(
         fetchWithRetry(`${this.apiUrl}?${params.toString()}`, {}, 2),
-        10000
+        15000 // Aumentar timeout para 15 segundos
       );
 
       console.log("📨 Status da resposta da busca:", response.status);
@@ -638,99 +947,7 @@ class OnlineAttendanceManager {
       }
     } catch (error) {
       console.error("❌ Erro na requisição de busca:", error);
-      return {
-        success: false,
-        error: error.message,
-        registros: [],
-      };
-    }
-  }
-
-  // Buscar último registro de um aluno específico na aba "Presenças"
-  async buscarUltimoRegistroAluno(nomeAluno) {
-    try {
-      console.log(
-        `🔍 BUSCA INDIVIDUAL - Procurando último registro para: "${nomeAluno}"`
-      );
-
-      // ✅ OTIMIZAÇÃO: Verificar cache primeiro
-      const cachedStatus = statusCache.getStatus(nomeAluno);
-      if (cachedStatus && !statusCache.isExpired()) {
-        console.log(`📋 Cache hit para ${nomeAluno}:`, cachedStatus);
-        return {
-          success: true,
-          registro: cachedStatus,
-        };
-      }
-
-      // Buscar todos os registros recentes e filtrar pelo nome
-      console.log("📋 Buscando registros gerais...");
-      const resultado = await this.buscarUltimosRegistros(50); // Buscar mais registros para encontrar o aluno
-
-      console.log("📊 Resultado da busca geral:", resultado);
-
-      if (resultado.success && resultado.registros.length > 0) {
-        console.log(
-          `📋 Total de registros encontrados: ${resultado.registros.length}`
-        );
-
-        // Log de todos os nomes encontrados para debug
-        const nomesEncontrados = resultado.registros.map((r) => r.nome);
-        console.log("👥 Nomes nos registros:", nomesEncontrados);
-
-        // Filtrar registros pelo nome do aluno
-        const registrosDoAluno = resultado.registros.filter((registro) => {
-          const nomeRegistro = registro.nome.toLowerCase();
-          const nomeAluno_lower = nomeAluno.toLowerCase();
-
-          const match =
-            nomeRegistro.includes(nomeAluno_lower) ||
-            nomeAluno_lower.includes(nomeRegistro);
-
-          if (match) {
-            console.log(
-              `✅ MATCH encontrado: "${registro.nome}" ↔ "${nomeAluno}"`
-            );
-          }
-
-          return match;
-        });
-
-        console.log(
-          `🎯 Registros filtrados para "${nomeAluno}": ${registrosDoAluno.length}`
-        );
-
-        if (registrosDoAluno.length > 0) {
-          const ultimoRegistro = registrosDoAluno[0]; // Já vem ordenado por mais recente
-          console.log(
-            `✅ SUCESSO - Último registro encontrado para ${nomeAluno}:`,
-            ultimoRegistro
-          );
-
-          return {
-            success: true,
-            registro: {
-              data: ultimoRegistro.data,
-              horario: ultimoRegistro.horario,
-              curso: ultimoRegistro.curso,
-              professor: ultimoRegistro.professor,
-              status: ultimoRegistro.status || "P", // Usar status real ou P como fallback
-              displayTime: `${ultimoRegistro.data} às ${ultimoRegistro.horario}`,
-              timestamp: new Date().toISOString(), // Para compatibilidade
-            },
-          };
-        }
-      } else {
-        console.log("❌ ERRO ou nenhum registro retornado da busca geral");
-      }
-
-      console.log(
-        `⚠️ RESULTADO VAZIO - Nenhum registro encontrado para: "${nomeAluno}"`
-      );
-      return { success: false, registro: null };
-    } catch (error) {
-      console.error(`❌ Erro ao buscar registro de ${nomeAluno}:`, error);
-      return { success: false, registro: null };
+      throw error;
     }
   }
 
@@ -741,45 +958,49 @@ class OnlineAttendanceManager {
       return;
     }
 
-    try {
-      console.log("🔄 Pré-carregando status de todos os alunos...");
-      const resultado = await this.buscarUltimosRegistros(100); // Buscar mais registros
+    // Usar fila para pré-carregamento com prioridade alta
+    return await requestQueue.addRequest(async () => {
+      try {
+        console.log("🔄 Pré-carregando status de todos os alunos...");
+        const resultado = await this.buscarUltimosRegistrosDirecto(100); // Buscar mais registros
 
-      if (resultado.success && resultado.registros.length > 0) {
-        // Agrupar registros por nome do aluno
-        const registrosPorAluno = new Map();
+        if (resultado.success && resultado.registros.length > 0) {
+          // Agrupar registros por nome do aluno
+          const registrosPorAluno = new Map();
 
-        resultado.registros.forEach((registro) => {
-          const nomeNormalizado = registro.nome.toLowerCase();
-          if (
-            !registrosPorAluno.has(nomeNormalizado) ||
-            registrosPorAluno.get(nomeNormalizado).id < registro.id
-          ) {
-            registrosPorAluno.set(nomeNormalizado, registro);
-          }
-        });
+          resultado.registros.forEach((registro) => {
+            const nomeNormalizado = registro.nome.toLowerCase();
+            if (
+              !registrosPorAluno.has(nomeNormalizado) ||
+              registrosPorAluno.get(nomeNormalizado).id < registro.id
+            ) {
+              registrosPorAluno.set(nomeNormalizado, registro);
+            }
+          });
 
-        // Adicionar ao cache
-        registrosPorAluno.forEach((registro, nome) => {
-          const registroFormatado = {
-            data: registro.data,
-            horario: registro.horario,
-            curso: registro.curso,
-            professor: registro.professor,
-            status: registro.status || "P",
-            displayTime: `${registro.data} às ${registro.horario}`,
-            timestamp: Date.now(),
-          };
-          statusCache.setStatus(nome, registroFormatado);
-        });
+          // Adicionar ao cache
+          registrosPorAluno.forEach((registro, nome) => {
+            const registroFormatado = {
+              data: registro.data,
+              horario: registro.horario,
+              curso: registro.curso,
+              professor: registro.professor,
+              status: registro.status || "P",
+              displayTime: `${registro.data} às ${registro.horario}`,
+              timestamp: Date.now(),
+            };
+            statusCache.setStatus(nome, registroFormatado);
+          });
 
-        console.log(
-          `✅ Cache pré-carregado com ${registrosPorAluno.size} alunos`
-        );
+          console.log(
+            `✅ Cache pré-carregado com ${registrosPorAluno.size} alunos`
+          );
+        }
+      } catch (error) {
+        console.error("❌ Erro no pré-carregamento:", error);
+        throw error;
       }
-    } catch (error) {
-      console.error("❌ Erro no pré-carregamento:", error);
-    }
+    }, 10); // Prioridade alta para pré-carregamento
   }
 
   // Exibir últimos registros na interface
@@ -921,7 +1142,7 @@ async function registrarLotePresencaOnline(registrosPorCurso, data) {
                 horarioFormatado,
                 curso,
                 currentUser.name,
-                "P"
+                registro.status // ✅ CORREÇÃO: Usar o status real do registro (P ou F)
               );
 
             if (resultado.success) {
@@ -1369,13 +1590,23 @@ let currentUser = null;
 const cacheManager = new CacheManager();
 
 // === UTILITÁRIOS DE REDE COM RETRY ===
-async function fetchWithRetry(url, options = {}, maxRetries = 3) {
+async function fetchWithRetry(url, options = {}, maxRetries = 3, timeoutMs = 20000) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(
-        `Tentativa ${attempt}/${maxRetries} para: ${url.substring(0, 100)}...`
+        `Tentativa ${attempt}/${maxRetries} para: ${url.substring(0, 100)}... (timeout: ${timeoutMs}ms)`
       );
-      const response = await fetch(url, options);
+      
+      // Criar um timeout personalizado para cada tentativa
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
 
       // Se a resposta não é ok, mas não é um erro de rede, não fazer retry
       if (!response.ok && response.status < 500) {
@@ -1400,9 +1631,11 @@ async function fetchWithRetry(url, options = {}, maxRetries = 3) {
         throw error;
       }
 
-      // Backoff exponencial: 1s, 2s, 4s
+      // Backoff exponencial adaptativo: aumentar timeout nas tentativas subsequentes
       const delay = Math.pow(2, attempt - 1) * 1000;
-      console.log(`⏳ Aguardando ${delay}ms antes da próxima tentativa...`);
+      timeoutMs = Math.min(timeoutMs * 1.5, 30000); // Aumentar timeout até 30s máximo
+      
+      console.log(`⏳ Aguardando ${delay}ms antes da próxima tentativa (próximo timeout: ${timeoutMs}ms)...`);
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
@@ -1440,6 +1673,9 @@ const domCache = {
 document.addEventListener("DOMContentLoaded", () => {
   console.log("🚀 Sistema CEDESP Universal carregado");
   console.log("🔗 Usando API:", API_URL);
+
+  // Inicializar monitoramento da fila
+  initializeQueueMonitoring();
 
   // Verificar autenticação
   if (!checkAuthentication()) {
@@ -3528,7 +3764,7 @@ async function registrarPresencaFalta(status) {
       status: status,
       professor: currentUser.username,
       curso: cursoAluno, // ✅ Especificar curso para processar apenas essa aba/coluna
-      marcarTodos: "true", // Indica que deve marcar os outros como falta
+      marcarTodos: "false", // ✅ CORREÇÃO: Usar false como nos cards que funcionam corretamente
     });
 
     const response = await fetch(`${API_URL}?${params.toString()}`);
@@ -3566,7 +3802,7 @@ async function registrarPresencaFalta(status) {
           horarioFormatado,
           cursoAluno,
           currentUser.name,
-          "P"
+          status // ✅ CORREÇÃO: Usar o status real (P ou F) em vez de fixo "P"
         );
 
       console.log("📊 Resultado presença online:", resultadoPresenca);
@@ -3592,7 +3828,7 @@ async function registrarPresencaFalta(status) {
 
     const acao = status === "P" ? "Presença" : "Falta";
     mostrarSucesso(
-      `${acao} registrada com sucesso! Outros alunos marcados automaticamente como falta.`,
+      `${acao} registrada com sucesso!`,
       "Registro Salvo"
     );
 
@@ -3715,6 +3951,10 @@ async function atualizarNotas() {
 
 // === FUNÇÕES DE INTERFACE ===
 function exibirResultados(alunos) {
+  // Cancelar requisições pendentes antes de exibir novos resultados
+  console.log('🔄 Exibindo novos resultados, cancelando requisições pendentes...');
+  cancelarRequisicoesCards();
+  
   const resultTableBody = domCache.get("resultTableBody");
   const studentsGrid = domCache.get("studentsGrid");
   const noResultsMessage = domCache.get("noResults");
@@ -3849,23 +4089,27 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
       atualizarCardImediatamente(aluno.ID_Unico, cachedStatus);
     }, 10);
   } else {
-    // Buscar último registro online de forma assíncrona apenas se não houver cache válido
+    // Buscar último registro online usando a fila sequencial
+    // Usar um delay baseado no índice do aluno para espalhar as requisições
+    const cardIndex = document.querySelectorAll('.student-card').length;
+    const delayMs = Math.min(cardIndex * 50, 2000); // Máximo de 2 segundos
+    
     setTimeout(async () => {
       try {
-        const resultado =
-          await onlineAttendanceManager.buscarUltimoRegistroAluno(aluno.Nome);
+        console.log(`🔄 Iniciando busca para ${aluno.Nome} (delay: ${delayMs}ms)`);
+        
+        const resultado = await onlineAttendanceManager.buscarUltimoRegistroAluno(aluno.Nome);
         const lastAttendanceElement = document.getElementById(lastAttendanceId);
 
         if (lastAttendanceElement) {
           if (resultado.success && resultado.registro) {
             const registro = resultado.registro;
-
-            // Salvar no cache
-            statusCache.setStatus(aluno.Nome, registro);
+            console.log(`✅ Registro encontrado para ${aluno.Nome}:`, registro);
 
             // Atualizar card
             atualizarCardImediatamente(aluno.ID_Unico, registro);
           } else {
+            console.log(`❌ Nenhum registro encontrado para ${aluno.Nome}`);
             lastAttendanceElement.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="attendance-icon">
               <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
@@ -3879,9 +4123,24 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
           }
         }
       } catch (error) {
-        console.error("Erro ao buscar último registro:", error);
+        console.error(`❌ Erro ao buscar último registro para ${aluno.Nome}:`, error);
+        
+        // Mostrar erro no card
+        const lastAttendanceElement = document.getElementById(lastAttendanceId);
+        if (lastAttendanceElement) {
+          lastAttendanceElement.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="attendance-icon">
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+              <path d="M11.46.146A.5.5 0 0 0 11.107 0H4.893a.5.5 0 0 0-.353.146L.146 4.54A.5.5 0 0 0 0 4.893v6.214a.5.5 0 0 0 .146.353l4.394 4.394a.5.5 0 0 0 .353.146h6.214a.5.5 0 0 0 .353-.146l4.394-4.394a.5.5 0 0 0 .146-.353V4.893a.5.5 0 0 0-.146-.353L11.46.146zM8 4c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995A.905.905 0 0 1 8 4zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+            </svg>
+            <div class="attendance-info">
+              <span class="attendance-label">Erro ao carregar</span>
+            </div>
+          `;
+          lastAttendanceElement.className = "last-attendance error";
+        }
       }
-    }, 100);
+    }, delayMs);
   }
 
   // HTML inicial com placeholder
@@ -5205,7 +5464,7 @@ async function submeterPresenca() {
       status: status,
       professor: currentUser?.username || "system",
       curso: cursoAluno, // ✅ Especificar curso para processar apenas essa aba/coluna
-      marcarTodos: "true",
+      marcarTodos: "false", // ✅ CORREÇÃO: Usar false como nos cards que funcionam corretamente
     });
 
     const response = await fetch(`${API_URL}?${params.toString()}`);
@@ -5809,7 +6068,7 @@ function handleAttendanceChange(checkbox) {
     }
 
     // Adicionar ao lote
-    batchAttendanceData.set(alunoId, type === "present" ? "P" : "A");
+    batchAttendanceData.set(alunoId, type === "present" ? "P" : "F"); // ✅ CORREÇÃO: Usar "F" para falta em vez de "A"
     row.classList.add("selected-row");
   } else {
     // Remover do lote
