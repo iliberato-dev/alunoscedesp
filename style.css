@@ -3814,6 +3814,21 @@ select.full-width-input option {
   background: rgba(160, 160, 160, 0.12);
 }
 
+.last-attendance.error {
+  background: rgba(220, 53, 69, 0.08);
+  border-color: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+}
+
+.last-attendance.error:hover {
+  background: rgba(220, 53, 69, 0.12);
+  border-color: rgba(220, 53, 69, 0.3);
+}
+
+.last-attendance.error .attendance-icon {
+  color: #dc3545;
+}
+
 .attendance-icon {
   width: 16px;
   height: 16px;
