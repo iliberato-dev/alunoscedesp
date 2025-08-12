@@ -2683,9 +2683,9 @@ select.full-width-input option {
 }
 
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
 .stat-card {
@@ -2699,6 +2699,7 @@ select.full-width-input option {
   transition: all var(--transition-normal);
   position: relative;
   overflow: hidden;
+  max-width: max-content !important;
 }
 
 .stat-card::before {
@@ -4684,9 +4685,10 @@ button:disabled {
 }
 
 .charts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
 }
 
 .chart-container {

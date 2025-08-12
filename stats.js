@@ -7,8 +7,8 @@ class StatsSystem {
   }
 
   init() {
-    // Verificar se é admin
-    if (!this.checkAdminAccess()) {
+    // Verificar se é admin ou professor
+    if (!this.checkStatsAccess()) {
       return;
     }
 
@@ -16,7 +16,7 @@ class StatsSystem {
     this.loadData();
   }
 
-  checkAdminAccess() {
+  checkStatsAccess() {
     const currentUser = AuthSystem.getCurrentUser();
 
     if (!currentUser) {
@@ -24,8 +24,10 @@ class StatsSystem {
       return false;
     }
 
-    if (currentUser.role !== "admin") {
-      alert("Acesso negado. Apenas administradores podem ver estatísticas.");
+    if (currentUser.role !== "admin" && currentUser.role !== "professor") {
+      alert(
+        "Acesso negado. Apenas administradores e professores podem ver estatísticas."
+      );
       window.location.href = "index.html";
       return false;
     }
@@ -485,14 +487,6 @@ class StatsSystem {
     // Aguardar um pouco para garantir que o DOM esteja pronto
     setTimeout(() => {
       console.log("🚀 Timeout completado, chamando createVisualAnalysis...");
-
-      // TESTE DIRETO: Adicionar um elemento visual para confirmar que o JS está funcionando
-      const testDiv = document.createElement("div");
-      testDiv.innerHTML = "🧪 TESTE: JavaScript está funcionando!";
-      testDiv.style.cssText =
-        "background: red; color: white; padding: 10px; margin: 10px; text-align: center;";
-      document.body.appendChild(testDiv);
-      console.log("🧪 Elemento de teste adicionado ao DOM");
 
       this.createVisualAnalysis();
     }, 100);
@@ -1014,32 +1008,13 @@ class StatsSystem {
       .join("");
   }
 
-  identifyAttentionStudents() {
-    const attentionStudents = [];
+  calculateStudentAverage(student) {
+    // Usar média já calculada no backend ou calcular localmente
+    let media = parseFloat(student.Media) || 0;
 
-    this.data.forEach((student) => {
-      const reasons = [];
-
-      // Verificar faltas excessivas
-      const faltas = parseInt(student.Faltas) || 0;
-      if (faltas > 15) {
-        reasons.push({
-          reason: "⚠️ Faltas Excessivas",
-          details: `${faltas} faltas registradas (Limite: 15)`,
-        });
-      }
-
-      // Verificar média baixa
-      const media = this.calculateStudentAverage(student);
-      if (media > 0 && media < 5.0) {
-        reasons.push({
-          reason: "📉 Média Baixa",
-          details: `Média atual: ${media.toFixed(1)} (Mínimo: 6.0)`,
-        });
-      }
-
-      // Verificar médias individuais muito baixas
-      const notas = [
+    if (media === 0) {
+      // Calcular incluindo todas as matérias
+      const todasAsNotas = [
         parseFloat(student.Nota1) || 0,
         parseFloat(student.Nota2) || 0,
         parseFloat(student.Nota3) || 0,
@@ -1049,15 +1024,38 @@ class StatsSystem {
         parseFloat(student.Convivio1) || 0,
         parseFloat(student.Convivio2) || 0,
         parseFloat(student.Convivio3) || 0,
-      ];
+      ].filter((nota) => nota > 0);
 
-      const notasAbaixoDe4 = notas.filter(
-        (nota) => nota > 0 && nota < 4
-      ).length;
-      if (notasAbaixoDe4 >= 3) {
+      media =
+        todasAsNotas.length > 0
+          ? todasAsNotas.reduce((a, b) => a + b) / todasAsNotas.length
+          : 0;
+    }
+
+    return media;
+  }
+
+  identifyAttentionStudents() {
+    const attentionStudents = [];
+
+    this.data.forEach((student) => {
+      const reasons = [];
+
+      // Verificar faltas excessivas (alinhado com alerts-section)
+      const faltas = parseInt(student.Faltas) || 0;
+      if (faltas >= 10) {
         reasons.push({
-          reason: "📚 Múltiplas Notas Baixas",
-          details: `${notasAbaixoDe4} avaliações abaixo de 4.0`,
+          reason: "⚠️ Faltas Excessivas",
+          details: `${faltas} faltas registradas (Limite: 10)`,
+        });
+      }
+
+      // Verificar média baixa (alinhado com alerts-section)
+      const media = this.calculateStudentAverage(student);
+      if (media > 0 && media < 6.0) {
+        reasons.push({
+          reason: "📉 Média Baixa",
+          details: `Média atual: ${media.toFixed(1)} (Mínimo: 6.0)`,
         });
       }
 

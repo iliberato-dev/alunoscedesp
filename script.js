@@ -67,14 +67,16 @@ class RequestQueue {
         resolve,
         reject,
         retries: 0,
-        id: Date.now() + Math.random()
+        id: Date.now() + Math.random(),
       });
 
       // Ordenar por prioridade (maior prioridade primeiro)
       this.queue.sort((a, b) => b.priority - a.priority);
 
-      console.log(`📋 Requisição adicionada à fila. Total: ${this.queue.length}`);
-      
+      console.log(
+        `📋 Requisição adicionada à fila. Total: ${this.queue.length}`
+      );
+
       this.processQueue();
     });
   }
@@ -86,40 +88,45 @@ class RequestQueue {
     }
 
     this.isProcessing = true;
-    console.log(`🔄 Iniciando processamento da fila com ${this.queue.length} requisições`);
+    console.log(
+      `🔄 Iniciando processamento da fila com ${this.queue.length} requisições`
+    );
 
     while (this.queue.length > 0) {
       const request = this.queue.shift();
-      
+
       try {
         console.log(`📤 Processando requisição ID: ${request.id}`);
         const result = await request.requestFunction();
         request.resolve(result);
         console.log(`✅ Requisição ${request.id} concluída com sucesso`);
-        
+
         // Delay entre requisições para evitar sobrecarga
         if (this.queue.length > 0) {
           await this.delay(this.baseDelay);
         }
-        
       } catch (error) {
         console.error(`❌ Erro na requisição ${request.id}:`, error);
-        
+
         // Tentar novamente se ainda houver tentativas
         if (request.retries < this.maxRetries) {
           request.retries++;
-          console.log(`🔄 Tentativa ${request.retries}/${this.maxRetries} para requisição ${request.id}`);
-          
+          console.log(
+            `🔄 Tentativa ${request.retries}/${this.maxRetries} para requisição ${request.id}`
+          );
+
           // Adicionar de volta à fila com prioridade menor
           this.queue.unshift({
             ...request,
-            priority: request.priority - 1
+            priority: request.priority - 1,
           });
-          
+
           // Delay maior para retry
           await this.delay(this.baseDelay * request.retries);
         } else {
-          console.error(`💥 Requisição ${request.id} falhou após ${this.maxRetries} tentativas`);
+          console.error(
+            `💥 Requisição ${request.id} falhou após ${this.maxRetries} tentativas`
+          );
           request.reject(error);
         }
       }
@@ -131,24 +138,24 @@ class RequestQueue {
 
   // Função auxiliar para delay
   delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   // Limpar fila
   clearQueue() {
-    this.queue.forEach(request => {
-      request.reject(new Error('Fila cancelada'));
+    this.queue.forEach((request) => {
+      request.reject(new Error("Fila cancelada"));
     });
     this.queue = [];
     this.isProcessing = false;
-    console.log('🗑️ Fila de requisições limpa');
+    console.log("🗑️ Fila de requisições limpa");
   }
 
   // Obter status da fila
   getQueueStatus() {
     return {
       queueLength: this.queue.length,
-      isProcessing: this.isProcessing
+      isProcessing: this.isProcessing,
     };
   }
 }
@@ -162,19 +169,21 @@ function initializeQueueMonitoring() {
   setInterval(() => {
     const status = requestQueue.getQueueStatus();
     if (status.queueLength > 0 || status.isProcessing) {
-      console.log(`📊 Status da fila: ${status.queueLength} pendentes, processando: ${status.isProcessing}`);
+      console.log(
+        `📊 Status da fila: ${status.queueLength} pendentes, processando: ${status.isProcessing}`
+      );
     }
   }, 5000);
 
   // Mostrar indicador visual quando há muitas requisições na fila
   setInterval(() => {
     const status = requestQueue.getQueueStatus();
-    const indicator = document.getElementById('queue-indicator');
-    
+    const indicator = document.getElementById("queue-indicator");
+
     if (status.queueLength > 5) {
       if (!indicator) {
-        const queueIndicator = document.createElement('div');
-        queueIndicator.id = 'queue-indicator';
+        const queueIndicator = document.createElement("div");
+        queueIndicator.id = "queue-indicator";
         queueIndicator.innerHTML = `
           <div style="
             position: fixed;
@@ -220,27 +229,27 @@ function initializeQueueMonitoring() {
 
 // === SISTEMA DE GERENCIAMENTO DE REQUISIÇÕES ===
 function cancelarRequisicoesCards() {
-  console.log('🛑 Cancelando requisições pendentes dos cards...');
+  console.log("🛑 Cancelando requisições pendentes dos cards...");
   requestQueue.clearQueue();
-  
+
   // Limpar cache se necessário
   statusCache.clear();
-  
+
   // Remover indicador visual se existir
-  const indicator = document.getElementById('queue-indicator');
+  const indicator = document.getElementById("queue-indicator");
   if (indicator) {
     indicator.remove();
   }
 }
 
 // Cancelar requisições quando usuário sai da página
-window.addEventListener('beforeunload', () => {
+window.addEventListener("beforeunload", () => {
   cancelarRequisicoesCards();
 });
 
 // Cancelar requisições quando usuário muda de filtro/busca
 function onFilterChange() {
-  console.log('🔄 Filtro alterado, cancelando requisições pendentes...');
+  console.log("🔄 Filtro alterado, cancelando requisições pendentes...");
   cancelarRequisicoesCards();
 }
 
@@ -783,7 +792,7 @@ class OnlineAttendanceManager {
 
         if (resultado.success) {
           console.log("✅ Presença registrada online com sucesso");
-          
+
           // Atualizar cache local
           const registroCache = {
             data: dataFormatada,
@@ -795,10 +804,13 @@ class OnlineAttendanceManager {
             timestamp: Date.now(),
           };
           statusCache.setStatus(nome, registroCache);
-          
+
           return resultado;
         } else {
-          console.error("❌ Erro ao registrar presença online:", resultado.error);
+          console.error(
+            "❌ Erro ao registrar presença online:",
+            resultado.error
+          );
           throw new Error(resultado.error || "Erro desconhecido");
         }
       } catch (error) {
@@ -1590,22 +1602,30 @@ let currentUser = null;
 const cacheManager = new CacheManager();
 
 // === UTILITÁRIOS DE REDE COM RETRY ===
-async function fetchWithRetry(url, options = {}, maxRetries = 3, timeoutMs = 20000) {
+async function fetchWithRetry(
+  url,
+  options = {},
+  maxRetries = 3,
+  timeoutMs = 20000
+) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(
-        `Tentativa ${attempt}/${maxRetries} para: ${url.substring(0, 100)}... (timeout: ${timeoutMs}ms)`
+        `Tentativa ${attempt}/${maxRetries} para: ${url.substring(
+          0,
+          100
+        )}... (timeout: ${timeoutMs}ms)`
       );
-      
+
       // Criar um timeout personalizado para cada tentativa
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-      
+
       const response = await fetch(url, {
         ...options,
-        signal: controller.signal
+        signal: controller.signal,
       });
-      
+
       clearTimeout(timeoutId);
 
       // Se a resposta não é ok, mas não é um erro de rede, não fazer retry
@@ -1634,8 +1654,10 @@ async function fetchWithRetry(url, options = {}, maxRetries = 3, timeoutMs = 200
       // Backoff exponencial adaptativo: aumentar timeout nas tentativas subsequentes
       const delay = Math.pow(2, attempt - 1) * 1000;
       timeoutMs = Math.min(timeoutMs * 1.5, 30000); // Aumentar timeout até 30s máximo
-      
-      console.log(`⏳ Aguardando ${delay}ms antes da próxima tentativa (próximo timeout: ${timeoutMs}ms)...`);
+
+      console.log(
+        `⏳ Aguardando ${delay}ms antes da próxima tentativa (próximo timeout: ${timeoutMs}ms)...`
+      );
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
@@ -1766,9 +1788,11 @@ function setupUserInterface() {
   // Configurar filtros baseados no usuário
   setupUserFilters();
 
-  // Se for admin, adicionar link para estatísticas
+  // Se for admin ou professor, adicionar funcionalidades avançadas
   if (currentUser.role === "admin") {
     addAdminFeatures();
+  } else if (currentUser.role === "professor") {
+    addProfessorFeatures();
   }
 
   // ✅ NOVO: Adicionar seção de últimos registros para professores
@@ -1948,11 +1972,42 @@ function hideIndividualEditingForAdmin() {
   document.body.classList.add("admin-view");
 }
 
+// === FUNCIONALIDADES PARA PROFESSORES ===
+function addProfessorFeatures() {
+  const buttonsContainer = document.getElementById("buttons");
+  if (buttonsContainer) {
+    // Adicionar botão de estatísticas para professor
+    const statsButton = document.createElement("button");
+    statsButton.id = "statsButton";
+    statsButton.className = "btn-primary";
+    statsButton.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/>
+      </svg>
+      <span>📊 Relatórios e Estatísticas</span>
+    `;
+    statsButton.addEventListener("click", abrirDashboardAdministrativo);
+    buttonsContainer.appendChild(statsButton);
+
+    // Adicionar aviso de acesso para professores
+    const infoButton = document.createElement("div");
+    infoButton.className = "professor-info-notice";
+    infoButton.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+        <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+      </svg>
+      <span>👨‍🏫 Acesso para visualização de relatórios e estatísticas</span>
+    `;
+    buttonsContainer.appendChild(infoButton);
+  }
+}
+
 // === DASHBOARD ADMINISTRATIVO (MODAL) ===
 async function abrirDashboardAdministrativo() {
-  if (currentUser.role !== "admin") {
+  if (currentUser.role !== "admin" && currentUser.role !== "professor") {
     mostrarErro(
-      "Acesso negado. Apenas administradores podem acessar esta funcionalidade.",
+      "Acesso negado. Apenas administradores e professores podem acessar esta funcionalidade.",
       "Acesso Restrito"
     );
     return;
@@ -3827,10 +3882,7 @@ async function registrarPresencaFalta(status) {
     }
 
     const acao = status === "P" ? "Presença" : "Falta";
-    mostrarSucesso(
-      `${acao} registrada com sucesso!`,
-      "Registro Salvo"
-    );
+    mostrarSucesso(`${acao} registrada com sucesso!`, "Registro Salvo");
 
     // ✅ NOVO: Registrar no rastreador local (substitui o localStorage)
     lastAttendanceTracker.recordAttendance(
@@ -3952,9 +4004,11 @@ async function atualizarNotas() {
 // === FUNÇÕES DE INTERFACE ===
 function exibirResultados(alunos) {
   // Cancelar requisições pendentes antes de exibir novos resultados
-  console.log('🔄 Exibindo novos resultados, cancelando requisições pendentes...');
+  console.log(
+    "🔄 Exibindo novos resultados, cancelando requisições pendentes..."
+  );
   cancelarRequisicoesCards();
-  
+
   const resultTableBody = domCache.get("resultTableBody");
   const studentsGrid = domCache.get("studentsGrid");
   const noResultsMessage = domCache.get("noResults");
@@ -4091,14 +4145,17 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
   } else {
     // Buscar último registro online usando a fila sequencial
     // Usar um delay baseado no índice do aluno para espalhar as requisições
-    const cardIndex = document.querySelectorAll('.student-card').length;
+    const cardIndex = document.querySelectorAll(".student-card").length;
     const delayMs = Math.min(cardIndex * 50, 2000); // Máximo de 2 segundos
-    
+
     setTimeout(async () => {
       try {
-        console.log(`🔄 Iniciando busca para ${aluno.Nome} (delay: ${delayMs}ms)`);
-        
-        const resultado = await onlineAttendanceManager.buscarUltimoRegistroAluno(aluno.Nome);
+        console.log(
+          `🔄 Iniciando busca para ${aluno.Nome} (delay: ${delayMs}ms)`
+        );
+
+        const resultado =
+          await onlineAttendanceManager.buscarUltimoRegistroAluno(aluno.Nome);
         const lastAttendanceElement = document.getElementById(lastAttendanceId);
 
         if (lastAttendanceElement) {
@@ -4123,8 +4180,11 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
           }
         }
       } catch (error) {
-        console.error(`❌ Erro ao buscar último registro para ${aluno.Nome}:`, error);
-        
+        console.error(
+          `❌ Erro ao buscar último registro para ${aluno.Nome}:`,
+          error
+        );
+
         // Mostrar erro no card
         const lastAttendanceElement = document.getElementById(lastAttendanceId);
         if (lastAttendanceElement) {
