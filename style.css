@@ -1,4 +1,3 @@
-
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap");
 
 /* Definição de variáveis CSS - Design CEDESP */
@@ -253,10 +252,10 @@ header {
 
 /* Informações do Usuário */
 .user-info {
-     display: flex;
-    align-items: center;
-    justify-content: space-around;
-    flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  flex-wrap: wrap;
 }
 
 .user-badge {
@@ -1428,6 +1427,33 @@ select.full-width-input option {
   background: var(--gradient-accent);
 }
 
+/* Melhorias na hierarquia visual dos cards */
+table td[data-label*="Nome"],
+table td[data-label*="Título"],
+table td[data-label*="Turma"] {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: 1.05rem;
+}
+
+table td[data-label*="Email"],
+table td[data-label*="Matrícula"],
+table td[data-label*="Data"] {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+}
+
+table td[data-label*="Status"],
+table td[data-label*="Situação"] {
+  font-weight: 500;
+}
+
+/* Melhor separação visual entre cards */
+table tr + tr {
+  margin-top: 0.25rem;
+}
+
 /* Responsividade - Design Adaptativo */
 @media (max-width: 768px) {
   body {
@@ -1562,44 +1588,56 @@ select.full-width-input option {
   table tr {
     background: var(--color-bg-surface);
     border: var(--border-subtle);
-    border-radius: var(--border-radius-md);
-    margin-bottom: 1.5rem;
-    padding: 1.5rem;
+    border-radius: var(--border-radius-lg);
+    margin-bottom: 1.25rem;
+    padding: 1.25rem;
     box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s ease;
+  }
+
+  table tr:hover {
+    box-shadow: var(--shadow-md);
   }
 
   table td {
     border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     position: relative;
-    padding: 1rem 0;
-    padding-left: 45%;
+    padding: 0.9rem 0;
+    padding-left: 42%;
     text-align: right;
-    font-size: 1rem;
-    min-height: 2.5rem;
+    font-size: 0.95rem;
+    min-height: 2.2rem;
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    line-height: 1.5;
+  }
+
+  table td:first-child {
+    padding-top: 0.5rem;
   }
 
   table td:last-child {
     border-bottom: none;
+    padding-bottom: 0.5rem;
   }
 
   table td::before {
     content: attr(data-label) ":";
     position: absolute;
     left: 0;
-    width: 40%;
+    width: 38%;
     font-weight: 600;
     color: var(--color-text-secondary);
     text-align: left;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.025em;
     line-height: 1.4;
     display: flex;
     align-items: center;
+    padding-right: 0.5rem;
   }
 
   /* Melhorias específicas para campos com checkboxes */
@@ -1607,17 +1645,33 @@ select.full-width-input option {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    padding: 1.2rem 0;
+    padding: 1rem 0;
+    min-height: 2.2rem;
   }
 
   .attendance-col input[type="checkbox"] {
-    margin-left: 0.8rem;
-    transform: scale(1.5);
+    margin-left: 0.6rem;
+    transform: scale(1.4);
     cursor: pointer;
   }
 
   /* Badges e botões em mobile */
   .badge,
+  .status-badge,
+  .priority-badge {
+    font-size: 0.85rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+    letter-spacing: 0.025em;
+  }
+
+  .btn-small {
+    padding: 0.65rem 1.1rem;
+    font-size: 0.85rem;
+    min-width: 110px;
+    border-radius: var(--border-radius-sm);
+  }
   .status-badge,
   .priority-badge {
     display: inline-block;
@@ -1679,6 +1733,87 @@ select.full-width-input option {
   }
 }
 
+/* Melhorias específicas para tablets */
+@media (min-width: 481px) and (max-width: 768px) {
+  table tr {
+    padding: 1.4rem;
+    margin-bottom: 1.3rem;
+    border-radius: var(--border-radius-lg);
+  }
+
+  table td {
+    padding-left: 40%;
+    font-size: 1rem;
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+    min-height: 2.3rem;
+  }
+
+  table td:first-child {
+    padding-top: 0.5rem;
+  }
+
+  table td:last-child {
+    padding-bottom: 0.5rem;
+  }
+
+  table td::before {
+    width: 36%;
+    font-size: 0.87rem;
+    padding-right: 0.6rem;
+  }
+
+  .attendance-col {
+    padding: 1.1rem 0;
+  }
+
+  .attendance-col input[type="checkbox"] {
+    transform: scale(1.4);
+    margin-left: 0.6rem;
+  }
+
+  .badge,
+  .status-badge,
+  .priority-badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .btn-small {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+  }
+
+  /* Tabelas de estatísticas em tablets */
+  .detailed-stats tr {
+    padding: 1.4rem;
+    margin-bottom: 1.3rem;
+    border-radius: var(--border-radius-lg);
+  }
+
+  .detailed-stats td {
+    padding-left: 40%;
+    font-size: 1rem;
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+    min-height: 2.3rem;
+  }
+
+  .detailed-stats td:first-child {
+    padding-top: 0.5rem;
+  }
+
+  .detailed-stats td:last-child {
+    padding-bottom: 0.5rem;
+  }
+
+  .detailed-stats td::before {
+    width: 36%;
+    font-size: 0.87rem;
+    padding-right: 0.6rem;
+  }
+}
+
 @media (max-width: 480px) {
   .container {
     padding: 0.8rem;
@@ -1695,28 +1830,55 @@ select.full-width-input option {
 
   /* Ajustes para telas menores */
   table tr {
-    padding: 1.2rem;
-    margin-bottom: 1.2rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: var(--border-radius-md);
   }
 
   table td {
-    padding-left: 50%;
-    font-size: 0.95rem;
-    padding-top: 0.8rem;
-    padding-bottom: 0.8rem;
+    padding-left: 45%;
+    font-size: 0.9rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    min-height: 2rem;
+  }
+
+  table td:first-child {
+    padding-top: 0.4rem;
+  }
+
+  table td:last-child {
+    padding-bottom: 0.4rem;
   }
 
   table td::before {
-    width: 45%;
-    font-size: 0.8rem;
+    width: 40%;
+    font-size: 0.75rem;
+    padding-right: 0.4rem;
+  }
+
+  /* Hierarquia visual em mobile */
+  table td[data-label*="Nome"],
+  table td[data-label*="Título"],
+  table td[data-label*="Turma"] {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  table td[data-label*="Email"],
+  table td[data-label*="Matrícula"],
+  table td[data-label*="Data"] {
+    font-size: 0.85rem;
   }
 
   .attendance-col {
-    padding: 1rem 0;
+    padding: 0.9rem 0;
+    min-height: 2rem;
   }
 
   .attendance-col input[type="checkbox"] {
-    transform: scale(1.4);
+    transform: scale(1.3);
+    margin-left: 0.5rem;
   }
 
   .badge,
@@ -1724,10 +1886,11 @@ select.full-width-input option {
   .priority-badge {
     font-size: 0.8rem;
     padding: 0.4rem 0.8rem;
+    border-radius: var(--border-radius-sm);
   }
 
   .btn-small {
-    padding: 0.5rem 1rem;
+    padding: 0.55rem 1rem;
     font-size: 0.8rem;
     min-width: 100px;
   }
@@ -1777,6 +1940,48 @@ select.full-width-input option {
     height: 52px;
     bottom: 1rem;
     right: 1rem;
+  }
+
+  /* Tabelas de estatísticas em mobile */
+  .detailed-stats tr {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: var(--border-radius-md);
+  }
+
+  .detailed-stats td {
+    padding-left: 45%;
+    font-size: 0.9rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    min-height: 2rem;
+  }
+
+  .detailed-stats td:first-child {
+    padding-top: 0.4rem;
+  }
+
+  .detailed-stats td:last-child {
+    padding-bottom: 0.4rem;
+  }
+
+  .detailed-stats td::before {
+    width: 40%;
+    font-size: 0.75rem;
+    padding-right: 0.4rem;
+  }
+
+  /* Hierarquia visual nas tabelas de estatísticas */
+  .detailed-stats td[data-label*="Nome"],
+  .detailed-stats td[data-label*="Curso"] {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .detailed-stats td[data-label*="Posição"],
+  .detailed-stats td[data-label*="Data"],
+  .detailed-stats td[data-label*="Média"] {
+    font-size: 0.85rem;
   }
 }
 
@@ -2683,9 +2888,9 @@ select.full-width-input option {
 }
 
 .stats-grid {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .stat-card {
@@ -2982,6 +3187,84 @@ select.full-width-input option {
     position: static;
     margin-top: 2rem;
     justify-content: center;
+  }
+
+  /* Transformação específica para tabelas de estatísticas */
+  .detailed-stats table {
+    display: block;
+  }
+
+  .detailed-stats table,
+  .detailed-stats thead,
+  .detailed-stats tbody,
+  .detailed-stats th,
+  .detailed-stats td,
+  .detailed-stats tr {
+    border: 0;
+  }
+
+  .detailed-stats thead {
+    display: none;
+  }
+
+  .detailed-stats tbody {
+    display: block;
+  }
+
+  .detailed-stats tr {
+    background: var(--color-bg-surface);
+    border: var(--border-subtle);
+    border-radius: var(--border-radius-lg);
+    margin-bottom: 1.25rem;
+    padding: 1.25rem;
+    display: block;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s ease;
+  }
+
+  .detailed-stats tr:hover {
+    box-shadow: var(--shadow-md);
+  }
+
+  .detailed-stats td {
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    position: relative;
+    padding: 0.9rem 0;
+    padding-left: 42%;
+    text-align: right;
+    font-size: 0.95rem;
+    min-height: 2.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    line-height: 1.5;
+  }
+
+  .detailed-stats td:first-child {
+    padding-top: 0.5rem;
+  }
+
+  .detailed-stats td:last-child {
+    border-bottom: none;
+    padding-bottom: 0.5rem;
+  }
+
+  .detailed-stats td::before {
+    content: attr(data-label) ":";
+    position: absolute;
+    left: 0;
+    width: 38%;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-align: left;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    padding-right: 0.5rem;
   }
 }
 
@@ -4685,10 +4968,10 @@ button:disabled {
 }
 
 .charts-grid {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
 }
 
 .chart-container {
@@ -6143,6 +6426,3 @@ button:disabled {
     padding: 16px;
   }
 }
-
-
-

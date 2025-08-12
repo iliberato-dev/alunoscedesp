@@ -509,13 +509,13 @@ class StatsSystem {
           : 0;
 
       row.innerHTML = `
-                <td>${course}</td>
-                <td>${stats.total}</td>
-                <td>${stats.approved}</td>
-                <td>${stats.inProgress}</td>
-                <td>${stats.failed}</td>
-                <td>${approvalRate.toFixed(1)}%</td>
-                <td>${stats.averageGrade}</td>
+                <td data-label="Curso">${course}</td>
+                <td data-label="Total">${stats.total}</td>
+                <td data-label="Aprovados">${stats.approved}</td>
+                <td data-label="Em Curso">${stats.inProgress}</td>
+                <td data-label="Reprovados">${stats.failed}</td>
+                <td data-label="Taxa Aprovação">${approvalRate.toFixed(1)}%</td>
+                <td data-label="Média Geral">${stats.averageGrade}</td>
             `;
       tbody.appendChild(row);
     });
@@ -627,11 +627,11 @@ class StatsSystem {
       };
 
       row.innerHTML = `
-                <td>${index + 1}º</td>
-                <td>${student.Nome}</td>
-                <td>${courseName}</td>
-                <td>${student.media.toFixed(1)}</td>
-                <td><span class="badge ${situation
+                <td data-label="Posição">${index + 1}º</td>
+                <td data-label="Nome">${student.Nome}</td>
+                <td data-label="Curso">${courseName}</td>
+                <td data-label="Média">${student.media.toFixed(1)}</td>
+                <td data-label="Situação"><span class="badge ${situation
                   .toLowerCase()
                   .replace(/\s+/g, "-")}">${
         situationText[situation] || situation
@@ -726,13 +726,16 @@ class StatsSystem {
           : "";
 
       row.innerHTML = `
-        <td>${this.formatDateTime(registro.data, registro.horario)}</td>
-        <td>${registro.nome || "Nome não informado"}</td>
-        <td>${registro.curso || "Curso não informado"}</td>
-        <td><span class="status-badge ${statusClass}">${
+        <td data-label="Data/Hora">${this.formatDateTime(
+          registro.data,
+          registro.horario
+        )}</td>
+        <td data-label="Aluno">${registro.nome || "Nome não informado"}</td>
+        <td data-label="Curso">${registro.curso || "Curso não informado"}</td>
+        <td data-label="Status"><span class="status-badge ${statusClass}">${
         registro.status || "N/A"
       }</span></td>
-        <td class="professor-info">
+        <td data-label="Professor" class="professor-info">
           <div class="professor-name">${
             registro.professor || "Professor não informado"
           }</div>
