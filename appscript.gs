@@ -2086,6 +2086,301 @@ function doGet(e) {
           cursoFiltro
         );
         return criarRespostaJson(resultado);
+      } else if (acao === "atualizarNotaEspecifica") {
+        // NOVA FUNCIONALIDADE: Atualizar nota específica (via JSONP)
+        console.log("📝 === AÇÃO: atualizarNotaEspecifica ===");
+        console.log(" Parâmetros recebidos:", e.parameter);
+
+        // Verificar se é uma requisição JSONP (simulando POST)
+        const isJSONP = e.parameter.callback && e.parameter._method === "POST";
+        console.log("🔍 É requisição JSONP?", isJSONP);
+
+        if (isJSONP) {
+          // Usar lógica específica para JSONP
+          const ra = e.parameter.ra;
+          const disciplina = e.parameter.disciplina;
+          const bimestre = e.parameter.bimestre;
+          const nota = e.parameter.nota;
+
+          console.log(
+            `✍️ Recebido via JSONP - RA: ${ra}, Disciplina: ${disciplina}, Bimestre: ${bimestre}, Nota: ${nota}`
+          );
+
+          // Validar nota
+          const notaNum = parseFloat(nota);
+          if (isNaN(notaNum) || notaNum < 0 || notaNum > 10) {
+            const erro = {
+              success: false,
+              message: "Nota deve ser um número entre 0 e 10",
+            };
+            console.log("❌ Nota inválida:", erro);
+            return ContentService.createTextOutput(
+              `${e.parameter.callback}(${JSON.stringify(erro)})`
+            ).setMimeType(ContentService.MimeType.JAVASCRIPT);
+          }
+
+          try {
+            // Buscar aluno em todas as planilhas
+            const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+            let abaEncontrada = null;
+            let linhaAluno = -1;
+
+            console.log("🔍 Buscando aluno em todas as planilhas...");
+            console.log("📋 Planilhas disponíveis:", SHEET_NAMES);
+
+            for (const nomeAba of SHEET_NAMES) {
+              const aba = spreadsheet.getSheetByName(nomeAba);
+              if (!aba) {
+                console.log(`⚠️ Planilha ${nomeAba} não encontrada`);
+                continue;
+              }
+
+              const indices = detectarColunasUniversal(aba);
+              if (indices.ID_Unico === undefined) {
+                console.log(`⚠️ Coluna ID_Unico não encontrada em ${nomeAba}`);
+                continue;
+              }
+
+              const ultimaLinha = aba.getLastRow();
+              if (ultimaLinha <= 1) {
+                console.log(`⚠️ Planilha ${nomeAba} está vazia`);
+                continue;
+              }
+
+              console.log(
+                `🔍 Procurando aluno ${ra} na planilha ${nomeAba}...`
+              );
+
+              // Buscar o aluno
+              const idsColuna = aba
+                .getRange(2, indices.ID_Unico + 1, ultimaLinha - 1, 1)
+                .getValues();
+
+              for (let i = 0; i < idsColuna.length; i++) {
+                if (idsColuna[i][0] && idsColuna[i][0].toString() === ra) {
+                  abaEncontrada = aba;
+                  linhaAluno = i + 2; // +2 porque começamos na linha 2 e i é 0-based
+                  console.log(
+                    `✅ Aluno ${ra} encontrado na linha ${linhaAluno} da planilha ${nomeAba}`
+                  );
+                  break;
+                }
+              }
+
+              if (abaEncontrada) break;
+            }
+
+            if (!abaEncontrada || linhaAluno === -1) {
+              const erro = { success: false, message: "Aluno não encontrado" };
+              console.log("❌ Aluno não encontrado:", erro);
+              return ContentService.createTextOutput(
+                `${e.parameter.callback}(${JSON.stringify(erro)})`
+              ).setMimeType(ContentService.MimeType.JAVASCRIPT);
+            }
+
+            console.log(
+              `👤 Aluno encontrado na aba ${abaEncontrada.getName()}, linha ${linhaAluno}`
+            );
+
+            // Detectar colunas da aba encontrada
+            const indices = detectarColunasUniversal(abaEncontrada);
+            console.log("📊 Índices de colunas:", indices);
+
+            // Mapear disciplina e bimestre para índice de coluna
+            let colunaIndice = undefined;
+
+            if (disciplina === "curso") {
+              if (bimestre === "1_BIMESTRE") colunaIndice = indices.Nota1;
+              else if (bimestre === "2_BIMESTRE") colunaIndice = indices.Nota2;
+              else if (bimestre === "3_BIMESTRE") colunaIndice = indices.Nota3;
+            } else if (disciplina === "mundoTrabalho") {
+              if (bimestre === "1_BIMESTRE")
+                colunaIndice = indices.MundoTrabalho1;
+              else if (bimestre === "2_BIMESTRE")
+                colunaIndice = indices.MundoTrabalho2;
+              else if (bimestre === "3_BIMESTRE")
+                colunaIndice = indices.MundoTrabalho3;
+            } else if (disciplina === "convivio") {
+              if (bimestre === "1_BIMESTRE") colunaIndice = indices.Convivio1;
+              else if (bimestre === "2_BIMESTRE")
+                colunaIndice = indices.Convivio2;
+              else if (bimestre === "3_BIMESTRE")
+                colunaIndice = indices.Convivio3;
+            }
+
+            console.log(
+              `🎯 Disciplina: ${disciplina}, Bimestre: ${bimestre}, Coluna índice: ${colunaIndice}`
+            );
+
+            if (colunaIndice === undefined) {
+              const erro = {
+                success: false,
+                message: "Disciplina ou bimestre não encontrado na planilha",
+              };
+              console.log("❌ Coluna não encontrada:", erro);
+              return ContentService.createTextOutput(
+                `${e.parameter.callback}(${JSON.stringify(erro)})`
+              ).setMimeType(ContentService.MimeType.JAVASCRIPT);
+            }
+
+            console.log(
+              `📍 Atualizando célula linha ${linhaAluno}, coluna ${
+                colunaIndice + 1
+              } com valor ${notaNum}`
+            );
+
+            // Atualizar nota
+            abaEncontrada
+              .getRange(linhaAluno, colunaIndice + 1)
+              .setValue(notaNum);
+
+            console.log("✅ Nota atualizada na planilha");
+
+            // Recalcular média se existir coluna de média
+            let media = null;
+            let situacao = null;
+
+            if (indices.Media !== undefined) {
+              console.log("📊 Recalculando média...");
+
+              // Coletar todas as notas para calcular média
+              const todasNotas = [];
+
+              // Notas principais (3)
+              if (indices.Nota1 !== undefined)
+                todasNotas.push(
+                  abaEncontrada
+                    .getRange(linhaAluno, indices.Nota1 + 1)
+                    .getValue() || 0
+                );
+              if (indices.Nota2 !== undefined)
+                todasNotas.push(
+                  abaEncontrada
+                    .getRange(linhaAluno, indices.Nota2 + 1)
+                    .getValue() || 0
+                );
+              if (indices.Nota3 !== undefined)
+                todasNotas.push(
+                  abaEncontrada
+                    .getRange(linhaAluno, indices.Nota3 + 1)
+                    .getValue() || 0
+                );
+
+              // Mundo do Trabalho (3)
+              if (indices.MundoTrabalho1 !== undefined)
+                todasNotas.push(
+                  abaEncontrada
+                    .getRange(linhaAluno, indices.MundoTrabalho1 + 1)
+                    .getValue() || 0
+                );
+              if (indices.MundoTrabalho2 !== undefined)
+                todasNotas.push(
+                  abaEncontrada
+                    .getRange(linhaAluno, indices.MundoTrabalho2 + 1)
+                    .getValue() || 0
+                );
+              if (indices.MundoTrabalho3 !== undefined)
+                todasNotas.push(
+                  abaEncontrada
+                    .getRange(linhaAluno, indices.MundoTrabalho3 + 1)
+                    .getValue() || 0
+                );
+
+              // Convívio (3)
+              if (indices.Convivio1 !== undefined)
+                todasNotas.push(
+                  abaEncontrada
+                    .getRange(linhaAluno, indices.Convivio1 + 1)
+                    .getValue() || 0
+                );
+              if (indices.Convivio2 !== undefined)
+                todasNotas.push(
+                  abaEncontrada
+                    .getRange(linhaAluno, indices.Convivio2 + 1)
+                    .getValue() || 0
+                );
+              if (indices.Convivio3 !== undefined)
+                todasNotas.push(
+                  abaEncontrada
+                    .getRange(linhaAluno, indices.Convivio3 + 1)
+                    .getValue() || 0
+                );
+
+              console.log("📋 Todas as notas coletadas:", todasNotas);
+
+              // Calcular média (dividir por 9 para incluir zeros)
+              media =
+                todasNotas.reduce(
+                  (sum, nota) => sum + parseFloat(nota || 0),
+                  0
+                ) / 9;
+
+              // Atualizar média
+              abaEncontrada
+                .getRange(linhaAluno, indices.Media + 1)
+                .setValue(media.toFixed(2));
+
+              // Calcular situação
+              if (indices.Situacao !== undefined) {
+                situacao =
+                  media >= 7
+                    ? "Aprovado"
+                    : media >= 5
+                    ? "Recuperação"
+                    : "Retido";
+                abaEncontrada
+                  .getRange(linhaAluno, indices.Situacao + 1)
+                  .setValue(situacao);
+              }
+
+              console.log(
+                `📊 Média recalculada: ${media.toFixed(
+                  2
+                )}, Situação: ${situacao}`
+              );
+            }
+
+            const sucesso = {
+              success: true,
+              message: "Nota atualizada com sucesso",
+              data: {
+                ra,
+                disciplina,
+                bimestre,
+                nota: notaNum,
+                media: media ? media.toFixed(2) : null,
+                situacao,
+                aba: abaEncontrada.getName(),
+                linha: linhaAluno,
+                coluna: colunaIndice + 1,
+              },
+            };
+
+            console.log("✅ Atualização concluída:", sucesso);
+
+            return ContentService.createTextOutput(
+              `${e.parameter.callback}(${JSON.stringify(sucesso)})`
+            ).setMimeType(ContentService.MimeType.JAVASCRIPT);
+          } catch (error) {
+            console.error("❌ Erro ao atualizar nota:", error);
+            const erro = {
+              success: false,
+              message: "Erro interno: " + error.toString(),
+            };
+            return ContentService.createTextOutput(
+              `${e.parameter.callback}(${JSON.stringify(erro)})`
+            ).setMimeType(ContentService.MimeType.JAVASCRIPT);
+          }
+        } else {
+          // GET normal (não JSONP) - retornar erro explicativo
+          const erro = {
+            success: false,
+            message:
+              "Esta action requer POST. Use JSONP com _method=POST para localhost.",
+          };
+          console.log("⚠️ Requisição GET normal:", erro);
+          return criarRespostaJson(erro);
+        }
       } else {
         return criarRespostaJson({
           success: false,

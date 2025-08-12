@@ -4108,7 +4108,7 @@ function buscarColuna(aluno, padroes) {
     }
   }
 
-  return "-";
+  return "0";
 }
 
 function createStudentCardHTML(aluno, media, situacao, faltas = null) {
@@ -4118,9 +4118,9 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
     .join("")
     .toUpperCase();
 
-  const nota1 = aluno.Nota1 || "";
-  const nota2 = aluno.Nota2 || "";
-  const nota3 = aluno.Nota3 || "";
+  const nota1 = aluno.Nota1 || "0";
+  const nota2 = aluno.Nota2 || "0";
+  const nota3 = aluno.Nota3 || "0";
   const faltasExibir = faltas !== null ? faltas : aluno.Faltas || 0;
 
   // Usar a média da tabela diretamente
@@ -4222,9 +4222,9 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
 
   // Calcular notas por matéria usando dados reais da tabela
   const notasCurso = {
-    bim1: aluno.Nota1 || "-",
-    bim2: aluno.Nota2 || "-",
-    bim3: aluno.Nota3 || "-",
+    bim1: aluno.Nota1 || "0",
+    bim2: aluno.Nota2 || "0",
+    bim3: aluno.Nota3 || "0",
   };
 
   // Padrões para buscar colunas de Mundo do Trabalho
@@ -4837,9 +4837,9 @@ function atualizarPainelDetalhes(aluno) {
 
   if (detailName) detailName.textContent = aluno.Nome;
   if (detailFaltas) detailFaltas.textContent = aluno.Faltas || 0;
-  if (detailNota1) detailNota1.value = aluno.Nota1 || "";
-  if (detailNota2) detailNota2.value = aluno.Nota2 || "";
-  if (detailNota3) detailNota3.value = aluno.Nota3 || "";
+  if (detailNota1) detailNota1.value = aluno.Nota1 || "0";
+  if (detailNota2) detailNota2.value = aluno.Nota2 || "0";
+  if (detailNota3) detailNota3.value = aluno.Nota3 || "0";
 }
 
 // ===== AUTOCOMPLETE FUNCTIONALITY =====
@@ -4985,26 +4985,19 @@ async function updateGrade(studentId, subject, bimester, newValue) {
     // Preparar dados para envio
     const dadosAtualizacao = {
       action: "atualizarNotaEspecifica",
-      alunoId: studentId,
-      campo: campo,
-      valor: grade,
-      professor: currentUser.name,
+      ra: studentId,
       disciplina: subject,
-      bimestre: bimester,
+      bimestre: `${bimester}_BIMESTRE`,
+      nota: grade.toString(),
     };
 
     console.log("📝 Enviando atualização de nota:", dadosAtualizacao);
+    console.log("🌐 URL da API:", API_URL);
+    console.log("🔧 IS_LOCAL:", IS_LOCAL);
 
-    // Enviar para o App Script
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(dadosAtualizacao),
-    });
-
-    const resultado = await response.json();
+    // Usar função universal que lida com CORS automaticamente
+    const resultado = await enviarRequisicao(dadosAtualizacao, false); // Não tentar fetch POST
+    console.log("📊 Resultado:", resultado);
 
     if (resultado.success) {
       mostrarSucessoCard(
@@ -5013,10 +5006,68 @@ async function updateGrade(studentId, subject, bimester, newValue) {
         "Nota Atualizada"
       );
 
-      // Atualizar a média exibida no card
-      setTimeout(() => {
-        atualizarMediaNoCard(studentId);
-      }, 1000);
+      // Aguardar um pouco e verificar se a atualização foi bem-sucedida
+      setTimeout(async () => {
+        try {
+          console.log("🔍 Verificando se a atualização foi aplicada...");
+
+          // Buscar dados atualizados do aluno
+          const response = await fetch(
+            `${API_URL}?nomeAluno=${encodeURIComponent(studentId)}`
+          );
+          const data = await response.json();
+
+          if (data.saida && data.saida.length > 0) {
+            const alunoAtualizado = data.saida.find(
+              (a) => a.ID_Unico === studentId
+            );
+            if (alunoAtualizado) {
+              // Verificar se a nota foi realmente atualizada
+              let notaAtualizada = false;
+
+              if (subject === "curso") {
+                const campoNota = `Nota${bimester}`;
+                const notaAtual = parseFloat(alunoAtualizado[campoNota]) || 0;
+                notaAtualizada = Math.abs(notaAtual - grade) < 0.01; // Tolerância para comparação de float
+                console.log(
+                  `📊 Verificação ${campoNota}: esperado=${grade}, atual=${notaAtual}, atualizada=${notaAtualizada}`
+                );
+              } else if (subject === "mundoTrabalho") {
+                const campoNota = `MundoTrabalho${bimester}`;
+                const notaAtual = parseFloat(alunoAtualizado[campoNota]) || 0;
+                notaAtualizada = Math.abs(notaAtual - grade) < 0.01;
+                console.log(
+                  `📊 Verificação ${campoNota}: esperado=${grade}, atual=${notaAtual}, atualizada=${notaAtualizada}`
+                );
+              } else if (subject === "convivio") {
+                const campoNota = `Convivio${bimester}`;
+                const notaAtual = parseFloat(alunoAtualizado[campoNota]) || 0;
+                notaAtualizada = Math.abs(notaAtual - grade) < 0.01;
+                console.log(
+                  `📊 Verificação ${campoNota}: esperado=${grade}, atual=${notaAtual}, atualizada=${notaAtualizada}`
+                );
+              }
+
+              if (notaAtualizada) {
+                console.log("✅ Atualização confirmada na planilha!");
+                // Atualizar a média exibida no card
+                atualizarMediaNoCard(studentId);
+              } else {
+                console.warn(
+                  "⚠️ Nota não foi atualizada na planilha. Tentando novamente..."
+                );
+                mostrarErroCard(
+                  studentId,
+                  "Nota pode não ter sido salva. Verifique a planilha.",
+                  "Verificação Necessária"
+                );
+              }
+            }
+          }
+        } catch (error) {
+          console.error("❌ Erro ao verificar atualização:", error);
+        }
+      }, 2000); // Aguardar 2 segundos antes de verificar
     } else {
       throw new Error(resultado.error || "Erro desconhecido");
     }
@@ -5030,6 +5081,181 @@ async function updateGrade(studentId, subject, bimester, newValue) {
   } finally {
     removerLoadingCard(studentId);
   }
+}
+
+// === FUNÇÃO JSONP PARA CONTORNAR CORS ===
+function enviarViaJSONP(dados) {
+  return new Promise((resolve, reject) => {
+    // Criar callback único
+    const callbackName = `jsonp_callback_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+
+    console.log("🔗 Iniciando JSONP com callback:", callbackName);
+
+    // Registrar callback global
+    window[callbackName] = function (response) {
+      console.log("✅ JSONP callback executado:", response);
+      // Limpar callback
+      delete window[callbackName];
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
+      resolve(response);
+    };
+
+    // Construir URL com parâmetros
+    const params = new URLSearchParams({
+      ...dados,
+      callback: callbackName,
+      _method: "POST", // Indicar ao Apps Script para usar lógica do doPost
+    });
+
+    const url = `${WEB_APP_URL}?${params.toString()}`;
+    console.log("🔗 URL JSONP (simulando POST):", url);
+
+    // Criar script element
+    const script = document.createElement("script");
+    script.src = url;
+
+    script.onerror = (error) => {
+      console.error("❌ Erro no script JSONP:", error);
+      delete window[callbackName];
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
+      reject(new Error("Erro na requisição JSONP - Script não carregou"));
+    };
+
+    script.onload = () => {
+      console.log("📄 Script JSONP carregado com sucesso");
+      // Se chegou aqui mas o callback não foi chamado em 2 segundos, algo deu errado
+      setTimeout(() => {
+        if (window[callbackName]) {
+          console.warn("⚠️ Script carregou mas callback não foi executado");
+          delete window[callbackName];
+          if (document.head.contains(script)) {
+            document.head.removeChild(script);
+          }
+          reject(new Error("Callback JSONP não foi executado"));
+        }
+      }, 2000);
+    };
+
+    // Timeout de 15 segundos
+    setTimeout(() => {
+      if (window[callbackName]) {
+        console.error("⏰ Timeout na requisição JSONP");
+        delete window[callbackName];
+        if (document.head.contains(script)) {
+          document.head.removeChild(script);
+        }
+        reject(new Error("Timeout na requisição JSONP"));
+      }
+    }, 15000);
+
+    // Adicionar ao DOM para executar
+    document.head.appendChild(script);
+  });
+}
+
+// === FUNÇÃO UNIVERSAL PARA REQUISIÇÕES (CORS-SAFE) ===
+async function enviarRequisicao(dados, tentarFetch = true) {
+  console.log("🚀 Iniciando envio de requisição:", dados);
+
+  // Para localhost, usar estratégia específica baseada na action
+  if (IS_LOCAL) {
+    console.log("🏠 Localhost detectado, usando estratégia otimizada...");
+
+    // Para ações específicas que requerem POST, tentar JSONP primeiro
+    if (dados.action === "atualizarNotaEspecifica") {
+      console.log("📝 Action específica detectada, usando JSONP...");
+      try {
+        return await enviarViaJSONP(dados);
+      } catch (jsonpError) {
+        console.log(
+          "❌ JSONP falhou, tentando GET com parâmetros...",
+          jsonpError
+        );
+
+        // Fallback: tentar GET mesmo sabendo que pode não funcionar
+        const params = new URLSearchParams(dados);
+        const url = `${WEB_APP_URL}?${params.toString()}`;
+        console.log("🔗 URL GET fallback:", url);
+
+        const response = await fetch(url, {
+          method: "GET",
+          mode: "no-cors",
+        });
+
+        return {
+          success: false,
+          message: "Action requer POST - usando GET como fallback",
+          data: dados,
+          error: "Esta action precisa ser adicionada ao doGet do Apps Script",
+        };
+      }
+    }
+
+    // Para outras actions, usar GET normal
+    try {
+      console.log("1️⃣ Tentando GET request...");
+      const params = new URLSearchParams(dados);
+      const url = `${WEB_APP_URL}?${params.toString()}`;
+      console.log("🔗 URL GET:", url);
+
+      const response = await fetch(url, {
+        method: "GET",
+        mode: "no-cors",
+      });
+
+      console.log("📡 Response recebido:", response);
+
+      // Com no-cors, não conseguimos ler o response diretamente
+      console.log("✅ Requisição GET enviada com sucesso");
+
+      return {
+        success: true,
+        message: "Requisição enviada com sucesso (modo no-cors)",
+        data: dados,
+      };
+    } catch (error) {
+      console.log("❌ GET falhou:", error);
+      throw error;
+    }
+  }
+
+  // Em produção, tentar fetch primeiro se solicitado
+  if (tentarFetch) {
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dados),
+        mode: "cors",
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.log("🔄 Fetch falhou, tentando GET como fallback...", error);
+      const params = new URLSearchParams(dados);
+      const url = `${WEB_APP_URL}?${params.toString()}`;
+      const response = await fetch(url, { method: "GET", mode: "no-cors" });
+      return { success: true, message: "Requisição enviada via GET fallback" };
+    }
+  }
+
+  // Usar GET como método principal para maior compatibilidade
+  const params = new URLSearchParams(dados);
+  const url = `${WEB_APP_URL}?${params.toString()}`;
+  const response = await fetch(url, { method: "GET", mode: "no-cors" });
+  return { success: true, message: "Requisição enviada via GET" };
 }
 
 // === FUNÇÃO PARA ATUALIZAR A MÉDIA NO CARD APÓS MUDANÇA DE NOTA ===
@@ -5079,6 +5305,248 @@ async function atualizarMediaNoCard(studentId) {
 // Tornar a função global para onClick
 window.selectAutocompleteItem = selectAutocompleteItem;
 window.updateGrade = updateGrade;
+
+// === FUNÇÃO DE TESTE PARA ATUALIZAÇÃO DE NOTAS ===
+async function testarAtualizacaoNota() {
+  console.log("🧪 === TESTANDO ATUALIZAÇÃO DE NOTA ===");
+
+  try {
+    // Dados de teste
+    const dadosTeste = {
+      action: "atualizarNotaEspecifica",
+      alunoId: "TESTE_ID",
+      campo: "Nota1",
+      valor: 8.5,
+      professor: "Professor Teste",
+      disciplina: "curso",
+      bimestre: 1,
+    };
+
+    console.log("📝 Dados de teste:", dadosTeste);
+
+    // Testar diferentes métodos
+    console.log("1️⃣ Testando GET request...");
+    try {
+      const params = new URLSearchParams(dadosTeste);
+      const url = `${WEB_APP_URL}?${params.toString()}`;
+      console.log("🔗 URL de teste:", url);
+
+      const response = await fetch(url, { method: "GET", mode: "cors" });
+      const resultado = await response.json();
+      console.log("✅ GET funcionou:", resultado);
+      return resultado;
+    } catch (error) {
+      console.error("❌ GET falhou:", error);
+    }
+
+    console.log("2️⃣ Testando JSONP...");
+    try {
+      const resultado = await enviarViaJSONP(dadosTeste);
+      console.log("✅ JSONP funcionou:", resultado);
+      return resultado;
+    } catch (error) {
+      console.error("❌ JSONP falhou:", error);
+    }
+
+    console.log("❌ Todos os métodos falharam");
+    return { success: false, error: "Todos os métodos de requisição falharam" };
+  } catch (error) {
+    console.error("❌ Erro no teste:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Disponibilizar função de teste globalmente
+window.testarAtualizacaoNota = testarAtualizacaoNota;
+
+// === FUNÇÃO DE TESTE ESPECÍFICA PARA VERIFICAR APPS SCRIPT ===
+async function verificarAppsScript() {
+  console.log("🔍 === VERIFICANDO GOOGLE APPS SCRIPT ===");
+
+  try {
+    // Teste 1: Verificar se o Apps Script responde
+    console.log("1️⃣ Testando conectividade básica...");
+    const testeBasico = await fetch(`${WEB_APP_URL}?teste=1`, {
+      method: "GET",
+      mode: "cors",
+    });
+
+    const resultadoBasico = await testeBasico.json();
+    console.log("✅ Apps Script responde:", resultadoBasico);
+
+    // Teste 2: Verificar se suporta a action de atualização de nota
+    console.log("2️⃣ Testando action atualizarNotaEspecifica...");
+    const testeAction = await fetch(
+      `${WEB_APP_URL}?action=atualizarNotaEspecifica&alunoId=TESTE&campo=Nota1&valor=5&teste=true`,
+      {
+        method: "GET",
+        mode: "cors",
+      }
+    );
+
+    const resultadoAction = await testeAction.json();
+    console.log("📊 Resultado da action:", resultadoAction);
+
+    // Teste 3: Verificar parâmetros completos
+    console.log("3️⃣ Testando com parâmetros completos...");
+    const params = new URLSearchParams({
+      action: "atualizarNotaEspecifica",
+      alunoId: "TESTE_COMPLETO",
+      campo: "MundoTrabalho1",
+      valor: 7.5,
+      professor: "Professor Teste",
+      disciplina: "mundoTrabalho",
+      bimestre: 1,
+      teste: true,
+    });
+
+    const testeCompleto = await fetch(`${WEB_APP_URL}?${params.toString()}`, {
+      method: "GET",
+      mode: "cors",
+    });
+
+    const resultadoCompleto = await testeCompleto.json();
+    console.log("🎯 Resultado completo:", resultadoCompleto);
+
+    return {
+      success: true,
+      testeBasico: resultadoBasico,
+      testeAction: resultadoAction,
+      testeCompleto: resultadoCompleto,
+    };
+  } catch (error) {
+    console.error("❌ Erro na verificação:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Disponibilizar função de verificação globalmente
+window.verificarAppsScript = verificarAppsScript;
+
+// === FUNÇÃO PARA TESTAR ATUALIZAÇÃO REAL DE NOTA ===
+async function testarAtualizacaoReal(alunoId, disciplina, bimestre, nota) {
+  console.log("🧪 === TESTANDO ATUALIZAÇÃO REAL DE NOTA ===");
+  console.log(
+    `📋 Parâmetros: Aluno=${alunoId}, Disciplina=${disciplina}, Bimestre=${bimestre}, Nota=${nota}`
+  );
+
+  try {
+    // Primeiro, buscar o aluno para ver o estado atual
+    console.log("1️⃣ Buscando estado atual do aluno...");
+    const responseBusca = await fetch(
+      `${WEB_APP_URL}?nomeAluno=${encodeURIComponent(alunoId)}`
+    );
+    const dadosBusca = await responseBusca.json();
+
+    if (dadosBusca.saida && dadosBusca.saida.length > 0) {
+      const alunoAntes = dadosBusca.saida.find((a) => a.ID_Unico === alunoId);
+      if (alunoAntes) {
+        console.log("📊 Estado atual do aluno:", alunoAntes);
+
+        // Determinar campo correto
+        let campo;
+        switch (disciplina) {
+          case "curso":
+            campo = `Nota${bimestre}`;
+            break;
+          case "mundoTrabalho":
+            campo = `MundoTrabalho${bimestre}`;
+            break;
+          case "convivio":
+            campo = `Convivio${bimestre}`;
+            break;
+          default:
+            throw new Error("Disciplina não reconhecida");
+        }
+
+        console.log(`📝 Campo a ser atualizado: ${campo}`);
+        console.log(`🔍 Valor atual: ${alunoAntes[campo] || "não definido"}`);
+
+        // Enviar atualização
+        console.log("2️⃣ Enviando atualização...");
+        const dadosAtualizacao = {
+          action: "atualizarNotaEspecifica",
+          alunoId: alunoId,
+          campo: campo,
+          valor: nota,
+          professor: "Teste Manual",
+          disciplina: disciplina,
+          bimestre: bimestre,
+        };
+
+        const params = new URLSearchParams(dadosAtualizacao);
+        const urlAtualizacao = `${WEB_APP_URL}?${params.toString()}`;
+        console.log("🔗 URL de atualização:", urlAtualizacao);
+
+        const responseAtualizacao = await fetch(urlAtualizacao, {
+          method: "GET",
+          mode: "cors",
+        });
+
+        const resultadoAtualizacao = await responseAtualizacao.json();
+        console.log("📊 Resultado da atualização:", resultadoAtualizacao);
+
+        // Aguardar e verificar o resultado
+        console.log("3️⃣ Aguardando e verificando resultado...");
+        await new Promise((resolve) => setTimeout(resolve, 3000)); // Aguardar 3 segundos
+
+        const responseVerificacao = await fetch(
+          `${WEB_APP_URL}?nomeAluno=${encodeURIComponent(alunoId)}`
+        );
+        const dadosVerificacao = await responseVerificacao.json();
+
+        if (dadosVerificacao.saida && dadosVerificacao.saida.length > 0) {
+          const alunoDepois = dadosVerificacao.saida.find(
+            (a) => a.ID_Unico === alunoId
+          );
+          if (alunoDepois) {
+            console.log("📊 Estado após atualização:", alunoDepois);
+            console.log(
+              `🔍 Valor após atualização: ${
+                alunoDepois[campo] || "não definido"
+              }`
+            );
+
+            const valorAntes = parseFloat(alunoAntes[campo]) || 0;
+            const valorDepois = parseFloat(alunoDepois[campo]) || 0;
+            const valorEsperado = parseFloat(nota);
+
+            const foiAtualizado = Math.abs(valorDepois - valorEsperado) < 0.01;
+
+            console.log(`📈 Comparação:`);
+            console.log(`   Antes: ${valorAntes}`);
+            console.log(`   Esperado: ${valorEsperado}`);
+            console.log(`   Depois: ${valorDepois}`);
+            console.log(
+              `   Foi atualizado: ${foiAtualizado ? "✅ SIM" : "❌ NÃO"}`
+            );
+
+            return {
+              success: foiAtualizado,
+              valorAntes,
+              valorDepois,
+              valorEsperado,
+              campo,
+              resultadoAtualizacao,
+            };
+          }
+        }
+
+        throw new Error(
+          "Não foi possível verificar o resultado da atualização"
+        );
+      }
+    }
+
+    throw new Error("Aluno não encontrado");
+  } catch (error) {
+    console.error("❌ Erro no teste:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Disponibilizar função de teste real globalmente
+window.testarAtualizacaoReal = testarAtualizacaoReal;
 
 // === FUNÇÃO DE TESTE CORS ===
 async function testarCORS() {
@@ -5726,7 +6194,7 @@ function calcularMediaESituacao(aluno) {
       String(buscarColuna(aluno, padroesConv3) || 0).replace(",", ".")
     ) || 0;
 
-  // Todas as notas disponíveis
+  // Todas as notas disponíveis (incluindo zeros para cálculo correto da média)
   const todasAsNotas = [
     nota1,
     nota2,
@@ -5737,37 +6205,40 @@ function calcularMediaESituacao(aluno) {
     convivio1,
     convivio2,
     convivio3,
-  ].filter((n) => n > 0);
+  ];
 
   // Usar faltas diretamente da planilha (que já inclui o sistema automático)
   const totalFaltas = parseInt(aluno.Faltas) || 0;
 
-  // Usar média da tabela se disponível, senão calcular com todas as notas
+  // Usar média da tabela se disponível, senão calcular com todas as 9 notas
   let media;
   if (aluno.Media !== undefined && aluno.Media !== null && aluno.Media !== "") {
     media = parseFloat(String(aluno.Media).replace(",", ".")) || 0;
-  } else if (todasAsNotas.length > 0) {
-    media = todasAsNotas.reduce((a, b) => a + b) / todasAsNotas.length;
   } else {
-    media = 0;
+    // Calcular média considerando todas as 9 disciplinas (incluindo zeros)
+    media = todasAsNotas.reduce((a, b) => a + b) / todasAsNotas.length;
   }
 
   console.log(`📊 Média calculada para ${aluno.Nome}:`, {
     mediaTabela: aluno.Media,
-    mediaCalculada: media,
-    notasCurso: [nota1, nota2, nota3].filter((n) => n > 0),
-    notasMundoTrabalho: [mundoTrabalho1, mundoTrabalho2, mundoTrabalho3].filter(
-      (n) => n > 0
-    ),
-    notasConvivio: [convivio1, convivio2, convivio3].filter((n) => n > 0),
-    totalNotas: todasAsNotas.length,
+    mediaCalculada: media.toFixed(2),
+    notasCurso: [nota1, nota2, nota3],
+    notasMundoTrabalho: [mundoTrabalho1, mundoTrabalho2, mundoTrabalho3],
+    notasConvivio: [convivio1, convivio2, convivio3],
+    totalDisciplinas: todasAsNotas.length,
+    somaNotas: todasAsNotas.reduce((a, b) => a + b),
     todasAsNotas: todasAsNotas,
+    observacao:
+      "Média calculada considerando todas as 9 disciplinas (incluindo zeros)",
   });
 
-  if (media === 0 && todasAsNotas.length === 0) {
+  // Verificar se tem pelo menos uma nota lançada
+  const temNotasLancadas = todasAsNotas.some((nota) => nota > 0);
+
+  if (!temNotasLancadas && totalFaltas === 0) {
     return {
       media: 0,
-      situacao: totalFaltas > 15 ? "Reprovado por Falta" : "Em Curso",
+      situacao: "Em Curso",
       faltas: totalFaltas,
     };
   }
@@ -7338,6 +7809,144 @@ function fecharModalHistorico() {
   }
 }
 
+// === FUNÇÃO DE TESTE - ATUALIZAÇÃO VIA JSONP ===
+async function testarAtualizacaoViaJSONP() {
+  console.log("🧪 === TESTE: Atualização via JSONP (simulando POST) ===");
+
+  const dadosTeste = {
+    action: "atualizarNotaEspecifica",
+    ra: "123456",
+    disciplina: "curso",
+    bimestre: "1_BIMESTRE",
+    nota: "9.5",
+  };
+
+  try {
+    console.log("📝 Dados do teste:", dadosTeste);
+
+    const resultado = await enviarViaJSONP(dadosTeste);
+    console.log("✅ Resultado via JSONP:", resultado);
+
+    if (resultado && resultado.success) {
+      console.log("🎉 Atualização via JSONP funcionou!");
+      return resultado;
+    } else {
+      console.log("⚠️ JSONP retornou sem success");
+      return resultado;
+    }
+  } catch (error) {
+    console.error("❌ Erro no teste JSONP:", error);
+    throw error;
+  }
+}
+
+// === FUNÇÃO DE DIAGNÓSTICO SIMPLIFICADA ===
+async function diagnosticarAppsScript() {
+  console.log("🔍 === DIAGNÓSTICO DO APPS SCRIPT ===");
+
+  try {
+    // Teste 1: Conectividade básica
+    console.log("1️⃣ Testando conectividade básica...");
+    const response1 = await fetch(`${WEB_APP_URL}?teste=1`, {
+      method: "GET",
+      mode: "cors",
+    });
+
+    if (response1.ok) {
+      const data1 = await response1.json();
+      console.log("✅ Conectividade OK:", data1);
+    } else {
+      console.log("❌ Problema de conectividade");
+      return;
+    }
+
+    // Teste 2: Verificar se action existe
+    console.log("2️⃣ Testando se action atualizarNotaEspecifica existe...");
+    const response2 = await fetch(
+      `${WEB_APP_URL}?action=atualizarNotaEspecifica`,
+      {
+        method: "GET",
+        mode: "cors",
+      }
+    );
+
+    if (response2.ok) {
+      const data2 = await response2.json();
+      console.log("📋 Resposta da action:", data2);
+
+      if (data2.message && data2.message.includes("Esta action requer POST")) {
+        console.log("✅ Action existe no doGet!");
+
+        // Teste 3: JSONP simples
+        console.log("3️⃣ Testando JSONP...");
+        await testarJSONPSimples();
+      } else if (data2.error && data2.error.includes("Ação não reconhecida")) {
+        console.log("❌ Action NÃO existe no doGet");
+        console.log("💡 O Apps Script precisa ser atualizado ou reimplantado");
+      } else {
+        console.log("⚠️ Resposta inesperada:", data2);
+      }
+    } else {
+      console.log("❌ Erro ao testar action");
+    }
+  } catch (error) {
+    console.error("❌ Erro no diagnóstico:", error);
+  }
+}
+
+// === TESTE JSONP SIMPLIFICADO ===
+function testarJSONPSimples() {
+  return new Promise((resolve, reject) => {
+    const callbackName = `teste_${Date.now()}`;
+
+    window[callbackName] = function (data) {
+      console.log("✅ JSONP funcionou:", data);
+      delete window[callbackName];
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+      resolve(data);
+    };
+
+    const script = document.createElement("script");
+    const params = new URLSearchParams({
+      action: "atualizarNotaEspecifica",
+      ra: "TESTE123",
+      disciplina: "curso",
+      bimestre: "1_BIMESTRE",
+      nota: "7.5",
+      callback: callbackName,
+      _method: "POST",
+    });
+
+    script.src = `${WEB_APP_URL}?${params.toString()}`;
+    console.log("🔗 URL JSONP teste:", script.src);
+
+    script.onerror = function (error) {
+      console.log("❌ JSONP falhou:", error);
+      delete window[callbackName];
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+      reject(error);
+    };
+
+    // Timeout
+    setTimeout(() => {
+      if (window[callbackName]) {
+        console.log("⏰ JSONP timeout");
+        delete window[callbackName];
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+        reject(new Error("Timeout"));
+      }
+    }, 10000);
+
+    document.head.appendChild(script);
+  });
+}
+
 // Tornar as funções globais para uso no onclick
 window.registrarPresencaCard = registrarPresencaCard;
 window.abrirControlePresencas = abrirControlePresencas;
@@ -7346,3 +7955,11 @@ window.atualizarCardImediatamente = atualizarCardImediatamente;
 window.invalidarCacheSeNecessario = invalidarCacheSeNecessario;
 window.removerNotificacaoCard = removerNotificacaoCard;
 window.toggleCardFlip = toggleCardFlip;
+
+// Tornar funções de teste globais
+window.testarAtualizacaoNota = testarAtualizacaoNota;
+window.verificarAppsScript = verificarAppsScript;
+window.testarAtualizacaoReal = testarAtualizacaoReal;
+window.testarAtualizacaoViaJSONP = testarAtualizacaoViaJSONP;
+window.diagnosticarAppsScript = diagnosticarAppsScript;
+window.testarJSONPSimples = testarJSONPSimples;

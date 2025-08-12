@@ -222,14 +222,15 @@ header {
   display: flex;
   align-items: center;
   gap: 1rem;
+  margin: 1rem auto;
 }
 
 .stats-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: linear-gradient(135deg, var(--primary-gold) 0%, #f39c12 100%);
-  color: var(--dark-blue);
+  background: var(--gradient-secondary);
+  color: var(--color-primary);
   border: none;
   padding: 0.75rem 1rem;
   border-radius: 8px;
@@ -237,11 +238,12 @@ header {
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 0.9rem;
+  box-shadow: 0 4px 15px rgba(244, 196, 48, 0.3);
 }
 
 .stats-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(244, 196, 48, 0.4);
+  box-shadow: 0 8px 25px rgba(244, 196, 48, 0.5);
   background: linear-gradient(135deg, #f1c40f 0%, #e67e22 100%);
 }
 
