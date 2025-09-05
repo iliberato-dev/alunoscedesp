@@ -207,10 +207,12 @@ body {
 /* Header Section */
 header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   margin-bottom: 3rem;
   position: relative;
+  flex-direction: column;
+  row-gap: 1rem;
 }
 
 .header-content {
@@ -3535,7 +3537,7 @@ table tr + tr {
     padding: 0.9rem 0;
     padding-left: 42%;
     text-align: right;
-    font-size: 0.95rem;
+    font-size: 0.75rem;
     min-height: 2.2rem;
     display: flex;
     align-items: center;
