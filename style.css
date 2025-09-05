@@ -5433,16 +5433,19 @@ button:disabled {
   }
 
   .dashboard-modal .modal-header h2 {
-    font-size: 1.25rem;
+    font-size: 1rem;
   }
 
   .stats-cards {
-    grid-template-columns: 1fr;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
   .dashboard-modal .close-btn {
-    width: 35px;
-    height: 35px;
+    width: 1.5rem;
+    height: 1.5rem;
   }
 }
 
