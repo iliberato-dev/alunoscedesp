@@ -5929,7 +5929,7 @@ function preencherFiltros() {
       MNN: "Manicure - Noite",
     };
 
-    cursoFilter.innerHTML = '<option value="">Todos os cursos</option>';
+    cursoFilter.innerHTML = '<option value="">Tarde e Noite</option>';
     cursosPermitidos.forEach((curso) => {
       const option = document.createElement("option");
       option.value = curso;
