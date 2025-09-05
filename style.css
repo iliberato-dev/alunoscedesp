@@ -1977,7 +1977,7 @@ table tr + tr {
   .detailed-stats td[data-label*="Nome"],
   .detailed-stats td[data-label*="Curso"] {
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.75rem;
   }
 
   .detailed-stats td[data-label*="Posição"],
@@ -3432,8 +3432,20 @@ table tr + tr {
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--color-text-secondary);
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
   text-align: center;
+}
+
+.table-container .table-description {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+  padding: 0.5rem;
+  background: rgba(244, 196, 48, 0.1);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid rgba(244, 196, 48, 0.2);
 }
 
 /* Responsividade para Estatísticas */
