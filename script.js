@@ -6421,7 +6421,7 @@ function calcularMediaESituacao(aluno) {
   // - Reprovado: faltas > 15 OU média < 6.0
   // - Aprovado: média >= 6.0 E faltas <= 15
   // - Em Curso: demais casos (ainda cursando)
-  
+
   let situacao;
   if (totalFaltas > 15) {
     situacao = "Reprovado";

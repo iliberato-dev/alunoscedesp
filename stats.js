@@ -82,25 +82,19 @@ class StatsSystem {
   }
 
   updateSummaryCards() {
-    // Usar estatísticas calculadas no backend se disponíveis
-    if (this.statistics && this.statistics.totalAlunos) {
-      document.getElementById("totalStudents").textContent =
-        this.statistics.totalAlunos;
-      document.getElementById("approvedStudents").textContent =
-        this.statistics.aprovados;
-      document.getElementById("inProgressStudents").textContent =
-        this.statistics.emCurso;
-      document.getElementById("failedStudents").textContent =
-        this.statistics.reprovados + this.statistics.reprovadosPorFaltas;
-    } else {
-      // Fallback para cálculo local se necessário
-      const stats = this.calculateBasicStats();
-      document.getElementById("totalStudents").textContent = stats.total;
-      document.getElementById("approvedStudents").textContent = stats.approved;
-      document.getElementById("inProgressStudents").textContent =
-        stats.inProgress;
-      document.getElementById("failedStudents").textContent = stats.failed;
-    }
+    console.log("🔄 Atualizando cards de resumo...");
+
+    // Sempre usar cálculo local para garantir consistência com a lógica atual
+    const stats = this.calculateBasicStats();
+    console.log("📊 Estatísticas para cards:", stats);
+
+    document.getElementById("totalStudents").textContent = stats.total;
+    document.getElementById("approvedStudents").textContent = stats.approved;
+    document.getElementById("inProgressStudents").textContent =
+      stats.inProgress;
+    document.getElementById("failedStudents").textContent = stats.failed;
+
+    console.log("✅ Cards atualizados com sucesso");
   }
 
   calculateBasicStats() {
@@ -109,8 +103,25 @@ class StatsSystem {
     let inProgress = 0;
     let failed = 0;
 
+    console.log("📊 Calculando estatísticas básicas...");
+    console.log("Total de alunos:", total);
+
     this.data.forEach((student) => {
       const situation = this.calculateStudentSituation(student);
+
+      // Log temporário para debug
+      if (
+        student.Faltas > 15 ||
+        (student.Media && parseFloat(student.Media) < 6.0)
+      ) {
+        console.log(`🔍 Aluno ${student.Nome}:`, {
+          situacao: situation,
+          faltas: student.Faltas,
+          media: student.Media,
+          situacaoOriginal: student.Situacao,
+        });
+      }
+
       switch (situation) {
         case "aprovado":
           approved++;
@@ -124,38 +135,57 @@ class StatsSystem {
       }
     });
 
+    console.log("Estatísticas calculadas:", {
+      total,
+      approved,
+      inProgress,
+      failed,
+    });
     return { total, approved, inProgress, failed };
   }
 
   calculateStudentSituation(student) {
     // Se a situação já vem calculada do backend, usar ela
     if (student.Situacao) {
-      switch (student.Situacao.toLowerCase()) {
-        case "aprovado":
-          return "aprovado";
-        case "reprovado":
-        case "reprovado por faltas":
-          return "reprovado";
-        default:
-          return "em-curso";
+      const situacaoLower = student.Situacao.toLowerCase();
+      if (situacaoLower === "aprovado") {
+        return "aprovado";
+      } else if (
+        situacaoLower === "reprovado" ||
+        situacaoLower === "reprovado por faltas"
+      ) {
+        return "reprovado";
+      } else if (situacaoLower === "em curso") {
+        return "em-curso";
+      } else {
+        return "em-curso";
       }
     }
 
-    // Fallback para cálculo local (compatibilidade)
-    const nota1 = parseFloat(student.Nota1) || 0;
-    const nota2 = parseFloat(student.Nota2) || 0;
-    const nota3 = parseFloat(student.Nota3) || 0;
+    // Fallback para cálculo local usando a mesma lógica do sistema principal
+    const nota1 = parseFloat(String(student.Nota1 || 0).replace(",", ".")) || 0;
+    const nota2 = parseFloat(String(student.Nota2 || 0).replace(",", ".")) || 0;
+    const nota3 = parseFloat(String(student.Nota3 || 0).replace(",", ".")) || 0;
 
-    // Incluir notas de outras matérias se disponíveis
-    const mundoTrabalho1 = parseFloat(student.MundoTrabalho1) || 0;
-    const mundoTrabalho2 = parseFloat(student.MundoTrabalho2) || 0;
-    const mundoTrabalho3 = parseFloat(student.MundoTrabalho3) || 0;
-    const convivio1 = parseFloat(student.Convivio1) || 0;
-    const convivio2 = parseFloat(student.Convivio2) || 0;
-    const convivio3 = parseFloat(student.Convivio3) || 0;
+    // Padrões para buscar colunas de Mundo do Trabalho
+    const mundoTrabalho1 =
+      parseFloat(String(student.MundoTrabalho1 || 0).replace(",", ".")) || 0;
+    const mundoTrabalho2 =
+      parseFloat(String(student.MundoTrabalho2 || 0).replace(",", ".")) || 0;
+    const mundoTrabalho3 =
+      parseFloat(String(student.MundoTrabalho3 || 0).replace(",", ".")) || 0;
+
+    // Padrões para buscar colunas de Convívio
+    const convivio1 =
+      parseFloat(String(student.Convivio1 || 0).replace(",", ".")) || 0;
+    const convivio2 =
+      parseFloat(String(student.Convivio2 || 0).replace(",", ".")) || 0;
+    const convivio3 =
+      parseFloat(String(student.Convivio3 || 0).replace(",", ".")) || 0;
 
     const faltas = parseInt(student.Faltas) || 0;
 
+    // Todas as notas (incluindo zeros para cálculo correto)
     const todasAsNotas = [
       nota1,
       nota2,
@@ -166,19 +196,43 @@ class StatsSystem {
       convivio1,
       convivio2,
       convivio3,
-    ].filter((nota) => nota > 0);
+    ];
 
-    if (todasAsNotas.length === 0) {
+    // Verificar se tem pelo menos uma nota lançada
+    const temNotasLancadas = todasAsNotas.some((nota) => nota > 0);
+
+    // Usar média da tabela se disponível, senão calcular
+    let media;
+    if (
+      student.Media !== undefined &&
+      student.Media !== null &&
+      student.Media !== ""
+    ) {
+      media = parseFloat(String(student.Media).replace(",", ".")) || 0;
+    } else {
+      // Calcular média considerando todas as 9 disciplinas
+      media = todasAsNotas.reduce((a, b) => a + b) / todasAsNotas.length;
+    }
+
+    // Se não tem notas lançadas e não tem faltas, está em curso
+    if (!temNotasLancadas && faltas === 0) {
       return "em-curso";
     }
 
-    const media = todasAsNotas.reduce((a, b) => a + b) / todasAsNotas.length;
+    // Lógica de situação:
+    // - Reprovado: faltas > 15 OU média < 6.0
+    // - Aprovado: média >= 6.0 E faltas <= 15
+    // - Em Curso: demais casos
 
     if (faltas > 15) {
       return "reprovado";
+    } else if (media >= 6.0 && faltas <= 15) {
+      return "aprovado";
+    } else if (media < 6.0 && temNotasLancadas) {
+      return "reprovado";
+    } else {
+      return "em-curso";
     }
-
-    return media >= 6.0 ? "aprovado" : "reprovado";
   }
 
   createCharts() {

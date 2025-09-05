@@ -5208,22 +5208,30 @@ function obterEstatisticasCompletas() {
             aluno.Convivio1,
             aluno.Convivio2,
             aluno.Convivio3,
-          ].filter((nota) => nota > 0);
+          ];
 
+          // Verificar se tem pelo menos uma nota lançada
+          const temNotasLancadas = todasAsNotas.some((nota) => nota > 0);
+
+          // Calcular média considerando todas as 9 disciplinas (incluindo zeros)
           aluno.Media =
-            todasAsNotas.length > 0
-              ? todasAsNotas.reduce((a, b) => a + b) / todasAsNotas.length
-              : 0;
+            todasAsNotas.reduce((a, b) => a + b) / todasAsNotas.length;
 
-          // Determina situação
-          if (aluno.Media === 0) {
+          // Determinar situação baseada nos novos critérios:
+          // - Reprovado: faltas > 15 OU média < 6.0
+          // - Aprovado: média >= 6.0 E faltas <= 15
+          // - Em Curso: demais casos
+
+          if (!temNotasLancadas && aluno.Faltas === 0) {
             aluno.Situacao = "Em Curso";
           } else if (aluno.Faltas > 15) {
-            aluno.Situacao = "Reprovado por Faltas";
-          } else if (aluno.Media >= 6.0) {
-            aluno.Situacao = "Aprovado";
-          } else {
             aluno.Situacao = "Reprovado";
+          } else if (aluno.Media >= 6.0 && aluno.Faltas <= 15) {
+            aluno.Situacao = "Aprovado";
+          } else if (aluno.Media < 6.0 && temNotasLancadas) {
+            aluno.Situacao = "Reprovado";
+          } else {
+            aluno.Situacao = "Em Curso";
           }
 
           todosAlunos.push(aluno);
@@ -5295,16 +5303,21 @@ function calcularEstatisticas(alunos) {
   let alunosComMedia = 0;
 
   alunos.forEach((aluno) => {
+    // Verificar se é reprovado especificamente por faltas para estatísticas
+    const reprovadoPorFalta =
+      aluno.Situacao === "Reprovado" && aluno.Faltas > 15;
+
     // Contadores gerais
     switch (aluno.Situacao) {
       case "Aprovado":
         stats.aprovados++;
         break;
       case "Reprovado":
-        stats.reprovados++;
-        break;
-      case "Reprovado por Faltas":
-        stats.reprovadosPorFaltas++;
+        if (reprovadoPorFalta) {
+          stats.reprovadosPorFaltas++;
+        } else {
+          stats.reprovados++;
+        }
         break;
       default:
         stats.emCurso++;
@@ -5322,7 +5335,7 @@ function calcularEstatisticas(alunos) {
     }
     stats.porCurso[aluno.Curso].total++;
     if (aluno.Situacao === "Aprovado") stats.porCurso[aluno.Curso].aprovados++;
-    else if (aluno.Situacao.includes("Reprovado"))
+    else if (aluno.Situacao === "Reprovado")
       stats.porCurso[aluno.Curso].reprovados++;
     else stats.porCurso[aluno.Curso].emCurso++;
 
@@ -5338,7 +5351,7 @@ function calcularEstatisticas(alunos) {
     stats.porPeriodo[aluno.Periodo].total++;
     if (aluno.Situacao === "Aprovado")
       stats.porPeriodo[aluno.Periodo].aprovados++;
-    else if (aluno.Situacao.includes("Reprovado"))
+    else if (aluno.Situacao === "Reprovado")
       stats.porPeriodo[aluno.Periodo].reprovados++;
     else stats.porPeriodo[aluno.Periodo].emCurso++;
 
