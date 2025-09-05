@@ -4376,38 +4376,52 @@ function createStudentCardHTML(aluno, media, situacao, faltas = null) {
           
           ${lastAttendanceDisplay}
 
-          <div style="text-align: center; margin: 1.5rem 0;">
-            <div class="situation-badge ${situacaoDisplay
-              .toLowerCase()
-              .replace(/\s/g, "-")} ${
-    reprovadoPorFalta ? "reprovado-por-falta" : ""
-  }">
-              ${getSituationIcon(situacao)}
-              ${situacaoDisplay}
-            </div>
-          </div>
-
-          <div class="card-performance">
-            <div class="performance-item">
-              <div class="performance-label">
+          <!-- Seção Principal de Performance com destaque para média -->
+          <div class="main-performance-section">
+            <div class="media-destaque">
+              <div class="media-label">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
                   <path d="M4 2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2zm2-1a1 1 0 0 0-1 1v12h6V2a1 1 0 0 0-1-1H6z"/>
                   <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
                 </svg>
-                Média
+                Média Geral
               </div>
-              <div class="performance-value media">${mediaExibir || "-"}</div>
+              <div class="media-valor-principal ${getMediaClass(
+                mediaExibir
+              )}" data-media="${mediaExibir}">
+                ${mediaExibir || "-"}
+              </div>
+              <div class="media-progress-bar">
+                <div class="progress-fill" style="width: ${getMediaPercentage(
+                  mediaExibir
+                )}%"></div>
+              </div>
             </div>
-            <div class="performance-item">
-              <div class="performance-label">
+
+            <div class="situacao-e-faltas">
+              <div class="situation-badge ${situacaoDisplay
+                .toLowerCase()
+                .replace(/\s/g, "-")} ${
+    reprovadoPorFalta ? "reprovado-por-falta" : ""
+  }">
+                ${getSituationIcon(situacao)}
+                <span class="situacao-text">${situacaoDisplay}</span>
+              </div>
+              
+              <div class="faltas-info ${
+                faltasExibir > 15 ? "faltas-excesso" : ""
+              }">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
                   <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
                 </svg>
-                Faltas ${faltasExibir > 15 ? "⚠️" : ""}
+                <span class="faltas-label">Faltas:</span>
+                <span class="faltas-valor">${faltasExibir}</span>
+                ${
+                  faltasExibir > 15
+                    ? '<span class="faltas-alerta">⚠️ Limite excedido</span>'
+                    : ""
+                }
               </div>
-              <div class="performance-value faltas ${
-                faltasExibir > 15 ? "excesso" : ""
-              }">${faltasExibir}</div>
             </div>
           </div>
 
@@ -4727,6 +4741,21 @@ function getSituationIcon(situacao) {
   }
 }
 
+// Função para obter classe CSS baseada na média
+function getMediaClass(media) {
+  if (!media || media === "-") return "media-vazia";
+  const valor = parseFloat(media);
+  if (valor >= 6.0) return "media-aprovado";
+  return "media-reprovado";
+}
+
+// Função para calcular porcentagem da média para barra de progresso
+function getMediaPercentage(media) {
+  if (!media || media === "-") return 0;
+  const valor = parseFloat(media);
+  return Math.min((valor / 10) * 100, 100);
+}
+
 function exibirResultadosComoTabela(alunos) {
   const resultTableBody = domCache.get("resultTableBody");
   if (!resultTableBody) return;
@@ -5000,11 +5029,28 @@ async function updateGrade(studentId, subject, bimester, newValue) {
     console.log("📊 Resultado:", resultado);
 
     if (resultado.success) {
-      mostrarSucessoCard(
-        studentId,
-        `Nota ${subject} ${bimester}º bim atualizada para ${grade}`,
-        "Nota Atualizada"
-      );
+      // Se o Apps Script retornou dados da média, atualizar imediatamente
+      if (resultado.data && resultado.data.media) {
+        console.log("📊 Atualizando média no card com dados do servidor...");
+        atualizarMediaNoCardComDados(studentId, {
+          media: resultado.data.media,
+          situacao: resultado.data.situacao,
+        });
+
+        // Mostrar notificação de sucesso com a nova média
+        mostrarSucessoCard(
+          studentId,
+          `Nota ${subject} ${bimester}º bim atualizada para ${grade}. Nova média: ${resultado.data.media}`,
+          "Nota e Média Atualizadas"
+        );
+      } else {
+        // Fallback se não tiver dados da média
+        mostrarSucessoCard(
+          studentId,
+          `Nota ${subject} ${bimester}º bim atualizada para ${grade}`,
+          "Nota Atualizada"
+        );
+      }
 
       // Aguardar um pouco e verificar se a atualização foi bem-sucedida
       setTimeout(async () => {
@@ -5050,8 +5096,12 @@ async function updateGrade(studentId, subject, bimester, newValue) {
 
               if (notaAtualizada) {
                 console.log("✅ Atualização confirmada na planilha!");
-                // Atualizar a média exibida no card
-                atualizarMediaNoCard(studentId);
+                // Atualizar a média exibida no card com dados recalculados
+                const calculado = calcularMediaESituacao(alunoAtualizado);
+                atualizarMediaNoCardComDados(studentId, {
+                  media: calculado.media,
+                  situacao: calculado.situacao,
+                });
               } else {
                 console.warn(
                   "⚠️ Nota não foi atualizada na planilha. Tentando novamente..."
@@ -5256,6 +5306,130 @@ async function enviarRequisicao(dados, tentarFetch = true) {
   const url = `${WEB_APP_URL}?${params.toString()}`;
   const response = await fetch(url, { method: "GET", mode: "no-cors" });
   return { success: true, message: "Requisição enviada via GET" };
+}
+
+// === FUNÇÃO PARA ATUALIZAR A MÉDIA NO CARD COM DADOS JÁ CALCULADOS ===
+function atualizarMediaNoCardComDados(studentId, dadosMedia) {
+  try {
+    console.log(`📊 Atualizando média no card ${studentId}:`, dadosMedia);
+
+    // Atualizar elementos da média no card
+    const mediaElement = document.querySelector(
+      `[data-student-id="${studentId}"] .media-value`
+    );
+    const situacaoElement = document.querySelector(
+      `[data-student-id="${studentId}"] .situacao`
+    );
+
+    if (mediaElement && dadosMedia.media) {
+      // Adicionar animação de atualização
+      mediaElement.classList.add("atualizando");
+
+      // Atualizar o valor após um pequeno delay para mostrar a animação
+      setTimeout(() => {
+        mediaElement.textContent = dadosMedia.media;
+        mediaElement.classList.remove("atualizando");
+      }, 150);
+
+      console.log(`✅ Média atualizada para: ${dadosMedia.media}`);
+    }
+
+    if (situacaoElement && dadosMedia.situacao) {
+      // Remover classes anteriores de situação
+      situacaoElement.classList.remove(
+        "situacao-aprovado",
+        "situacao-recuperacao",
+        "situacao-retido"
+      );
+
+      // Atualizar texto e classe
+      situacaoElement.textContent = dadosMedia.situacao;
+      const novaClasse = obterClasseSituacao(dadosMedia.situacao);
+      if (novaClasse) {
+        situacaoElement.classList.add(novaClasse);
+      }
+
+      console.log(`✅ Situação atualizada para: ${dadosMedia.situacao}`);
+    }
+
+    // Também atualizar a barra de progresso se existir
+    const progressElement = document.querySelector(
+      `[data-student-id="${studentId}"] .progress-bar`
+    );
+
+    if (progressElement && dadosMedia.media) {
+      const mediaNum = parseFloat(dadosMedia.media);
+      const progressPercent = Math.min((mediaNum / 10) * 100, 100);
+
+      // Remover classes anteriores de progresso
+      progressElement.classList.remove(
+        "progress-aprovado",
+        "progress-recuperacao",
+        "progress-retido",
+        "progress-default"
+      );
+
+      // Atualizar largura da barra
+      progressElement.style.width = `${progressPercent}%`;
+
+      // Atualizar cor da barra baseada na situação
+      const classeProgresso = obterClasseProgressoSituacao(dadosMedia.situacao);
+      progressElement.classList.add(classeProgresso);
+
+      console.log(`✅ Barra de progresso atualizada: ${progressPercent}%`);
+    }
+
+    // Feedback visual no card inteiro
+    const cardElement = document.querySelector(
+      `[data-student-id="${studentId}"]`
+    );
+    if (cardElement) {
+      cardElement.style.transform = "scale(1.02)";
+      cardElement.style.boxShadow =
+        "0 8px 25px rgba(var(--color-primary-rgb), 0.15)";
+
+      setTimeout(() => {
+        cardElement.style.transform = "";
+        cardElement.style.boxShadow = "";
+      }, 300);
+    }
+
+    console.log(`✅ Card ${studentId} atualizado com sucesso!`);
+  } catch (error) {
+    console.error(`❌ Erro ao atualizar card ${studentId}:`, error);
+  }
+}
+
+// === FUNÇÃO AUXILIAR PARA OBTER CLASSE CSS DA SITUAÇÃO ===
+function obterClasseSituacao(situacao) {
+  if (!situacao) return "";
+
+  const situacaoLower = situacao.toLowerCase();
+  if (situacaoLower.includes("aprovado")) return "situacao-aprovado";
+  if (
+    situacaoLower.includes("recuperação") ||
+    situacaoLower.includes("recuperacao")
+  )
+    return "situacao-recuperacao";
+  if (situacaoLower.includes("retido")) return "situacao-retido";
+
+  return "";
+}
+
+// === FUNÇÃO AUXILIAR PARA OBTER CLASSE CSS DA BARRA DE PROGRESSO ===
+function obterClasseProgressoSituacao(situacao) {
+  if (!situacao) return "progress-default";
+
+  const situacaoLower = situacao.toLowerCase();
+  if (situacaoLower.includes("aprovado")) return "progress-aprovado";
+  if (
+    situacaoLower.includes("recuperação") ||
+    situacaoLower.includes("recuperacao")
+  )
+    return "progress-recuperacao";
+  if (situacaoLower.includes("retido")) return "progress-retido";
+
+  return "progress-default";
 }
 
 // === FUNÇÃO PARA ATUALIZAR A MÉDIA NO CARD APÓS MUDANÇA DE NOTA ===

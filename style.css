@@ -2230,6 +2230,212 @@ table tr + tr {
   color: var(--color-error);
 }
 
+/* Nova Seção Principal de Performance - Layout Melhorado */
+.main-performance-section {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: linear-gradient(
+    135deg,
+    rgba(26, 41, 81, 0.4),
+    rgba(35, 58, 107, 0.4)
+  );
+  border-radius: var(--border-radius-lg);
+  border: 1px solid rgba(244, 196, 48, 0.2);
+}
+
+.media-destaque {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: rgba(244, 196, 48, 0.1);
+  border-radius: var(--border-radius-md);
+  border: 2px solid rgba(244, 196, 48, 0.3);
+}
+
+.media-label {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.media-label svg {
+  width: 18px;
+  height: 18px;
+  color: var(--color-secondary);
+}
+
+.media-valor-principal {
+  font-size: 2.5rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.media-valor-principal.media-vazia {
+  color: var(--color-text-disabled);
+  font-size: 2rem;
+}
+
+.media-valor-principal.media-aprovado {
+  color: var(--color-success);
+  animation: pulseSuccess 2s ease-in-out infinite alternate;
+}
+
+.media-valor-principal.media-reprovado {
+  color: var(--color-error);
+  animation: pulseError 2s ease-in-out infinite alternate;
+}
+
+.media-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--color-secondary),
+    var(--color-accent)
+  );
+  border-radius: 4px;
+  transition: width 0.8s ease-out;
+  box-shadow: 0 0 10px rgba(244, 196, 48, 0.5);
+}
+
+.situacao-e-faltas {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.situation-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius-xl);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 2px solid;
+  flex: 1;
+  justify-content: center;
+  min-width: 120px;
+}
+
+.situation-badge .situacao-text {
+  font-weight: 700;
+}
+
+.faltas-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--border-radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex: 1;
+  justify-content: center;
+  min-width: 100px;
+}
+
+.faltas-info svg {
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-muted);
+}
+
+.faltas-info.faltas-excesso {
+  background: rgba(220, 53, 69, 0.2);
+  border-color: var(--color-error);
+  animation: pulseError 2s ease-in-out infinite alternate;
+}
+
+.faltas-info.faltas-excesso svg {
+  color: var(--color-error);
+}
+
+.faltas-label {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.faltas-valor {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--color-text-primary);
+}
+
+.faltas-excesso .faltas-valor {
+  color: var(--color-error);
+}
+
+.faltas-alerta {
+  font-size: 0.7rem;
+  color: var(--color-error);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Animações para as médias */
+@keyframes pulseSuccess {
+  from {
+    text-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
+  }
+  to {
+    text-shadow: 0 0 20px rgba(40, 167, 69, 0.8),
+      0 0 30px rgba(40, 167, 69, 0.6);
+  }
+}
+
+@keyframes pulseError {
+  from {
+    text-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
+  }
+  to {
+    text-shadow: 0 0 20px rgba(220, 53, 69, 0.8),
+      0 0 30px rgba(220, 53, 69, 0.6);
+  }
+}
+
+/* Responsividade para dispositivos móveis */
+@media (max-width: 480px) {
+  .situacao-e-faltas {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .situation-badge,
+  .faltas-info {
+    flex: none;
+    width: 100%;
+  }
+
+  .media-valor-principal {
+    font-size: 2rem;
+  }
+}
+
 /* Badge de Situação */
 .situation-badge {
   display: inline-flex;
@@ -2820,6 +3026,77 @@ table tr + tr {
   width: 0%;
   transition: width 0.3s ease;
   border-radius: 0 2px 2px 0;
+}
+
+/* === ESTILOS PARA SITUAÇÃO ACADÊMICA === */
+.situacao {
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.situacao-aprovado {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.situacao-recuperacao {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+}
+
+.situacao-retido {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+/* === ESTILOS PARA BARRAS DE PROGRESSO BASEADAS NA SITUAÇÃO === */
+.progress-aprovado {
+  background: linear-gradient(90deg, #10b981, #059669);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+
+.progress-recuperacao {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+}
+
+.progress-retido {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+.progress-default {
+  background: var(--gradient-secondary);
+}
+
+/* === ANIMAÇÃO PARA ATUALIZAÇÃO DA MÉDIA === */
+.media-value {
+  transition: all 0.3s ease;
+}
+
+.media-value.atualizando {
+  animation: pulseMedia 0.6s ease-in-out;
+}
+
+@keyframes pulseMedia {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+    background-color: rgba(var(--color-primary-rgb), 0.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Responsividade para notificações */
