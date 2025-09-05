@@ -662,17 +662,18 @@ class StatsSystem {
     console.log("📊 Gerando tabela de melhores alunos...");
     const topStudents = this.getTopStudents(10);
     console.log("Alunos retornados para tabela:", topStudents.length);
-    
+
     const tbody = document.getElementById("topStudentsBody");
     if (!tbody) {
       console.error("❌ Elemento topStudentsBody não encontrado!");
       return;
     }
-    
+
     tbody.innerHTML = "";
 
     if (topStudents.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" class="no-data">Nenhum aluno encontrado para o ranking</td></tr>';
+      tbody.innerHTML =
+        '<tr><td colspan="8" class="no-data">Nenhum aluno encontrado para o ranking</td></tr>';
       return;
     }
 
@@ -694,7 +695,7 @@ class StatsSystem {
       };
 
       // Calcular porcentagem de presença
-      const presencaPercentual = Math.max(0, 100 - (student.faltas * 5));
+      const presencaPercentual = Math.max(0, 100 - student.faltas * 5);
 
       row.innerHTML = `
                 <td data-label="Posição">${index + 1}º</td>
@@ -703,7 +704,9 @@ class StatsSystem {
                 <td data-label="Média">${student.media.toFixed(1)}</td>
                 <td data-label="Faltas">${student.faltas}</td>
                 <td data-label="Presença">${presencaPercentual.toFixed(0)}%</td>
-                <td data-label="Pontuação">${student.pontuacaoTotal.toFixed(1)}</td>
+                <td data-label="Pontuação">${student.pontuacaoTotal.toFixed(
+                  1
+                )}</td>
                 <td data-label="Situação"><span class="badge ${situation
                   .toLowerCase()
                   .replace(/\s+/g, "-")}">${
@@ -713,14 +716,14 @@ class StatsSystem {
 
       tbody.appendChild(row);
     });
-    
+
     console.log("✅ Tabela de melhores alunos gerada com sucesso!");
   }
 
   getTopStudents(limit) {
     console.log("🏆 Calculando top alunos...");
     console.log("Total de alunos disponíveis:", this.data.length);
-    
+
     if (this.data.length === 0) {
       console.warn("⚠️ Nenhum dado de aluno disponível!");
       return [];
@@ -728,13 +731,15 @@ class StatsSystem {
 
     // Log sample data para debug
     console.log("📝 Sample aluno:", this.data[0]);
-    
+
     const studentsWithGrades = this.data
       .map((student, index) => {
         // Tentar diferentes formatos de média
-        let media = parseFloat(student.Media) || 
-                   parseFloat(student.media) || 
-                   parseFloat(student.MediaGeral) || 0;
+        let media =
+          parseFloat(student.Media) ||
+          parseFloat(student.media) ||
+          parseFloat(student.MediaGeral) ||
+          0;
 
         // Se não tem média, calcular
         if (media === 0) {
@@ -751,19 +756,22 @@ class StatsSystem {
           ];
 
           const notasValidas = todasAsNotas.filter((nota) => nota > 0);
-          media = notasValidas.length > 0 
-            ? notasValidas.reduce((a, b) => a + b) / notasValidas.length 
-            : 0;
+          media =
+            notasValidas.length > 0
+              ? notasValidas.reduce((a, b) => a + b) / notasValidas.length
+              : 0;
         }
 
         // Tentar diferentes formatos de faltas
-        const faltas = parseInt(student.Faltas || student.faltas || student.TotalFaltas) || 0;
-        
+        const faltas =
+          parseInt(student.Faltas || student.faltas || student.TotalFaltas) ||
+          0;
+
         // Calcular pontuação de presença
-        const pontuacaoPresenca = Math.max(0, 100 - (faltas * 5));
-        
+        const pontuacaoPresenca = Math.max(0, 100 - faltas * 5);
+
         // Calcular pontuação total
-        const pontuacaoTotal = (media * 6) + (pontuacaoPresenca * 0.4);
+        const pontuacaoTotal = media * 6 + pontuacaoPresenca * 0.4;
 
         const resultado = {
           ...student,
@@ -771,7 +779,8 @@ class StatsSystem {
           faltas: faltas,
           pontuacaoPresenca: pontuacaoPresenca,
           pontuacaoTotal: pontuacaoTotal,
-          curso: student.Curso || student.curso || student.Origem || "Não informado",
+          curso:
+            student.Curso || student.curso || student.Origem || "Não informado",
         };
 
         // Log para debug dos primeiros 3 alunos
@@ -779,7 +788,7 @@ class StatsSystem {
           console.log(`👤 Aluno ${index + 1}: ${student.Nome}`, {
             media: media,
             faltas: faltas,
-            pontuacaoTotal: pontuacaoTotal
+            pontuacaoTotal: pontuacaoTotal,
           });
         }
 
@@ -806,12 +815,15 @@ class StatsSystem {
 
     console.log("Alunos filtrados para ranking:", studentsWithGrades.length);
     if (studentsWithGrades.length > 0) {
-      console.log("Top 3 alunos:", studentsWithGrades.slice(0, 3).map(s => ({ 
-        nome: s.Nome, 
-        media: s.media, 
-        faltas: s.faltas, 
-        pontuacao: s.pontuacaoTotal.toFixed(1)
-      })));
+      console.log(
+        "Top 3 alunos:",
+        studentsWithGrades.slice(0, 3).map((s) => ({
+          nome: s.Nome,
+          media: s.media,
+          faltas: s.faltas,
+          pontuacao: s.pontuacaoTotal.toFixed(1),
+        }))
+      );
     }
 
     return studentsWithGrades;
