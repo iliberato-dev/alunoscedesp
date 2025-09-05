@@ -4733,6 +4733,11 @@ function getSituationIcon(situacao) {
         <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
         <path d="M6.146 6.146a.5.5 0 0 1 .708 0L8 7.293l1.146-1.147a.5.5 0 1 1 .708.708L8.707 8l1.147 1.146a.5.5 0 0 1-.708.708L8 8.707 6.854 9.854a.5.5 0 0 1-.708-.708L7.293 8 6.146 6.854a.5.5 0 0 1 0-.708z"/>
       </svg>`;
+    case "em curso":
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+      </svg>`;
     default:
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
         <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
@@ -4743,7 +4748,7 @@ function getSituationIcon(situacao) {
 
 // Função para obter classe CSS baseada na média
 function getMediaClass(media) {
-  if (!media || media === "-") return "media-vazia";
+  if (!media || media === "-" || media === 0) return "media-vazia";
   const valor = parseFloat(media);
   if (valor >= 6.0) return "media-aprovado";
   return "media-reprovado";
@@ -5406,11 +5411,8 @@ function obterClasseSituacao(situacao) {
 
   const situacaoLower = situacao.toLowerCase();
   if (situacaoLower.includes("aprovado")) return "situacao-aprovado";
-  if (
-    situacaoLower.includes("recuperação") ||
-    situacaoLower.includes("recuperacao")
-  )
-    return "situacao-recuperacao";
+  if (situacaoLower.includes("reprovado")) return "situacao-reprovado";
+  if (situacaoLower.includes("em curso")) return "situacao-em-curso";
   if (situacaoLower.includes("retido")) return "situacao-retido";
 
   return "";
@@ -5422,11 +5424,8 @@ function obterClasseProgressoSituacao(situacao) {
 
   const situacaoLower = situacao.toLowerCase();
   if (situacaoLower.includes("aprovado")) return "progress-aprovado";
-  if (
-    situacaoLower.includes("recuperação") ||
-    situacaoLower.includes("recuperacao")
-  )
-    return "progress-recuperacao";
+  if (situacaoLower.includes("reprovado")) return "progress-reprovado";
+  if (situacaoLower.includes("em curso")) return "progress-em-curso";
   if (situacaoLower.includes("retido")) return "progress-retido";
 
   return "progress-default";
@@ -6409,6 +6408,7 @@ function calcularMediaESituacao(aluno) {
   // Verificar se tem pelo menos uma nota lançada
   const temNotasLancadas = todasAsNotas.some((nota) => nota > 0);
 
+  // Se não tem notas lançadas e não tem faltas, está em curso
   if (!temNotasLancadas && totalFaltas === 0) {
     return {
       media: 0,
@@ -6417,17 +6417,21 @@ function calcularMediaESituacao(aluno) {
     };
   }
 
-  // Verificar reprovação por falta primeiro
+  // Determinar situação baseada nos critérios:
+  // - Reprovado: faltas > 15 OU média < 6.0
+  // - Aprovado: média >= 6.0 E faltas <= 15
+  // - Em Curso: demais casos (ainda cursando)
+  
+  let situacao;
   if (totalFaltas > 15) {
-    return {
-      media: typeof media === "number" ? media.toFixed(1) : media,
-      situacao: "Reprovado por Falta",
-      faltas: totalFaltas,
-    };
+    situacao = "Reprovado";
+  } else if (media >= 6.0 && totalFaltas <= 15) {
+    situacao = "Aprovado";
+  } else if (media < 6.0 && temNotasLancadas) {
+    situacao = "Reprovado";
+  } else {
+    situacao = "Em Curso";
   }
-
-  // Depois verificar por nota
-  const situacao = media >= 6.0 ? "Aprovado" : "Reprovado";
 
   return {
     media: typeof media === "number" ? media.toFixed(1) : media,
@@ -6460,11 +6464,7 @@ function obterClasseSituacao(situacao) {
 
   if (situacaoLower.includes("aprovado")) return "situacao-aprovado";
   if (situacaoLower.includes("reprovado")) return "situacao-reprovado";
-  if (
-    situacaoLower.includes("recuperacao") ||
-    situacaoLower.includes("recuperação")
-  )
-    return "situacao-recuperacao";
+  if (situacaoLower.includes("em curso")) return "situacao-em-curso";
 
   return "situacao-em-curso";
 }

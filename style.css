@@ -3045,10 +3045,16 @@ table tr + tr {
   box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
 }
 
-.situacao-recuperacao {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+.situacao-reprovado {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
   color: white;
-  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+.situacao-em-curso {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
 .situacao-retido {
@@ -3063,9 +3069,14 @@ table tr + tr {
   box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
 }
 
-.progress-recuperacao {
-  background: linear-gradient(90deg, #f59e0b, #d97706);
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+.progress-reprovado {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+.progress-em-curso {
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
 }
 
 .progress-retido {
