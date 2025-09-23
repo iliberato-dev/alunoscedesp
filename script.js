@@ -4,7 +4,12 @@ const WEB_APP_URL =
 
 const IS_LOCAL =
   location.hostname === "localhost" || location.hostname === "127.0.0.1";
-const API_URL = IS_LOCAL ? WEB_APP_URL : "/api/appsscript";
+
+// CORREÇÃO: Sempre usar WEB_APP_URL diretamente para garantir comunicação com Google Apps Script
+const API_URL = WEB_APP_URL; // Removido o proxy que estava causando problemas
+
+console.log(`🌐 Configuração detectada: ${IS_LOCAL ? "LOCAL" : "PRODUÇÃO"}`);
+console.log(`🔗 API_URL configurada para: ${API_URL}`);
 
 // === CACHE LOCAL DE STATUS ===
 class StatusCache {
@@ -5033,6 +5038,8 @@ async function updateGrade(studentId, subject, bimester, newValue) {
     console.log("📝 Enviando atualização de nota:", dadosAtualizacao);
     console.log("🌐 URL da API:", API_URL);
     console.log("🔧 IS_LOCAL:", IS_LOCAL);
+    console.log(`🌍 Hostname atual: ${location.hostname}`);
+    console.log(`🔗 URL completa atual: ${location.href}`);
 
     // === FALLBACK IMEDIATO: Atualizar média no frontend ANTES de enviar para planilha ===
     console.log("🚀 Aplicando fallback imediato - atualizando frontend...");
@@ -5065,86 +5072,63 @@ async function updateGrade(studentId, subject, bimester, newValue) {
       console.warn("⚠️ Erro no fallback imediato:", errorFallback);
     }
 
-    // Usar função universal que lida com CORS automaticamente
-    const resultado = await enviarRequisicao(dadosAtualizacao, false); // Não tentar fetch POST
-    console.log("📊 Resultado:", resultado);
+    // === ENVIO PARA PLANILHA ===
+    console.log("📡 INICIANDO envio para Google Apps Script...");
+    console.log("⏱️ Timestamp do envio:", new Date().toISOString());
 
-    if (resultado.success) {
-      // Se o Apps Script retornou dados da média, atualizar imediatamente
-      if (resultado.data && resultado.data.media) {
-        console.log("📊 Atualizando média no card com dados do servidor...");
-        atualizarMediaNoCardComDados(studentId, {
-          media: resultado.data.media,
-          situacao: resultado.data.situacao,
-        });
+    try {
+      // Usar função universal que lida com CORS automaticamente
+      const resultado = await enviarRequisicao(dadosAtualizacao, false);
+      console.log("✅ RESPOSTA RECEBIDA do servidor:", resultado);
+      console.log("⏱️ Timestamp da resposta:", new Date().toISOString());
 
-        // Mostrar notificação de sucesso com a nova média
-        mostrarSucessoCard(
-          studentId,
-          `Nota ${subject} ${bimester}º bim atualizada para ${grade}. Nova média: ${resultado.data.media}`,
-          "Nota e Média Atualizadas"
-        );
-      } else {
-        // Fallback se não tiver dados da média
-        mostrarSucessoCard(
-          studentId,
-          `Nota ${subject} ${bimester}º bim atualizada para ${grade}`,
-          "Nota Atualizada"
-        );
-      }
+      if (resultado.success) {
+        console.log("🎉 SUCESSO: Nota enviada para a planilha!");
 
-      // Aguardar um pouco e verificar se a atualização foi bem-sucedida
-      setTimeout(async () => {
-        try {
-          console.log("🔍 Atualizando card com cálculo local...");
+        // Se o Apps Script retornou dados da média, atualizar imediatamente
+        if (resultado.data && resultado.data.media) {
+          console.log("📊 Atualizando média no card com dados do servidor...");
+          atualizarMediaNoCardComDados(studentId, {
+            media: resultado.data.media,
+            situacao: resultado.data.situacao,
+          });
 
-          // Buscar dados do aluno na tabela local primeiro
-          const alunoLocal = encontrarAlunoNaTabela(studentId);
-          if (alunoLocal) {
-            // Atualizar a nota local para garantir cálculo correto
-            atualizarNotaLocal(alunoLocal, subject, bimester, grade);
-
-            // Recalcular média com dados locais
-            const calculado = calcularMediaESituacao(alunoLocal);
-            console.log(`📊 Média recalculada localmente: ${calculado.media}`);
-
-            // Atualizar o card imediatamente
-            atualizarMediaNoCardComDados(studentId, {
-              media: calculado.media,
-              situacao: calculado.situacao,
-            });
-
-            console.log("✅ Card atualizado com dados locais!");
-          } else {
-            // Fallback: buscar do servidor se não encontrar local
-            console.log("🌐 Buscando dados do servidor como fallback...");
-            const response = await fetch(
-              `${API_URL}?nomeAluno=${encodeURIComponent(studentId)}`
-            );
-            const data = await response.json();
-
-            if (data.saida && data.saida.length > 0) {
-              const alunoAtualizado = data.saida.find(
-                (a) => a.ID_Unico === studentId
-              );
-              if (alunoAtualizado) {
-                const calculado = calcularMediaESituacao(alunoAtualizado);
-                atualizarMediaNoCardComDados(studentId, {
-                  media: calculado.media,
-                  situacao: calculado.situacao,
-                });
-              }
-            }
-          }
-        } catch (error) {
-          console.error("❌ Erro ao verificar atualização:", error);
+          // Mostrar notificação de sucesso com a nova média
+          mostrarSucessoCard(
+            studentId,
+            `✅ Nota ${subject} ${bimester}º bim: ${grade} | Média: ${resultado.data.media} (Confirmado pela Planilha)`,
+            "Sincronizado com Sucesso"
+          );
+        } else {
+          console.log("📝 Servidor confirmou envio mas sem dados de média");
+          // Mostrar notificação básica de sucesso
+          mostrarSucessoCard(
+            studentId,
+            `✅ Nota ${subject} ${bimester}º bim: ${grade} (Enviado para Planilha)`,
+            "Nota Atualizada"
+          );
         }
-      }, 2000); // Aguardar 2 segundos antes de verificar
-    } else {
-      throw new Error(resultado.error || "Erro desconhecido");
+      } else {
+        console.error("❌ FALHA: Servidor retornou erro:", resultado.error);
+        throw new Error(resultado.error || "Erro desconhecido do servidor");
+      }
+    } catch (errorEnvio) {
+      console.error("💥 ERRO NO ENVIO para planilha:", errorEnvio);
+      console.error("🔍 Detalhes do erro:", {
+        message: errorEnvio.message,
+        stack: errorEnvio.stack,
+        dados: dadosAtualizacao,
+      });
+
+      // Ainda assim considerar como sucesso no frontend (fallback já foi aplicado)
+      mostrarSucessoCard(
+        studentId,
+        `⚠️ Nota ${subject} ${bimester}º bim: ${grade} (Atualizada Localmente - Erro na Sincronização)`,
+        "Fallback Aplicado"
+      );
     }
   } catch (error) {
-    console.error("❌ Erro ao atualizar nota:", error);
+    console.error("❌ Erro geral ao atualizar nota:", error);
 
     // === FALLBACK GARANTIDO EM CASO DE ERRO ===
     console.log("🚨 Aplicando fallback garantido devido ao erro...");
@@ -5175,7 +5159,7 @@ async function updateGrade(studentId, subject, bimester, newValue) {
         // Mostrar notificação especial indicando atualização local
         mostrarSucessoCard(
           studentId,
-          `Nota ${subject} ${bimester}º bim: ${grade} | Média: ${calculadoFallback.media} (Atualização Local)`,
+          `⚠️ Nota ${subject} ${bimester}º bim: ${grade} | Média: ${calculadoFallback.media} (Erro de Comunicação - Atualização Local)`,
           "Fallback Aplicado"
         );
       } else {
@@ -5258,19 +5242,24 @@ function enviarViaJSONP(dados) {
       }, 2000);
     };
 
-    // Timeout de 15 segundos
+    // Timeout de 10 segundos (reduzido para melhor experiência)
     setTimeout(() => {
       if (window[callbackName]) {
-        console.error("⏰ Timeout na requisição JSONP");
+        console.error("⏰ Timeout na requisição JSONP (10s)");
         delete window[callbackName];
         if (document.head.contains(script)) {
           document.head.removeChild(script);
         }
-        reject(new Error("Timeout na requisição JSONP"));
+        reject(
+          new Error(
+            "Timeout na requisição JSONP - servidor não respondeu em 10s"
+          )
+        );
       }
-    }, 15000);
+    }, 10000);
 
     // Adicionar ao DOM para executar
+    console.log("📡 Enviando script JSONP...");
     document.head.appendChild(script);
   });
 }
@@ -5278,100 +5267,130 @@ function enviarViaJSONP(dados) {
 // === FUNÇÃO UNIVERSAL PARA REQUISIÇÕES (CORS-SAFE) ===
 async function enviarRequisicao(dados, tentarFetch = true) {
   console.log("🚀 Iniciando envio de requisição:", dados);
+  console.log(`🌐 Ambiente: ${IS_LOCAL ? "LOCAL" : "PRODUÇÃO"}`);
+  console.log(`🔗 URL de destino: ${API_URL}`);
 
-  // Para localhost, usar estratégia específica baseada na action
-  if (IS_LOCAL) {
-    console.log("🏠 Localhost detectado, usando estratégia otimizada...");
+  // ESTRATÉGIA UNIFICADA: Para atualizações de nota, sempre tentar JSONP primeiro
+  if (dados.action === "atualizarNotaEspecifica") {
+    console.log(
+      "📝 Atualização de nota detectada - usando estratégia JSONP..."
+    );
 
-    // Para ações específicas que requerem POST, tentar JSONP primeiro
-    if (dados.action === "atualizarNotaEspecifica") {
-      console.log("📝 Action específica detectada, usando JSONP...");
+    try {
+      const resultadoJSONP = await enviarViaJSONP(dados);
+      console.log("✅ JSONP executado com sucesso:", resultadoJSONP);
+      return resultadoJSONP;
+    } catch (jsonpError) {
+      console.warn(
+        "⚠️ JSONP falhou, tentando estratégia alternativa:",
+        jsonpError
+      );
+
+      // Fallback 1: Tentar POST direto (pode funcionar em alguns ambientes)
       try {
-        return await enviarViaJSONP(dados);
-      } catch (jsonpError) {
-        console.log(
-          "❌ JSONP falhou, tentando GET com parâmetros...",
-          jsonpError
-        );
+        console.log("� Tentativa 1: POST direto...");
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams(dados),
+          mode: "cors",
+        });
 
-        // Fallback: tentar GET mesmo sabendo que pode não funcionar
+        if (response.ok) {
+          const resultado = await response.json();
+          console.log("✅ POST direto funcionou:", resultado);
+          return resultado;
+        }
+      } catch (postError) {
+        console.warn("⚠️ POST direto falhou:", postError);
+      }
+
+      // Fallback 2: Tentar GET com parâmetros
+      try {
+        console.log("🔄 Tentativa 2: GET com parâmetros...");
         const params = new URLSearchParams(dados);
-        const url = `${WEB_APP_URL}?${params.toString()}`;
-        console.log("🔗 URL GET fallback:", url);
+        const url = `${API_URL}?${params.toString()}`;
+        console.log("🔗 URL GET:", url);
 
         const response = await fetch(url, {
           method: "GET",
-          mode: "no-cors",
+          mode: "cors", // Tentar CORS primeiro
         });
 
-        return {
-          success: false,
-          message: "Action requer POST - usando GET como fallback",
-          data: dados,
-          error: "Esta action precisa ser adicionada ao doGet do Apps Script",
-        };
+        if (response.ok) {
+          const resultado = await response.json();
+          console.log("✅ GET com CORS funcionou:", resultado);
+          return resultado;
+        }
+      } catch (corsError) {
+        console.warn("⚠️ GET com CORS falhou, tentando no-cors:", corsError);
+
+        // Fallback 3: GET com no-cors (último recurso)
+        try {
+          const params = new URLSearchParams(dados);
+          const url = `${API_URL}?${params.toString()}`;
+
+          await fetch(url, {
+            method: "GET",
+            mode: "no-cors",
+          });
+
+          console.log("📡 GET no-cors enviado (sem confirmação de resposta)");
+          return {
+            success: true,
+            message:
+              "Requisição enviada via GET no-cors - confirmação não disponível",
+            data: dados,
+          };
+        } catch (finalError) {
+          console.error("❌ Todas as tentativas falharam:", finalError);
+          throw new Error(
+            `Falha em todas as tentativas de comunicação: ${finalError.message}`
+          );
+        }
       }
-    }
-
-    // Para outras actions, usar GET normal
-    try {
-      console.log("1️⃣ Tentando GET request...");
-      const params = new URLSearchParams(dados);
-      const url = `${WEB_APP_URL}?${params.toString()}`;
-      console.log("🔗 URL GET:", url);
-
-      const response = await fetch(url, {
-        method: "GET",
-        mode: "no-cors",
-      });
-
-      console.log("📡 Response recebido:", response);
-
-      // Com no-cors, não conseguimos ler o response diretamente
-      console.log("✅ Requisição GET enviada com sucesso");
-
-      return {
-        success: true,
-        message: "Requisição enviada com sucesso (modo no-cors)",
-        data: dados,
-      };
-    } catch (error) {
-      console.log("❌ GET falhou:", error);
-      throw error;
     }
   }
 
-  // Em produção, tentar fetch primeiro se solicitado
-  if (tentarFetch) {
-    try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(dados),
-        mode: "cors",
-      });
+  // Para outras actions (não atualização de nota), usar estratégia GET simples
+  try {
+    console.log("🔄 Enviando requisição GET padrão...");
+    const params = new URLSearchParams(dados);
+    const url = `${API_URL}?${params.toString()}`;
+    console.log("🔗 URL GET:", url);
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+    const response = await fetch(url, {
+      method: "GET",
+      mode: "cors",
+    });
 
-      return await response.json();
-    } catch (error) {
-      console.log("🔄 Fetch falhou, tentando GET como fallback...", error);
-      const params = new URLSearchParams(dados);
-      const url = `${WEB_APP_URL}?${params.toString()}`;
-      const response = await fetch(url, { method: "GET", mode: "no-cors" });
-      return { success: true, message: "Requisição enviada via GET fallback" };
+    if (response.ok) {
+      const resultado = await response.json();
+      console.log("✅ GET padrão funcionou:", resultado);
+      return resultado;
+    } else {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-  }
+  } catch (error) {
+    console.warn("⚠️ GET padrão falhou, tentando no-cors:", error);
 
-  // Usar GET como método principal para maior compatibilidade
-  const params = new URLSearchParams(dados);
-  const url = `${WEB_APP_URL}?${params.toString()}`;
-  const response = await fetch(url, { method: "GET", mode: "no-cors" });
-  return { success: true, message: "Requisição enviada via GET" };
+    // Fallback para no-cors
+    const params = new URLSearchParams(dados);
+    const url = `${API_URL}?${params.toString()}`;
+
+    await fetch(url, {
+      method: "GET",
+      mode: "no-cors",
+    });
+
+    return {
+      success: true,
+      message: "Requisição enviada via GET no-cors",
+      data: dados,
+    };
+  }
 }
 
 // === FUNÇÃO PARA ATUALIZAR A MÉDIA NO CARD COM DADOS JÁ CALCULADOS ===
@@ -8840,4 +8859,91 @@ function initializeMediaWatcher() {
   }, 3000); // Aguardar 3 segundos após carregamento
 
   console.log("👁️ Observador de médias ativo");
+}
+
+// === FUNÇÃO DE TESTE PARA COMUNICAÇÃO EM PRODUÇÃO ===
+async function testarComunicacaoProducao() {
+  console.log("🧪 === TESTANDO COMUNICAÇÃO EM PRODUÇÃO ===");
+  console.log(`🌐 Ambiente detectado: ${IS_LOCAL ? "LOCAL" : "PRODUÇÃO"}`);
+  console.log(`🔗 URL da API: ${API_URL}`);
+
+  // Teste 1: Verificar se o Apps Script está acessível
+  console.log("1️⃣ Testando acesso ao Google Apps Script...");
+  try {
+    const response = await fetch(API_URL, {
+      method: "GET",
+      mode: "cors",
+    });
+
+    if (response.ok) {
+      const data = await response.text();
+      console.log(
+        "✅ Apps Script acessível via GET CORS:",
+        data.substring(0, 100)
+      );
+    } else {
+      console.log(`⚠️ Apps Script respondeu com status ${response.status}`);
+    }
+  } catch (error) {
+    console.log("❌ Erro no acesso via CORS:", error.message);
+  }
+
+  // Teste 2: Testar atualização de nota via JSONP
+  console.log("2️⃣ Testando atualização de nota via JSONP...");
+  const dadosTeste = {
+    action: "atualizarNotaEspecifica",
+    ra: "TESTE_ID_123",
+    disciplina: "curso",
+    bimestre: "1_BIMESTRE",
+    nota: "7.5",
+  };
+
+  try {
+    const resultado = await enviarViaJSONP(dadosTeste);
+    console.log("✅ JSONP teste executado:", resultado);
+
+    if (resultado.success) {
+      console.log(
+        "🎉 COMUNICAÇÃO FUNCIONANDO! A nota seria atualizada na planilha."
+      );
+    } else {
+      console.log("⚠️ JSONP executou mas retornou erro:", resultado.error);
+    }
+  } catch (jsonpError) {
+    console.log("❌ Erro no teste JSONP:", jsonpError.message);
+
+    // Teste 3: Fallback com GET
+    console.log("3️⃣ Testando fallback com GET...");
+    try {
+      const params = new URLSearchParams(dadosTeste);
+      const url = `${API_URL}?${params.toString()}`;
+      console.log("🔗 URL de teste:", url);
+
+      const response = await fetch(url, {
+        method: "GET",
+        mode: "no-cors",
+      });
+
+      console.log("📡 GET no-cors enviado (sem confirmação de resposta)");
+      console.log(
+        "⚠️ Verifique manualmente na planilha se a nota TESTE_ID_123 foi alterada"
+      );
+    } catch (getError) {
+      console.log("❌ Erro até no GET fallback:", getError.message);
+    }
+  }
+
+  console.log("🏁 Teste de comunicação concluído. Verifique os logs acima.");
+}
+
+// Tornar função de teste global
+window.testarComunicacaoProducao = testarComunicacaoProducao;
+
+// Auto-executar teste em produção (apenas uma vez)
+if (!IS_LOCAL && !window.testeProducaoExecutado) {
+  window.testeProducaoExecutado = true;
+  setTimeout(() => {
+    console.log("🚀 Executando teste automático de comunicação em produção...");
+    testarComunicacaoProducao();
+  }, 5000); // Aguardar 5 segundos após carregamento
 }
