@@ -1364,8 +1364,8 @@ class SmartBatchProcessor {
     // Verificar se já está em cache
     const cached = cacheManager.getAttendance(cacheKey);
     if (cached) {
-      console.log(`📋 Cache hit para ${registro.alunoId}`);
-      return { success: true, cached: true, alunoId: registro.alunoId };
+      console.log(`📋 Cache hit para ${registro.alunoId}:`, cached);
+      return cached; // ✅ CORREÇÃO: Retornar o resultado original do cache, não forçar success: true
     }
 
     // Verificar se já há uma requisição pendente
@@ -1709,6 +1709,12 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeViewToggle();
   setupUserInterface();
   initializeBatchAttendance();
+
+  // Inicializar monitoramento de mudanças em notas para fallback automático
+  initializeFallbackMediaUpdate();
+
+  // Inicializar observador de médias desatualizadas
+  initializeMediaWatcher();
 
   // Garantir que a visibilidade da tabela esteja correta na inicialização
   setTimeout(() => {
@@ -5028,6 +5034,37 @@ async function updateGrade(studentId, subject, bimester, newValue) {
     console.log("🌐 URL da API:", API_URL);
     console.log("🔧 IS_LOCAL:", IS_LOCAL);
 
+    // === FALLBACK IMEDIATO: Atualizar média no frontend ANTES de enviar para planilha ===
+    console.log("🚀 Aplicando fallback imediato - atualizando frontend...");
+
+    try {
+      // Buscar dados atuais do aluno
+      const alunoLocal = encontrarAlunoNaTabela(studentId);
+      if (alunoLocal) {
+        // Atualizar a nota específica nos dados locais
+        atualizarNotaLocal(alunoLocal, subject, bimester, grade);
+
+        // Recalcular média com a nova nota
+        const calculadoImediato = calcularMediaESituacao(alunoLocal);
+        console.log(
+          `📊 FALLBACK: Nova média calculada: ${calculadoImediato.media}`
+        );
+
+        // Atualizar interface IMEDIATAMENTE
+        atualizarMediaNoCardComDados(studentId, {
+          media: calculadoImediato.media,
+          situacao: calculadoImediato.situacao,
+        });
+
+        // Atualizar o campo de nota específico também
+        atualizarNotaNoCard(studentId, subject, bimester, grade);
+
+        console.log("✅ FALLBACK: Interface atualizada imediatamente!");
+      }
+    } catch (errorFallback) {
+      console.warn("⚠️ Erro no fallback imediato:", errorFallback);
+    }
+
     // Usar função universal que lida com CORS automaticamente
     const resultado = await enviarRequisicao(dadosAtualizacao, false); // Não tentar fetch POST
     console.log("📊 Resultado:", resultado);
@@ -5107,12 +5144,56 @@ async function updateGrade(studentId, subject, bimester, newValue) {
       throw new Error(resultado.error || "Erro desconhecido");
     }
   } catch (error) {
-    console.error("Erro ao atualizar nota:", error);
-    mostrarErroCard(
-      studentId,
-      `Erro: ${error.message}`,
-      "Falha na Atualização"
-    );
+    console.error("❌ Erro ao atualizar nota:", error);
+
+    // === FALLBACK GARANTIDO EM CASO DE ERRO ===
+    console.log("🚨 Aplicando fallback garantido devido ao erro...");
+
+    try {
+      // Buscar dados do aluno mesmo com erro
+      const alunoFallback = encontrarAlunoNaTabela(studentId);
+      if (alunoFallback) {
+        // Forçar atualização local da nota
+        atualizarNotaLocal(alunoFallback, subject, bimester, grade);
+
+        // Recalcular média
+        const calculadoFallback = calcularMediaESituacao(alunoFallback);
+
+        // Atualizar interface imediatamente
+        atualizarMediaNoCardComDados(studentId, {
+          media: calculadoFallback.media,
+          situacao: calculadoFallback.situacao,
+        });
+
+        // Atualizar campo de nota também
+        atualizarNotaNoCard(studentId, subject, bimester, grade);
+
+        console.log(
+          "✅ FALLBACK GARANTIDO: Interface atualizada apesar do erro!"
+        );
+
+        // Mostrar notificação especial indicando atualização local
+        mostrarSucessoCard(
+          studentId,
+          `Nota ${subject} ${bimester}º bim: ${grade} | Média: ${calculadoFallback.media} (Atualização Local)`,
+          "Fallback Aplicado"
+        );
+      } else {
+        // Se nem o fallback funcionar, mostrar erro
+        mostrarErroCard(
+          studentId,
+          `Erro: ${error.message}`,
+          "Falha na Atualização"
+        );
+      }
+    } catch (fallbackError) {
+      console.error("❌ Erro até no fallback garantido:", fallbackError);
+      mostrarErroCard(
+        studentId,
+        `Erro: ${error.message}`,
+        "Falha na Atualização"
+      );
+    }
   } finally {
     removerLoadingCard(studentId);
   }
@@ -5296,7 +5377,10 @@ async function enviarRequisicao(dados, tentarFetch = true) {
 // === FUNÇÃO PARA ATUALIZAR A MÉDIA NO CARD COM DADOS JÁ CALCULADOS ===
 function atualizarMediaNoCardComDados(studentId, dadosMedia) {
   try {
-    console.log(`📊 Atualizando média no card ${studentId}:`, dadosMedia);
+    console.log(
+      `📊 ATUALIZANDO MÉDIA COMPLETA no card ${studentId}:`,
+      dadosMedia
+    );
 
     // Seletores para o novo layout de cards
     const cardElement = document.querySelector(
@@ -5307,48 +5391,145 @@ function atualizarMediaNoCardComDados(studentId, dadosMedia) {
       return;
     }
 
-    // Atualizar valor principal da média
-    const mediaValorPrincipal = cardElement.querySelector(
-      ".media-valor-principal"
-    );
-    const mediaValue = cardElement.querySelector(".media-value");
-    const performanceValue = cardElement.querySelector(
-      ".performance-value.media"
-    );
+    // === LISTA COMPLETA DE SELETORES PARA CAMPOS DE MÉDIA ===
+    const seletoresMedia = [
+      ".media-valor-principal",
+      ".media-value",
+      ".performance-value.media",
+      ".media-geral .valor",
+      ".media-display",
+      ".media",
+      ".average",
+      ".grade-average",
+      ".student-average",
+      ".nota-media",
+      ".media-final",
+      ".resultado-media",
+      ".score-value",
+      ".performance-score",
+      '[data-field="media"]',
+      '[data-field="Media"]',
+      '[data-type="media"]',
+      ".card-media",
+      ".student-media",
+      ".average-score",
+      ".total-average",
+      ".final-grade",
+      ".overall-score",
+    ];
 
-    if (mediaValorPrincipal && dadosMedia.media !== undefined) {
-      // Adicionar animação de atualização
-      mediaValorPrincipal.classList.add("atualizando");
+    let elementosAtualizados = 0;
 
-      // Atualizar valor e classe CSS baseada na média
-      setTimeout(() => {
-        mediaValorPrincipal.textContent = dadosMedia.media;
-        mediaValorPrincipal.setAttribute("data-media", dadosMedia.media);
+    // === ATUALIZAR TODOS OS ELEMENTOS DE MÉDIA ENCONTRADOS ===
+    seletoresMedia.forEach((seletor) => {
+      try {
+        const elementos = cardElement.querySelectorAll(seletor);
+        elementos.forEach((elemento) => {
+          if (elemento && dadosMedia.media !== undefined) {
+            const valorAnterior = elemento.textContent?.trim();
 
-        // Remover classes anteriores e adicionar nova
-        mediaValorPrincipal.classList.remove(
-          "media-vazia",
-          "media-aprovado",
-          "media-reprovado",
-          "atualizando"
-        );
-        const novaClasseMedia = getMediaClass(dadosMedia.media);
-        if (novaClasseMedia) {
-          mediaValorPrincipal.classList.add(novaClasseMedia);
+            // Verificar se parece ser um campo de média (contém número ou está vazio)
+            if (
+              !valorAnterior ||
+              /^\d+\.?\d*$/.test(valorAnterior) ||
+              valorAnterior === "" ||
+              valorAnterior === "-"
+            ) {
+              console.log(
+                `🎯 Atualizando "${seletor}": "${valorAnterior}" → "${dadosMedia.media}"`
+              );
+
+              // Atualizar texto
+              elemento.textContent = dadosMedia.media;
+              elemento.setAttribute("data-media", dadosMedia.media);
+
+              // Se for input, atualizar value também
+              if (elemento.tagName === "INPUT") {
+                elemento.value = dadosMedia.media;
+              }
+
+              // Adicionar feedback visual
+              elemento.style.background = "#4CAF50";
+              elemento.style.color = "white";
+              elemento.style.transform = "scale(1.05)";
+              elemento.style.transition = "all 0.3s ease";
+              elemento.style.fontWeight = "bold";
+              elemento.style.borderRadius = "4px";
+              elemento.style.padding = "2px 6px";
+
+              // Remover animação após um tempo
+              setTimeout(() => {
+                elemento.style.background = "";
+                elemento.style.color = "";
+                elemento.style.transform = "";
+                elemento.style.fontWeight = "";
+                elemento.style.borderRadius = "";
+                elemento.style.padding = "";
+              }, 1500);
+
+              // Remover classes anteriores e adicionar nova
+              elemento.classList.remove(
+                "media-vazia",
+                "media-aprovado",
+                "media-reprovado",
+                "atualizando"
+              );
+              const novaClasseMedia = getMediaClass(dadosMedia.media);
+              if (novaClasseMedia) {
+                elemento.classList.add(novaClasseMedia);
+              }
+
+              elementosAtualizados++;
+            }
+          }
+        });
+      } catch (e) {
+        // Ignorar seletores que falham silenciosamente
+      }
+    });
+
+    // === BUSCA ADICIONAL POR TEXTO QUE CONTENHA NÚMEROS (MÉTODO MAIS AGRESSIVO) ===
+    const todosElementos = cardElement.querySelectorAll("*");
+    todosElementos.forEach((elemento) => {
+      if (elemento.children.length === 0) {
+        // Apenas elementos folha (sem filhos)
+        const texto = elemento.textContent?.trim();
+        if (texto && /^\d+\.?\d*$/.test(texto)) {
+          const numero = parseFloat(texto);
+          // Se for um número entre 0 e 10 (provável média) e diferente da nova média
+          if (
+            numero >= 0 &&
+            numero <= 10 &&
+            numero.toString() !== dadosMedia.media.toString()
+          ) {
+            console.log(
+              `🔍 BUSCA AGRESSIVA: Substituindo "${texto}" por "${dadosMedia.media}"`
+            );
+            elemento.textContent = dadosMedia.media;
+
+            // Animação visual forte
+            elemento.style.background = "#FF5722";
+            elemento.style.color = "white";
+            elemento.style.transform = "scale(1.2)";
+            elemento.style.transition = "all 0.3s ease";
+            elemento.style.border = "2px solid #4CAF50";
+            elemento.style.borderRadius = "6px";
+            elemento.style.padding = "4px 8px";
+
+            setTimeout(() => {
+              elemento.style.background = "";
+              elemento.style.color = "";
+              elemento.style.transform = "";
+              elemento.style.border = "";
+              elemento.style.borderRadius = "";
+              elemento.style.padding = "";
+            }, 2000);
+
+            elementosAtualizados++;
+          }
         }
-      }, 150);
-
-      console.log(`✅ Média principal atualizada para: ${dadosMedia.media}`);
-    }
-
-    // Atualizar outros elementos de média (compatibilidade)
-    if (mediaValue && dadosMedia.media !== undefined) {
-      mediaValue.textContent = dadosMedia.media;
-    }
-
-    if (performanceValue && dadosMedia.media !== undefined) {
-      performanceValue.textContent = dadosMedia.media;
-    }
+      }
+    });
 
     // Atualizar barra de progresso da média
     const progressFill = cardElement.querySelector(".progress-fill");
@@ -5393,18 +5574,45 @@ function atualizarMediaNoCardComDados(studentId, dadosMedia) {
       situationBadge.classList.add(situacaoClass);
     }
 
-    // Feedback visual no card inteiro
-    if (cardElement) {
+    // === ATUALIZAR BARRAS DE PROGRESSO ADICIONAIS ===
+    const todasBarrasProgresso = cardElement.querySelectorAll(
+      '.progress-bar, .progress-fill, [role="progressbar"]'
+    );
+    todasBarrasProgresso.forEach((barra) => {
+      if (dadosMedia.media !== undefined) {
+        const mediaNum = parseFloat(dadosMedia.media) || 0;
+        const progressPercent = Math.min((mediaNum / 10) * 100, 100);
+
+        if (barra.style !== undefined) {
+          barra.style.width = `${progressPercent}%`;
+          console.log(
+            `✅ Barra de progresso adicional atualizada: ${progressPercent}%`
+          );
+        }
+
+        // Atualizar atributos aria se existirem
+        if (barra.hasAttribute("aria-valuenow")) {
+          barra.setAttribute("aria-valuenow", dadosMedia.media);
+        }
+      }
+    });
+
+    // === FEEDBACK VISUAL NO CARD INTEIRO ===
+    if (cardElement && elementosAtualizados > 0) {
       cardElement.style.transform = "scale(1.02)";
       cardElement.style.boxShadow = "0 8px 25px rgba(244, 196, 48, 0.15)";
+      cardElement.style.border = "2px solid #4CAF50";
 
       setTimeout(() => {
         cardElement.style.transform = "";
         cardElement.style.boxShadow = "";
-      }, 300);
+        cardElement.style.border = "";
+      }, 1000);
     }
 
-    console.log(`✅ Card ${studentId} atualizado com sucesso!`);
+    console.log(
+      `✅ Card ${studentId} COMPLETAMENTE atualizado! ${elementosAtualizados} elementos de média atualizados.`
+    );
   } catch (error) {
     console.error(`❌ Erro ao atualizar card ${studentId}:`, error);
   }
@@ -5585,6 +5793,64 @@ function obterClasseProgressoSituacao(situacao) {
   if (situacaoLower.includes("retido")) return "progress-retido";
 
   return "progress-default";
+}
+
+// === FUNÇÃO PARA ATUALIZAR NOTA ESPECÍFICA NO CARD ===
+function atualizarNotaNoCard(studentId, subject, bimester, newValue) {
+  try {
+    const card = document.querySelector(`[data-student-id="${studentId}"]`);
+    if (!card) {
+      console.warn(`❌ Card não encontrado para ${studentId}`);
+      return;
+    }
+
+    // Determinar seletores para encontrar o campo de nota específico
+    const seletoresPossíveis = [
+      `.nota-${bimester}`,
+      `[data-field="Nota${bimester}"]`,
+      `[data-field="${subject}${bimester}"]`,
+      `[name="Nota${bimester}"]`,
+      `[id*="nota${bimester}"]`,
+      `.${subject}-${bimester}`,
+      `input[data-subject="${subject}"][data-bimester="${bimester}"]`,
+    ];
+
+    let campoEncontrado = false;
+
+    // Tentar encontrar e atualizar o campo específico
+    seletoresPossíveis.forEach((seletor) => {
+      const campo = card.querySelector(seletor);
+      if (campo) {
+        // Atualizar valor
+        if (campo.tagName === "INPUT") {
+          campo.value = newValue;
+        } else {
+          campo.textContent = newValue;
+        }
+
+        // Adicionar feedback visual
+        campo.style.background = "#4CAF50";
+        campo.style.color = "white";
+        campo.style.transition = "all 0.3s ease";
+
+        setTimeout(() => {
+          campo.style.background = "";
+          campo.style.color = "";
+        }, 1000);
+
+        console.log(`✅ Campo de nota atualizado: ${seletor} = ${newValue}`);
+        campoEncontrado = true;
+      }
+    });
+
+    if (!campoEncontrado) {
+      console.warn(
+        `⚠️ Campo de nota não encontrado para ${subject} ${bimester}º bim no card ${studentId}`
+      );
+    }
+  } catch (error) {
+    console.error(`❌ Erro ao atualizar nota no card ${studentId}:`, error);
+  }
 }
 
 // === FUNÇÃO PARA ATUALIZAR A MÉDIA NO CARD APÓS MUDANÇA DE NOTA ===
@@ -7715,7 +7981,12 @@ function initializeBatchAttendance() {
 
   // Event listeners para checkboxes de presença nos cards
   document.addEventListener("change", (e) => {
-    if (e.target.classList.contains("attendance-checkbox")) {
+    if (
+      e.target &&
+      e.target.classList &&
+      e.target.classList.contains("attendance-checkbox") &&
+      !e.target.hasAttribute("onchange") // Não processar se já tem onchange inline
+    ) {
       handleCardAttendanceToggle(e.target);
     }
   });
@@ -7723,10 +7994,40 @@ function initializeBatchAttendance() {
 
 // === FUNÇÕES DE PRESENÇA NOS CARDS ===
 function handleCardAttendanceToggle(checkbox) {
-  const studentId = checkbox.dataset.studentId;
+  // Verificação de segurança - se checkbox não existir ou não tiver dataset
+  if (!checkbox || !checkbox.dataset) {
+    console.warn("Checkbox inválido:", checkbox);
+    return;
+  }
+
+  // Verificar se é um checkbox de card (não de lote)
+  // Checkboxes de lote têm data-type, checkboxes de card não têm
+  if (checkbox.hasAttribute("data-type")) {
+    console.log(
+      "Checkbox de lote detectado, ignorando no handleCardAttendanceToggle"
+    );
+    return;
+  }
+
+  // Usar data-aluno-id se existir, senão usar data-student-id
+  const studentId = checkbox.dataset.alunoId || checkbox.dataset.studentId;
+
+  if (!studentId) {
+    console.warn("Checkbox sem studentId/alunoId:", checkbox);
+    return;
+  }
+
   const controlsDiv = document.getElementById(
     `attendanceControls-${studentId}`
   );
+
+  // Verificação de segurança - se o elemento não existir, sair da função
+  if (!controlsDiv) {
+    console.warn(
+      `Elemento attendanceControls-${studentId} não encontrado no DOM`
+    );
+    return;
+  }
 
   if (checkbox.checked) {
     controlsDiv.classList.remove("hidden");
@@ -7802,11 +8103,11 @@ async function registrarPresencaCard(studentId) {
     atualizarMensagemLoadingCard(studentId, "Enviando dados...");
 
     // Usar o mesmo sistema de processamento do sistema principal
-    let success = false;
+    let resultadoProcessamento = null;
     let timeoutOccurred = false;
 
     try {
-      success = await smartProcessor.processWithCache(registro);
+      resultadoProcessamento = await smartProcessor.processWithCache(registro);
     } catch (timeoutError) {
       if (timeoutError.message && timeoutError.message.includes("Timeout")) {
         timeoutOccurred = true;
@@ -7880,7 +8181,10 @@ async function registrarPresencaCard(studentId) {
       }
     }
 
-    if (success) {
+    // ✅ CORREÇÃO: Verificar se o resultado tem success = true
+    if (resultadoProcessamento && resultadoProcessamento.success === true) {
+      console.log("✅ Processamento bem-sucedido:", resultadoProcessamento);
+
       const statusText =
         selectedStatus === "P"
           ? "Presente"
@@ -7969,7 +8273,17 @@ async function registrarPresencaCard(studentId) {
       cacheManager.clearAttendance();
       attendanceManager.clearAllRecords();
     } else {
-      throw new Error("Falha ao registrar presença");
+      // ✅ CORREÇÃO: Tratar adequadamente quando a requisição falha
+      console.error("❌ Processamento falhou:", {
+        resultadoProcessamento,
+        success: resultadoProcessamento?.success,
+        error: resultadoProcessamento?.error,
+      });
+
+      const mensagemErro =
+        resultadoProcessamento?.error ||
+        "Falha ao registrar presença no servidor";
+      throw new Error(mensagemErro);
     }
   } catch (error) {
     console.error("❌ Erro ao registrar presença via card:", error);
@@ -8295,3 +8609,235 @@ window.testarAtualizacaoReal = testarAtualizacaoReal;
 window.testarAtualizacaoViaJSONP = testarAtualizacaoViaJSONP;
 window.diagnosticarAppsScript = diagnosticarAppsScript;
 window.testarJSONPSimples = testarJSONPSimples;
+
+// === INICIALIZAR MONITORAMENTO DE MUDANÇAS EM NOTAS PARA FALLBACK AUTOMÁTICO ===
+function initializeFallbackMediaUpdate() {
+  console.log(
+    "📊 Inicializando fallback automático para atualização de médias..."
+  );
+
+  // Event listener para mudanças em campos de input de notas
+  document.addEventListener("input", function (event) {
+    const input = event.target;
+
+    // Verificar se é um campo de nota
+    const isNotaField =
+      input.name?.includes("nota") ||
+      input.id?.includes("nota") ||
+      input.classList.contains("nota-input") ||
+      input.getAttribute("data-field")?.includes("Nota");
+
+    if (isNotaField) {
+      const card = input.closest("[data-student-id]");
+      if (card) {
+        const studentId = card.getAttribute("data-student-id");
+        console.log(
+          `📝 Mudança detectada em campo de nota para ${studentId}: ${input.value}`
+        );
+
+        // Aguardar um pouco para que o usuário termine de digitar
+        clearTimeout(input.fallbackTimeout);
+        input.fallbackTimeout = setTimeout(() => {
+          aplicarFallbackMediaImediato(studentId, input);
+        }, 800); // 800ms de delay
+      }
+    }
+  });
+
+  // Event listener para mudanças via blur (quando sai do campo)
+  document.addEventListener(
+    "blur",
+    function (event) {
+      const input = event.target;
+
+      const isNotaField =
+        input.name?.includes("nota") ||
+        input.id?.includes("nota") ||
+        input.classList.contains("nota-input") ||
+        input.getAttribute("data-field")?.includes("Nota");
+
+      if (isNotaField) {
+        const card = input.closest("[data-student-id]");
+        if (card) {
+          const studentId = card.getAttribute("data-student-id");
+          console.log(
+            `📝 Campo de nota perdeu foco para ${studentId}: ${input.value}`
+          );
+
+          // Aplicar fallback imediatamente
+          aplicarFallbackMediaImediato(studentId, input);
+        }
+      }
+    },
+    true
+  );
+
+  console.log("✅ Fallback automático para médias inicializado");
+}
+
+// === APLICAR FALLBACK DE MÉDIA IMEDIATO ===
+function aplicarFallbackMediaImediato(studentId, inputElement) {
+  try {
+    console.log(`🚀 Aplicando fallback de média para ${studentId}...`);
+
+    // Buscar dados do aluno
+    const aluno = encontrarAlunoNaTabela(studentId);
+    if (!aluno) {
+      console.warn(`⚠️ Aluno ${studentId} não encontrado para fallback`);
+      return;
+    }
+
+    // Determinar qual campo foi alterado
+    const fieldName =
+      inputElement.getAttribute("data-field") ||
+      inputElement.name ||
+      inputElement.id;
+
+    const newValue = parseFloat(inputElement.value) || 0;
+
+    if (fieldName) {
+      // Atualizar dados locais
+      aluno[fieldName] = newValue;
+      console.log(`📝 Fallback: ${fieldName} atualizado para ${newValue}`);
+
+      // Recalcular média
+      const calculado = calcularMediaESituacao(aluno);
+      console.log(`📊 Fallback: Nova média calculada: ${calculado.media}`);
+
+      // Atualizar interface imediatamente
+      atualizarMediaNoCardComDados(studentId, {
+        media: calculado.media,
+        situacao: calculado.situacao,
+      });
+
+      // Feedback visual no campo alterado
+      inputElement.style.background = "#E8F5E8";
+      inputElement.style.borderColor = "#4CAF50";
+
+      setTimeout(() => {
+        inputElement.style.background = "";
+        inputElement.style.borderColor = "";
+      }, 2000);
+
+      console.log(`✅ Fallback aplicado com sucesso para ${studentId}`);
+    }
+  } catch (error) {
+    console.error(`❌ Erro no fallback para ${studentId}:`, error);
+  }
+}
+
+// === INICIALIZAR OBSERVADOR DE MÉDIAS DESATUALIZADAS ===
+function initializeMediaWatcher() {
+  console.log("👁️ Inicializando observador de médias desatualizadas...");
+
+  // Armazenar médias conhecidas por student ID
+  const mediasConhecidas = new Map();
+
+  // Observer para detectar mudanças no DOM
+  const mediaObserver = new MutationObserver(function (mutations) {
+    mutations.forEach(function (mutation) {
+      if (mutation.type === "childList" || mutation.type === "characterData") {
+        // Verificar cards com data-student-id
+        const cards = document.querySelectorAll("[data-student-id]");
+
+        cards.forEach((card) => {
+          const studentId = card.getAttribute("data-student-id");
+          if (studentId) {
+            // Buscar dados atuais do aluno
+            const alunoAtual = encontrarAlunoNaTabela(studentId);
+            if (alunoAtual) {
+              const calculado = calcularMediaESituacao(alunoAtual);
+              const mediaEsperada = calculado.media;
+
+              // Verificar se algum elemento no card mostra uma média diferente
+              const elementosComNumeros = card.querySelectorAll("*");
+              let mediaDesatualizada = false;
+
+              elementosComNumeros.forEach((elemento) => {
+                if (elemento.children.length === 0) {
+                  // Elementos folha
+                  const texto = elemento.textContent?.trim();
+                  if (texto && /^\d+\.?\d*$/.test(texto)) {
+                    const numero = parseFloat(texto);
+
+                    // Se for um número entre 0 e 10 e diferente da média esperada
+                    if (
+                      numero >= 0 &&
+                      numero <= 10 &&
+                      numero.toString() !== mediaEsperada.toString()
+                    ) {
+                      // Verificar se não é uma nota individual (que pode ser diferente da média)
+                      const isNotaIndividual =
+                        elemento.closest('[data-field*="Nota"]') ||
+                        elemento.closest(".nota-") ||
+                        elemento.parentElement?.textContent?.includes("Nota") ||
+                        elemento.parentElement?.textContent?.includes("bim");
+
+                      if (!isNotaIndividual) {
+                        console.log(
+                          `🚨 Média desatualizada detectada em ${studentId}: "${texto}" deveria ser "${mediaEsperada}"`
+                        );
+                        mediaDesatualizada = true;
+                      }
+                    }
+                  }
+                }
+              });
+
+              // Se detectou média desatualizada, forçar atualização completa
+              if (mediaDesatualizada) {
+                console.log(
+                  `🔧 Corrigindo média desatualizada para ${studentId}...`
+                );
+                setTimeout(() => {
+                  atualizarMediaNoCardComDados(studentId, {
+                    media: calculado.media,
+                    situacao: calculado.situacao,
+                  });
+                }, 100);
+              }
+            }
+          }
+        });
+      }
+    });
+  });
+
+  // Observar mudanças em todo o documento
+  mediaObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+  });
+
+  // Verificação inicial após carregamento
+  setTimeout(() => {
+    console.log("🔍 Executando verificação inicial de médias...");
+
+    const cards = document.querySelectorAll("[data-student-id]");
+    let cardsComProblemas = 0;
+
+    cards.forEach((card) => {
+      const studentId = card.getAttribute("data-student-id");
+      const aluno = encontrarAlunoNaTabela(studentId);
+
+      if (aluno) {
+        const calculado = calcularMediaESituacao(aluno);
+
+        // Forçar atualização para garantir consistência
+        atualizarMediaNoCardComDados(studentId, {
+          media: calculado.media,
+          situacao: calculado.situacao,
+        });
+
+        cardsComProblemas++;
+      }
+    });
+
+    console.log(
+      `✅ Verificação inicial concluída: ${cardsComProblemas} cards verificados`
+    );
+  }, 3000); // Aguardar 3 segundos após carregamento
+
+  console.log("👁️ Observador de médias ativo");
+}

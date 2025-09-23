@@ -10,6 +10,9 @@
 
 // === CONFIGURAÇÕES ===
 
+// Cache global para controlar criação de colunas por execução
+const COLUNAS_CRIADAS_EXECUCAO = new Set();
+
 // Nomes das planilhas que você usa (ajuste conforme necessário)
 const SHEET_NAMES = ["PWT", "PWN", "DGT", "DGN", "MNT", "MNN"];
 
@@ -22,6 +25,125 @@ const CURSO_PARA_PERIODO = {
   DGN: "Noite",
   MNN: "Noite",
 };
+
+/**
+ * Função para limpar o cache de colunas criadas (útil para debugging)
+ */
+function limparCacheColunasExecucao() {
+  COLUNAS_CRIADAS_EXECUCAO.clear();
+  console.log("🧹 Cache de colunas de execução limpo");
+  return { success: true, message: "Cache limpo" };
+}
+
+/**
+ * FUNÇÃO CENTRALIZADA PARA CRIAÇÃO DE COLUNAS COM LOCK ANTI-DUPLICAÇÃO
+ * Esta função garante que apenas uma execução por vez possa criar colunas
+ */
+function criarColunaComLock(worksheet, cabecalhoData, indices) {
+  const chaveColuna = `${worksheet.getName()}_${cabecalhoData}`;
+  const lockKey = `LOCK_COLUNA_${chaveColuna}`;
+  const properties = PropertiesService.getScriptProperties();
+
+  try {
+    // 1. Verificar cache de execução primeiro
+    if (COLUNAS_CRIADAS_EXECUCAO.has(chaveColuna)) {
+      console.log(
+        `🔒 [Cache] Coluna '${cabecalhoData}' já criada nesta execução`
+      );
+      return { success: true, colunaExistente: true, colunaIndex: -1 };
+    }
+
+    // 2. Verificar se a coluna já existe na planilha
+    const cabecalhos = worksheet
+      .getRange(1, 1, 1, worksheet.getLastColumn())
+      .getValues()[0];
+    for (let i = 0; i < cabecalhos.length; i++) {
+      if (String(cabecalhos[i]).trim() === cabecalhoData) {
+        console.log(
+          `✅ [Existente] Coluna '${cabecalhoData}' encontrada na posição: ${i}`
+        );
+        COLUNAS_CRIADAS_EXECUCAO.add(chaveColuna);
+        return { success: true, colunaExistente: true, colunaIndex: i };
+      }
+    }
+
+    // 3. Tentar adquirir lock (timeout de 5 segundos)
+    const lockTimeout = new Date().getTime() + 5000;
+    while (new Date().getTime() < lockTimeout) {
+      const lockValue = properties.getProperty(lockKey);
+      if (!lockValue) {
+        // Lock livre, tentar adquirir
+        properties.setProperty(lockKey, new Date().getTime().toString());
+        console.log(`🔐 [Lock] Adquirido para coluna '${cabecalhoData}'`);
+        break;
+      }
+
+      // Verificar se lock é muito antigo (mais de 10 segundos)
+      const lockTime = parseInt(lockValue);
+      if (new Date().getTime() - lockTime > 10000) {
+        console.log(
+          `⏰ [Lock] Expirado para coluna '${cabecalhoData}', liberando...`
+        );
+        properties.deleteProperty(lockKey);
+        continue;
+      }
+
+      // Aguardar um pouco antes de tentar novamente
+      Utilities.sleep(100);
+    }
+
+    // 4. Verificar novamente se a coluna foi criada enquanto aguardávamos o lock
+    const cabecalhosAtualizado = worksheet
+      .getRange(1, 1, 1, worksheet.getLastColumn())
+      .getValues()[0];
+    for (let i = 0; i < cabecalhosAtualizado.length; i++) {
+      if (String(cabecalhosAtualizado[i]).trim() === cabecalhoData) {
+        console.log(
+          `✅ [Lock] Coluna '${cabecalhoData}' criada por outra execução na posição: ${i}`
+        );
+        COLUNAS_CRIADAS_EXECUCAO.add(chaveColuna);
+        properties.deleteProperty(lockKey); // Liberar lock
+        return { success: true, colunaExistente: true, colunaIndex: i };
+      }
+    }
+
+    // 5. Criar a coluna (apenas se chegou até aqui com lock)
+    const colunaFaltas =
+      indices.Faltas !== undefined
+        ? indices.Faltas
+        : worksheet.getLastColumn() - 1;
+    const posicaoInsercao = colunaFaltas + 2; // Após coluna de faltas
+
+    worksheet.insertColumnAfter(colunaFaltas + 1);
+    const colunaIndex = colunaFaltas + 1;
+    worksheet.getRange(1, posicaoInsercao).setValue(cabecalhoData);
+
+    // 6. Marcar como criada e liberar lock
+    COLUNAS_CRIADAS_EXECUCAO.add(chaveColuna);
+    properties.deleteProperty(lockKey);
+
+    console.log(
+      `🆕 [Criada] Nova coluna '${cabecalhoData}' criada na posição ${posicaoInsercao}`
+    );
+
+    return {
+      success: true,
+      colunaExistente: false,
+      colunaIndex: colunaIndex,
+      posicaoInsercao: posicaoInsercao,
+    };
+  } catch (error) {
+    // Sempre liberar o lock em caso de erro
+    properties.deleteProperty(lockKey);
+    console.error(`❌ [Lock] Erro ao criar coluna '${cabecalhoData}':`, error);
+    return {
+      success: false,
+      error: error.toString(),
+      colunaExistente: false,
+      colunaIndex: -1,
+    };
+  }
+}
 
 // === FUNÇÕES DE DIAGNÓSTICO ===
 
@@ -525,6 +647,8 @@ function registrarPresencaFuncao(alunoId, status, dataPresenca) {
       "dd/MM"
     );
 
+    const chaveColuna = `${abaEncontrada.getName()}_${cabecalhoData}`;
+
     // Procura ou cria a coluna da data
     let colunaData = -1;
     const cabecalhos = abaEncontrada
@@ -534,19 +658,40 @@ function registrarPresencaFuncao(alunoId, status, dataPresenca) {
     for (let i = 0; i < cabecalhos.length; i++) {
       if (String(cabecalhos[i]).trim() === cabecalhoData) {
         colunaData = i;
+        console.log(
+          `✅ Coluna '${cabecalhoData}' encontrada na posição: ${colunaData}`
+        );
+        COLUNAS_CRIADAS_EXECUCAO.add(chaveColuna);
         break;
       }
     }
 
-    // Se não encontrou a coluna da data, cria uma nova
+    // Se não encontrou a coluna da data, usar função centralizada para criá-la
     if (colunaData === -1) {
-      const colunaFaltas =
-        indices.Faltas !== undefined
-          ? indices.Faltas
-          : abaEncontrada.getLastColumn() - 1;
-      abaEncontrada.insertColumnAfter(colunaFaltas + 1);
-      colunaData = colunaFaltas + 1;
-      abaEncontrada.getRange(1, colunaData + 1).setValue(cabecalhoData);
+      const resultadoColuna = criarColunaComLock(
+        abaEncontrada,
+        cabecalhoData,
+        indices
+      );
+
+      if (!resultadoColuna.success) {
+        return {
+          success: false,
+          error: `Erro ao criar coluna: ${resultadoColuna.error}`,
+        };
+      }
+
+      colunaData = resultadoColuna.colunaIndex;
+
+      if (!resultadoColuna.colunaExistente) {
+        console.log(
+          `✅ [registrarPresencaFuncao] Nova coluna '${cabecalhoData}' criada`
+        );
+      } else {
+        console.log(
+          `✅ [registrarPresencaFuncao] Coluna '${cabecalhoData}' já existia`
+        );
+      }
     }
 
     // Registra a presença/falta
@@ -865,33 +1010,49 @@ function registrarPresencaAutomatica(
 
       console.log(`Procurando/criando coluna para data: ${cabecalhoData}`);
 
+      const chaveColuna = `${sheetName}_${cabecalhoData}`;
+
       // Verificar se existe coluna para esta data
       let colunaData = -1;
       for (let i = 0; i < headers.length; i++) {
         if (String(headers[i]).trim() === cabecalhoData) {
           colunaData = i;
+          console.log(
+            `✅ Coluna '${cabecalhoData}' encontrada na posição: ${colunaData}`
+          );
+          COLUNAS_CRIADAS_EXECUCAO.add(chaveColuna);
           break;
         }
       }
 
-      // Se não existe a coluna para esta data, criar
+      // Se não existe a coluna para esta data, usar função centralizada
       if (colunaData === -1) {
-        // Inserir nova coluna após a coluna de Faltas (se existir) ou no final
-        const posicaoInsercao =
-          indices.Faltas !== undefined
-            ? indices.Faltas + 2 // Após a coluna de Faltas
-            : ultimaColuna + 1; // No final
-
-        worksheet.insertColumnAfter(posicaoInsercao - 1);
-        colunaData = posicaoInsercao - 1; // Ajuste para índice 0-based
-        worksheet.getRange(1, posicaoInsercao).setValue(cabecalhoData);
-
-        console.log(
-          `Nova coluna '${cabecalhoData}' criada na posição ${posicaoInsercao}`
+        const resultadoColuna = criarColunaComLock(
+          worksheet,
+          cabecalhoData,
+          indices
         );
 
+        if (!resultadoColuna.success) {
+          console.error(
+            `❌ Erro ao criar coluna '${cabecalhoData}': ${resultadoColuna.error}`
+          );
+          continue; // Pular para próxima planilha
+        }
+
+        colunaData = resultadoColuna.colunaIndex;
+
         // Atualizar array de headers
-        headers.splice(colunaData, 0, cabecalhoData);
+        if (!resultadoColuna.colunaExistente) {
+          headers.splice(colunaData, 0, cabecalhoData);
+          console.log(
+            `✅ [registrarPresencaAutomatica] Nova coluna '${cabecalhoData}' criada`
+          );
+        } else {
+          console.log(
+            `✅ [registrarPresencaAutomatica] Coluna '${cabecalhoData}' já existia`
+          );
+        }
       }
 
       // Obter todos os dados dos alunos
@@ -1499,37 +1660,67 @@ function registrarPresencaOtimizada(
       "dd/MM"
     );
 
-    console.log(`📅 Procurando/criando coluna para data: ${cabecalhoData}`);
+    console.log(`📅 Verificando coluna para data: ${cabecalhoData}`);
+
+    const chaveColuna = `${abaEncontrada.getName()}_${cabecalhoData}`;
+
+    // ✅ VERIFICAR CACHE DE EXECUÇÃO
+    if (COLUNAS_CRIADAS_EXECUCAO.has(chaveColuna)) {
+      console.log(
+        `🔄 Coluna '${cabecalhoData}' já processada nesta execução para ${abaEncontrada.getName()}`
+      );
+    }
+
+    // ✅ VERIFICAÇÃO ROBUSTA: Sempre recarregar headers atuais
+    const headersAtuais = abaEncontrada
+      .getRange(1, 1, 1, abaEncontrada.getLastColumn())
+      .getValues()[0];
 
     // Verificar se existe coluna para esta data APENAS nesta aba
     let colunaData = -1;
-    for (let i = 0; i < headers.length; i++) {
-      if (String(headers[i]).trim() === cabecalhoData) {
+    for (let i = 0; i < headersAtuais.length; i++) {
+      const headerAtual = String(headersAtuais[i]).trim();
+      if (headerAtual === cabecalhoData) {
         colunaData = i;
-        console.log(`✅ Coluna da data já existe na posição: ${colunaData}`);
+        console.log(
+          `✅ Coluna '${cabecalhoData}' já existe na posição: ${colunaData}`
+        );
+
+        // Marcar como processada
+        COLUNAS_CRIADAS_EXECUCAO.add(chaveColuna);
         break;
       }
     }
 
-    // Se não existe a coluna para esta data, criar APENAS nesta aba
+    // Se não existe a coluna para esta data, usar função centralizada
     if (colunaData === -1) {
-      // Inserir nova coluna após a coluna de Faltas (se existir) ou no final
-      const posicaoInsercao =
-        indices.Faltas !== undefined
-          ? indices.Faltas + 2 // Após a coluna de Faltas
-          : ultimaColuna + 1; // No final
-
-      abaEncontrada.insertColumnAfter(posicaoInsercao - 1);
-      colunaData = posicaoInsercao - 1; // Ajuste para índice 0-based
-      abaEncontrada.getRange(1, posicaoInsercao).setValue(cabecalhoData);
-
-      console.log(
-        `✅ Nova coluna '${cabecalhoData}' criada APENAS na aba ${abaEncontrada.getName()} na posição ${posicaoInsercao}`
+      const resultadoColuna = criarColunaComLock(
+        abaEncontrada,
+        cabecalhoData,
+        indices
       );
 
-      // Atualizar array de headers
-      headers.splice(colunaData, 0, cabecalhoData);
+      if (!resultadoColuna.success) {
+        return {
+          success: false,
+          error: `Erro ao criar coluna: ${resultadoColuna.error}`,
+        };
+      }
+
+      colunaData = resultadoColuna.colunaIndex;
+
+      if (!resultadoColuna.colunaExistente) {
+        console.log(
+          `✅ [registrarPresencaOtimizada] Nova coluna '${cabecalhoData}' criada na aba ${abaEncontrada.getName()}`
+        );
+      } else {
+        console.log(
+          `✅ [registrarPresencaOtimizada] Coluna '${cabecalhoData}' já existia na aba ${abaEncontrada.getName()}`
+        );
+      }
     }
+
+    // Registra a presença/falta na coluna da data
 
     // PASSO 3: Marcar presença/falta do aluno específico
     abaEncontrada.getRange(linhaAluno, colunaData + 1).setValue(status);
@@ -2974,6 +3165,8 @@ function doPost(e) {
         "dd/MM"
       );
 
+      const chaveColuna = `${abaEncontrada.getName()}_${cabecalhoData}`;
+
       // Procura ou cria a coluna da data
       let colunaData = -1;
       const cabecalhos = abaEncontrada
@@ -2983,22 +3176,44 @@ function doPost(e) {
       for (let i = 0; i < cabecalhos.length; i++) {
         if (String(cabecalhos[i]).trim() === cabecalhoData) {
           colunaData = i;
+          console.log(
+            `✅ [doPost] Coluna '${cabecalhoData}' encontrada na posição: ${colunaData}`
+          );
+          COLUNAS_CRIADAS_EXECUCAO.add(chaveColuna);
           break;
         }
       }
 
-      // Se não encontrou a coluna da data, cria uma nova
+      // Se não encontrou a coluna da data, usar função centralizada
       if (colunaData === -1) {
-        const colunaFaltas =
-          indices.Faltas !== undefined
-            ? indices.Faltas
-            : abaEncontrada.getLastColumn() - 1;
-        abaEncontrada.insertColumnAfter(colunaFaltas + 1);
-        colunaData = colunaFaltas + 1;
-        abaEncontrada.getRange(1, colunaData + 1).setValue(cabecalhoData);
-        console.log(
-          `Nova coluna '${cabecalhoData}' criada na posição ${colunaData + 1}`
+        const resultadoColuna = criarColunaComLock(
+          abaEncontrada,
+          cabecalhoData,
+          indices
         );
+
+        if (!resultadoColuna.success) {
+          return criarRespostaJson({
+            success: false,
+            error: `Erro ao criar coluna: ${resultadoColuna.error}`,
+          });
+        }
+
+        colunaData = resultadoColuna.colunaIndex;
+
+        if (!resultadoColuna.colunaExistente) {
+          console.log(
+            `✅ [doPost] Nova coluna '${cabecalhoData}' criada na posição ${
+              colunaData + 1
+            }`
+          );
+        } else {
+          console.log(
+            `✅ [doPost] Coluna '${cabecalhoData}' já existia na posição ${
+              colunaData + 1
+            }`
+          );
+        }
       }
 
       // Registra a presença/falta na coluna da data
