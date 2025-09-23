@@ -1418,6 +1418,255 @@ function processarPresencaAbaEspecifica(
 }
 
 /**
+ * ✅ NOVA FUNÇÃO OTIMIZADA - Registrar presença apenas na aba do aluno específico
+ * Esta função corrige o problema de criar colunas desnecessárias em todas as abas
+ * Processa APENAS a aba onde o aluno está localizado
+ */
+function registrarPresencaOtimizada(
+  alunoId,
+  data,
+  status,
+  professor,
+  marcarTodos = "false"
+) {
+  try {
+    console.log("🎯 === REGISTRANDO PRESENÇA OTIMIZADA ===");
+    console.log("Parâmetros:", {
+      alunoId,
+      data,
+      status,
+      professor,
+      marcarTodos,
+    });
+
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    let abaEncontrada = null;
+    let linhaAluno = -1;
+    let indices = null;
+
+    // PASSO 1: Encontrar em qual aba está o aluno
+    for (const sheetName of SHEET_NAMES) {
+      const worksheet = spreadsheet.getSheetByName(sheetName);
+      if (!worksheet) continue;
+
+      const indicesTemp = detectarColunasUniversal(worksheet);
+      if (indicesTemp.ID_Unico === undefined) continue;
+
+      const ultimaLinha = worksheet.getLastRow();
+      if (ultimaLinha <= 1) continue;
+
+      // Buscar o aluno nesta aba
+      const dadosIds = worksheet
+        .getRange(2, indicesTemp.ID_Unico + 1, ultimaLinha - 1, 1)
+        .getValues();
+
+      for (let i = 0; i < dadosIds.length; i++) {
+        const currentId = String(dadosIds[i][0] || "").trim();
+        if (currentId === alunoId) {
+          abaEncontrada = worksheet;
+          linhaAluno = i + 2; // +2 porque começamos da linha 2
+          indices = indicesTemp;
+          console.log(
+            `✅ Aluno encontrado na aba: ${sheetName}, linha: ${linhaAluno}`
+          );
+          break;
+        }
+      }
+
+      if (abaEncontrada) break; // Parar quando encontrar o aluno
+    }
+
+    if (!abaEncontrada) {
+      throw new Error(
+        `Aluno com ID ${alunoId} não encontrado em nenhuma planilha`
+      );
+    }
+
+    // PASSO 2: Processar APENAS a aba onde o aluno foi encontrado
+    console.log(`🎯 Processando APENAS a aba: ${abaEncontrada.getName()}`);
+
+    // Obter cabeçalhos atuais da aba específica
+    const ultimaColuna = abaEncontrada.getLastColumn();
+    const headers = abaEncontrada
+      .getRange(1, 1, 1, ultimaColuna)
+      .getValues()[0];
+
+    // Formatar data para cabeçalho (formato brasileiro: dd/MM)
+    const dataObj = new Date(data + "T12:00:00Z");
+    const cabecalhoData = Utilities.formatDate(
+      dataObj,
+      Session.getScriptTimeZone(),
+      "dd/MM"
+    );
+
+    console.log(`📅 Procurando/criando coluna para data: ${cabecalhoData}`);
+
+    // Verificar se existe coluna para esta data APENAS nesta aba
+    let colunaData = -1;
+    for (let i = 0; i < headers.length; i++) {
+      if (String(headers[i]).trim() === cabecalhoData) {
+        colunaData = i;
+        console.log(`✅ Coluna da data já existe na posição: ${colunaData}`);
+        break;
+      }
+    }
+
+    // Se não existe a coluna para esta data, criar APENAS nesta aba
+    if (colunaData === -1) {
+      // Inserir nova coluna após a coluna de Faltas (se existir) ou no final
+      const posicaoInsercao =
+        indices.Faltas !== undefined
+          ? indices.Faltas + 2 // Após a coluna de Faltas
+          : ultimaColuna + 1; // No final
+
+      abaEncontrada.insertColumnAfter(posicaoInsercao - 1);
+      colunaData = posicaoInsercao - 1; // Ajuste para índice 0-based
+      abaEncontrada.getRange(1, posicaoInsercao).setValue(cabecalhoData);
+
+      console.log(
+        `✅ Nova coluna '${cabecalhoData}' criada APENAS na aba ${abaEncontrada.getName()} na posição ${posicaoInsercao}`
+      );
+
+      // Atualizar array de headers
+      headers.splice(colunaData, 0, cabecalhoData);
+    }
+
+    // PASSO 3: Marcar presença/falta do aluno específico
+    abaEncontrada.getRange(linhaAluno, colunaData + 1).setValue(status);
+
+    console.log(
+      `✅ Status '${status}' registrado para o aluno na linha ${linhaAluno}, coluna ${
+        colunaData + 1
+      }`
+    );
+
+    const updates = [];
+
+    // PASSO 4: Se marcarTodos = true, marcar outros alunos APENAS desta aba como ausentes
+    if (marcarTodos === "true") {
+      console.log("📝 Marcando outros alunos da mesma aba como ausentes...");
+
+      const ultimaLinhaAba = abaEncontrada.getLastRow();
+      const dadosCompletos = abaEncontrada
+        .getRange(2, 1, ultimaLinhaAba - 1, abaEncontrada.getLastColumn())
+        .getValues();
+
+      for (let i = 0; i < dadosCompletos.length; i++) {
+        const row = dadosCompletos[i];
+        const currentId = String(row[indices.ID_Unico] || "").trim();
+        const nomeAluno = String(row[indices.Nome] || "").trim();
+        const rowNumber = i + 2;
+
+        if (!currentId || !nomeAluno) continue;
+
+        if (currentId !== alunoId) {
+          // Para outros alunos, verificar se já tem status para hoje
+          const statusExistente =
+            colunaData < row.length ? String(row[colunaData] || "").trim() : "";
+
+          if (!statusExistente) {
+            // Se não tem status, marcar como ausente
+            abaEncontrada.getRange(rowNumber, colunaData + 1).setValue("A");
+            console.log(
+              `📝 Aluno ${nomeAluno} marcado como ausente automaticamente`
+            );
+          }
+        }
+      }
+    }
+
+    // PASSO 5: Recalcular totais de faltas e presenças APENAS para esta aba
+    console.log("🔄 Recalculando totais de faltas e presenças...");
+
+    const ultimaLinhaAba = abaEncontrada.getLastRow();
+    const dadosCompletos = abaEncontrada
+      .getRange(2, 1, ultimaLinhaAba - 1, abaEncontrada.getLastColumn())
+      .getValues();
+
+    // Obter headers atualizados após possível inserção de coluna
+    const headersAtualizados = abaEncontrada
+      .getRange(1, 1, 1, abaEncontrada.getLastColumn())
+      .getValues()[0];
+
+    for (let i = 0; i < dadosCompletos.length; i++) {
+      const row = dadosCompletos[i];
+      const currentId = String(row[indices.ID_Unico] || "").trim();
+      const nomeAluno = String(row[indices.Nome] || "").trim();
+      const rowNumber = i + 2;
+
+      if (!currentId || !nomeAluno) continue;
+
+      let totalFaltas = 0;
+      let totalPresencas = 0;
+
+      // Contar faltas e presenças em todas as colunas de data
+      for (let col = 0; col < headersAtualizados.length; col++) {
+        const header = String(headersAtualizados[col]).trim();
+
+        // Verificar se é uma coluna de data (formato dd/MM)
+        if (header.match(/^\d{1,2}\/\d{1,2}$/)) {
+          const statusNaData = String(row[col] || "")
+            .trim()
+            .toUpperCase();
+
+          if (statusNaData === "A" || statusNaData === "F") {
+            totalFaltas++;
+          } else if (statusNaData === "P") {
+            totalPresencas++;
+          }
+        }
+      }
+
+      // Atualizar totais na planilha
+      if (indices.Faltas !== undefined) {
+        abaEncontrada
+          .getRange(rowNumber, indices.Faltas + 1)
+          .setValue(totalFaltas);
+      }
+
+      if (indices.Presencas !== undefined) {
+        abaEncontrada
+          .getRange(rowNumber, indices.Presencas + 1)
+          .setValue(totalPresencas);
+      }
+
+      updates.push({
+        planilha: abaEncontrada.getName(),
+        id: currentId,
+        nome: nomeAluno,
+        faltas: totalFaltas,
+        presencas: totalPresencas,
+        statusHoje: currentId === alunoId ? status : "A",
+        data: cabecalhoData,
+      });
+    }
+
+    console.log(
+      `✅ Presença registrada com sucesso! Processada APENAS 1 aba: ${abaEncontrada.getName()}`
+    );
+
+    return {
+      success: true,
+      message: `Presença registrada para ${alunoId} na aba ${abaEncontrada.getName()}. ${
+        marcarTodos === "true"
+          ? "Outros alunos da mesma aba marcados como ausentes."
+          : ""
+      }`,
+      updates: updates.length,
+      abaProcessada: abaEncontrada.getName(),
+      data: updates,
+    };
+  } catch (error) {
+    console.error("❌ Erro ao registrar presença otimizada:", error);
+    return {
+      success: false,
+      error: error.toString(),
+      message: "Erro ao registrar presença",
+    };
+  }
+}
+
+/**
  * Função de teste para o sistema de presença automática
  * Execute esta função para testar o novo sistema
  */
@@ -1904,13 +2153,35 @@ function doGet(e) {
           });
         }
 
-        const resultado = registrarPresencaAutomatica(
+        const resultado = registrarPresencaOtimizada(
           alunoId,
           data,
           status,
           professor,
-          marcarTodos,
-          curso // ← PASSAR CURSO COMO apenasEsteCurso
+          marcarTodos
+        );
+        return criarRespostaJson(resultado);
+      } else if (acao === "registrarPresencaOtimizada") {
+        // ✅ NOVA FUNCIONALIDADE: Registrar presença de forma otimizada (evita criar colunas desnecessárias)
+        const alunoId = e.parameter.alunoId;
+        const status = e.parameter.status;
+        const data = e.parameter.data;
+        const professor = e.parameter.professor;
+        const marcarTodos = e.parameter.marcarTodos || "false";
+
+        if (!alunoId || !status || !data) {
+          return criarRespostaJson({
+            success: false,
+            error: "Parâmetros obrigatórios: alunoId, status, data",
+          });
+        }
+
+        const resultado = registrarPresencaOtimizada(
+          alunoId,
+          data,
+          status,
+          professor,
+          marcarTodos
         );
         return criarRespostaJson(resultado);
       } else if (acao === "registrarPresencaCursoEspecifico") {
@@ -5516,6 +5787,161 @@ function obterHistoricoFaltas(alunoId) {
     return {
       success: false,
       error: error.toString(),
+    };
+  }
+}
+
+/**
+ * ✅ FUNÇÃO DE TESTE - Validar correção de colunas desnecessárias
+ * Execute esta função para testar se o problema foi resolvido
+ */
+function testarCorrecaoColunasUnicas() {
+  console.log("🧪 === TESTANDO CORREÇÃO DE COLUNAS ÚNICAS ===");
+
+  try {
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+
+    // PASSO 1: Contar colunas antes do teste
+    const colunasAntes = {};
+    for (const sheetName of SHEET_NAMES) {
+      const sheet = spreadsheet.getSheetByName(sheetName);
+      if (sheet) {
+        colunasAntes[sheetName] = sheet.getLastColumn();
+      }
+    }
+
+    console.log("📊 Colunas antes do teste:", colunasAntes);
+
+    // PASSO 2: Buscar primeiro aluno disponível
+    let alunoTeste = null;
+    let abaTeste = null;
+
+    for (const sheetName of SHEET_NAMES) {
+      const sheet = spreadsheet.getSheetByName(sheetName);
+      if (!sheet) continue;
+
+      const indices = detectarColunasUniversal(sheet);
+      if (indices.ID_Unico === undefined) continue;
+
+      const lastRow = sheet.getLastRow();
+      if (lastRow <= 1) continue;
+
+      const primeiroId = sheet.getRange(2, indices.ID_Unico + 1).getValue();
+      if (primeiroId) {
+        alunoTeste = String(primeiroId).trim();
+        abaTeste = sheetName;
+        break;
+      }
+    }
+
+    if (!alunoTeste) {
+      throw new Error("Nenhum aluno encontrado para teste");
+    }
+
+    console.log(`👤 Testando com aluno ${alunoTeste} da aba ${abaTeste}`);
+
+    // PASSO 3: Testar função otimizada
+    const dataTesteISO = new Date().toISOString().split("T")[0];
+
+    console.log("🎯 Executando registrarPresencaOtimizada...");
+    const resultado = registrarPresencaOtimizada(
+      alunoTeste,
+      dataTesteISO,
+      "P",
+      "Professor Teste",
+      "false"
+    );
+
+    console.log("📊 Resultado do teste:", resultado);
+
+    if (!resultado.success) {
+      throw new Error("Teste falhou: " + resultado.error);
+    }
+
+    // PASSO 4: Contar colunas depois do teste
+    const colunasDepois = {};
+    let novasColunasDetectadas = [];
+
+    for (const sheetName of SHEET_NAMES) {
+      const sheet = spreadsheet.getSheetByName(sheetName);
+      if (sheet) {
+        colunasDepois[sheetName] = sheet.getLastColumn();
+
+        // Verificar se houve mudança
+        if (colunasDepois[sheetName] > colunasAntes[sheetName]) {
+          novasColunasDetectadas.push({
+            aba: sheetName,
+            antes: colunasAntes[sheetName],
+            depois: colunasDepois[sheetName],
+            diferenca: colunasDepois[sheetName] - colunasAntes[sheetName],
+          });
+        }
+      }
+    }
+
+    console.log("📊 Colunas depois do teste:", colunasDepois);
+    console.log("🔍 Novas colunas detectadas:", novasColunasDetectadas);
+
+    // PASSO 5: Validar resultado
+    const abaProcessada = resultado.abaProcessada;
+    const esperadoUmaAba =
+      novasColunasDetectadas.length === 1 &&
+      novasColunasDetectadas[0].aba === abaProcessada;
+    const nenhumaNovaColuna = novasColunasDetectadas.length === 0;
+
+    if (esperadoUmaAba) {
+      console.log(
+        `✅ SUCESSO: Apenas 1 aba foi afetada (${abaProcessada}) - problema resolvido!`
+      );
+      return {
+        success: true,
+        message: "Correção validada com sucesso",
+        detalhes: {
+          alunoTestado: alunoTeste,
+          abaProcessada: abaProcessada,
+          colunasAntes: colunasAntes,
+          colunasDepois: colunasDepois,
+          novasColunasDetectadas: novasColunasDetectadas,
+          problema: "RESOLVIDO",
+        },
+      };
+    } else if (nenhumaNovaColuna) {
+      console.log(
+        `✅ EXCELENTE: Nenhuma nova coluna foi criada - coluna já existia!`
+      );
+      return {
+        success: true,
+        message: "Teste perfeito - nenhuma coluna desnecessária criada",
+        detalhes: {
+          alunoTestado: alunoTeste,
+          abaProcessada: abaProcessada,
+          colunasAntes: colunasAntes,
+          colunasDepois: colunasDepois,
+          novasColunasDetectadas: novasColunasDetectadas,
+          problema: "INEXISTENTE",
+        },
+      };
+    } else {
+      console.log(`❌ PROBLEMA PERSISTE: Múltiplas abas foram afetadas!`);
+      return {
+        success: false,
+        message: "Problema ainda não foi totalmente resolvido",
+        detalhes: {
+          alunoTestado: alunoTeste,
+          abaProcessada: abaProcessada,
+          colunasAntes: colunasAntes,
+          colunasDepois: colunasDepois,
+          novasColunasDetectadas: novasColunasDetectadas,
+          problema: "AINDA_EXISTE",
+        },
+      };
+    }
+  } catch (error) {
+    console.error("❌ Erro no teste:", error);
+    return {
+      success: false,
+      error: error.toString(),
+      message: "Erro durante o teste",
     };
   }
 }

@@ -1449,7 +1449,7 @@ const smartProcessor = new SmartBatchProcessor();
 // === FUNÇÃO PARA CRIAR PARÂMETROS ROBUSTOS ===
 function createAttendanceParams(registro, forceSpecificCourse = true) {
   const params = {
-    action: "registrarPresencaAutomatica",
+    action: "registrarPresencaOtimizada", // ✅ Usar função otimizada
     alunoId: registro.alunoId,
     data: registro.data,
     status: registro.status,
@@ -3811,14 +3811,13 @@ async function registrarPresencaFalta(status) {
     const dataObj = new Date();
     attendanceManager.markAttendance(selectedStudentId, dataObj, status, true);
 
-    // ✅ OTIMIZAÇÃO: Depois salvar na planilha via API APENAS NO CURSO ESPECÍFICO
+    // ✅ OTIMIZAÇÃO: Depois salvar na planilha via API OTIMIZADA
     const params = new URLSearchParams({
-      action: "registrarPresencaAutomatica",
+      action: "registrarPresencaOtimizada", // ✅ Usar função otimizada que evita criar colunas desnecessárias
       alunoId: selectedStudentId,
       data: dataHoje,
       status: status,
       professor: currentUser.username,
-      curso: cursoAluno, // ✅ Especificar curso para processar apenas essa aba/coluna
       marcarTodos: "false", // ✅ CORREÇÃO: Usar false como nos cards que funcionam corretamente
     });
 
@@ -6324,14 +6323,13 @@ async function submeterPresenca() {
       );
     }
 
-    // ✅ OTIMIZAÇÃO: Salvar na planilha via API APENAS NO CURSO ESPECÍFICO
+    // ✅ OTIMIZAÇÃO: Salvar na planilha via API OTIMIZADA
     const params = new URLSearchParams({
-      action: "registrarPresencaAutomatica",
+      action: "registrarPresencaOtimizada", // ✅ Usar função otimizada que evita criar colunas desnecessárias
       alunoId: alunoId,
       data: data,
       status: status,
       professor: currentUser?.username || "system",
-      curso: cursoAluno, // ✅ Especificar curso para processar apenas essa aba/coluna
       marcarTodos: "false", // ✅ CORREÇÃO: Usar false como nos cards que funcionam corretamente
     });
 
